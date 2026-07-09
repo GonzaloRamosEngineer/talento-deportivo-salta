@@ -103,6 +103,7 @@ export interface ClubResumen {
   id: string;
   nombre: string;
   localidad: string;
+  departamento: string; // nombre IGN del departamento (para el mapa)
   esEsteClub: boolean;
   // métricas AGREGADAS: lo único que sale del club hacia el observatorio
   deportistas: number;
@@ -117,18 +118,18 @@ export const CLUB = { nombre: "Club Atlético Antoniana", localidad: "Salta" };
 export const CLUBES: ClubResumen[] = [
   {
     id: "cja", nombre: "Club Atlético Antoniana", localidad: "Salta Capital",
-    esEsteClub: true, deportistas: 43, medicionesMes: 118,
-    consentimientoPct: 88, categoriasActivas: 5,
+    departamento: "Capital", esEsteClub: true, deportistas: 43,
+    medicionesMes: 118, consentimientoPct: 88, categoriasActivas: 5,
   },
   {
     id: "smi", nombre: "Sportivo del Milagro", localidad: "Salta Capital",
-    esEsteClub: false, deportistas: 61, medicionesMes: 74,
-    consentimientoPct: 93, categoriasActivas: 7,
+    departamento: "Capital", esEsteClub: false, deportistas: 61,
+    medicionesMes: 74, consentimientoPct: 93, categoriasActivas: 7,
   },
   {
     id: "avl", nombre: "Atlético Valle de Lerma", localidad: "Cerrillos",
-    esEsteClub: false, deportistas: 28, medicionesMes: 41,
-    consentimientoPct: 100, categoriasActivas: 3,
+    departamento: "Cerrillos", esEsteClub: false, deportistas: 28,
+    medicionesMes: 41, consentimientoPct: 100, categoriasActivas: 3,
   },
 ];
 
