@@ -9,7 +9,6 @@ import {
   Landmark,
   ShieldAlert,
   UserRound,
-  CalendarDays,
 } from "lucide-react";
 import {
   ATRIBUTOS,
@@ -18,12 +17,12 @@ import {
   CLUBES,
   DEPORTISTAS,
   ENTRENADORES,
+  HOY_DEMO,
   PROFE_DEMO,
-  SESIONES,
-  formatFecha,
-  getAtributo,
+  eventosDe,
   getCategoria,
 } from "@/lib/mock-data";
+import { EventoCard } from "@/components/evento-card";
 import { tendencia } from "@/lib/tendencia";
 import { EstadoBadge } from "@/components/estado-badge";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
@@ -112,12 +111,11 @@ export default function Inicio() {
   const enAlcance = (categoriaId: string) =>
     !permisos.categorias || permisos.categorias.includes(categoriaId);
   const deportistas = DEPORTISTAS.filter((d) => enAlcance(d.categoriaId));
-  const sesiones = SESIONES.filter((s) => enAlcance(s.categoriaId));
 
-  const proximas = sesiones
-    .filter((s) => new Date(s.fecha) >= hoy)
-    .sort((a, b) => a.fecha.localeCompare(b.fecha));
-  const proxima = proximas[0];
+  // Próximos eventos de la agenda (entrenamientos y partidos mezclados)
+  const proximos = eventosDe(permisos.categorias)
+    .filter((e) => new Date(e.fecha) >= HOY_DEMO)
+    .slice(0, 2);
   const sinConsentimiento = deportistas.filter((d) => !d.consentimientoOk);
   const medicionesJunio = deportistas.reduce(
     (acc, d) =>
@@ -294,45 +292,24 @@ export default function Inicio() {
         </section>
       )}
 
-      {/* Próxima sesión */}
-      {proxima && (
+      {/* Agenda: próximos entrenamientos y partidos */}
+      {proximos.length > 0 && (
         <section className="flex flex-col gap-2.5">
           <div className="flex items-baseline justify-between">
-            <h2 className="text-base font-extrabold">Próxima sesión</h2>
+            <h2 className="text-base font-extrabold">Agenda</h2>
             <Link href="/sesiones" className="text-sm font-semibold text-primary">
-              Ver todas
+              Ver la semana
             </Link>
           </div>
-          <Link
-            href={`/sesiones/${proxima.id}`}
-            className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
-          >
-            <span className="flex size-12 shrink-0 flex-col items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
-              <CalendarDays className="size-5" aria-hidden />
-            </span>
-            <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-bold">
-                {getCategoria(proxima.categoriaId)?.nombre} ·{" "}
-                {formatFecha(proxima.fecha)} ·{" "}
-                {new Date(proxima.fecha).toLocaleTimeString("es-AR", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  hour12: false,
-                })}{" "}
-                h
-              </span>
-              <span className="block truncate text-xs text-muted-foreground">
-                {proxima.atributoFocoId
-                  ? `Foco: ${getAtributo(proxima.atributoFocoId)?.nombre}`
-                  : "Sin foco definido"}{" "}
-                · {proxima.entrenador}
-              </span>
-            </span>
-            <ChevronRight
-              className="size-5 shrink-0 text-muted-foreground"
-              aria-hidden
-            />
-          </Link>
+          <div className="flex flex-col gap-2">
+            {proximos.map((e) => (
+              <EventoCard
+                key={e.tipo === "sesion" ? e.sesion.id : e.partido.id}
+                evento={e}
+                conFecha
+              />
+            ))}
+          </div>
         </section>
       )}
 

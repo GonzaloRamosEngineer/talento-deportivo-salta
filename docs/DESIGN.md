@@ -119,6 +119,16 @@ La dirección tiene que servir a los dos sin traicionar a ninguno:
 - **Selector de perfil demo**: switcher en sidebar/header que muestra
   el producto según rol (profesor, admin, comisión directiva solo
   lectura, super admin). Es visibilidad de UI, no seguridad.
+- **Agenda semanal** (/sesiones): lunes→domingo con "Hoy" resaltado,
+  mezclando entrenamientos y partidos por día; días sin actividad en
+  borde punteado. La `EventoCard` distingue tipos: entrenamiento con
+  icono Dumbbell en secondary, partido con Trophy en primario (el
+  evento estrella de la semana). Resultado como número grande solo en
+  partidos jugados; en escuelitas, chip "Sin marcador" — la regla
+  formativa hecha UI. Cronograma (la rutina) como lista sobria al pie.
+- **Estados de sesión**: cancelada = card al 70% de opacidad + chip
+  ámbar + banner con motivo en el detalle (CloudRain). Nunca se borra:
+  la agenda es registro, no solo plan.
 
 ## Qué NO es esta dirección
 

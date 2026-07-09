@@ -38,10 +38,16 @@ de datos debe poder escalar a multi-club y multi-disciplina sin reescritura.
 2. **Evolución y potencial**: serie temporal de mediciones por atributo,
    con estado derivado (creciendo / amesetado / en baja). Esta es la
    capa diferencial del producto.
-3. **Entrenamiento**: sesiones con fecha, foco (qué capacidad se trabajó),
-   entrenador a cargo y deportistas participantes. Habilita medir el
-   impacto del entrenamiento sobre la evolución, y gamificación para
-   el deportista (ver su propio progreso).
+3. **Entrenamiento y agenda**: cada categoría tiene su CRONOGRAMA
+   semanal fijo (días, horario, lugar — Primera entrena a diario, las
+   escuelitas 2 veces por semana); la sesión es la instancia de un día
+   (con foco de capacidad, entrenador, lugar, estado —puede cancelarse
+   por lluvia— y asistencia). El fin de semana está el PARTIDO (torneo,
+   rival, local/visitante, citados y resultado del equipo — SOLO datos
+   grupales, sin estadísticas individuales de menores; en escuelitas
+   no se registra marcador: son encuentros formativos). Todo esto
+   permite observar qué se trabajó y cuándo, en paralelo a la
+   evolución registrada, sin pretensión causal.
 4. **Preparación de partidos / táctica**: formaciones y posiciones.
    Baja prioridad — roadmap lejano.
 5. **Finanzas e inversión formativa**: movimientos por área/disciplina

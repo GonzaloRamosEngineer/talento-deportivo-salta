@@ -19,6 +19,9 @@ de ese archivo para el alcance por categoría del profesor).
 | Alta/edición de deportistas | ✅ sus categorías | ✅ | ❌ | ❌ |
 | Borrar deportistas | ❌ | ✅ | ❌ | ❌ |
 | Gestionar categorías y staff (membresías) | ❌ | ✅ | ❌ | ❌ |
+| Ver agenda (entrenamientos y partidos) | ✅ sus categorías | ✅ | ✅ (lectura) | ❌ |
+| Cargar partidos (rival, citados, resultado) | ✅ sus categorías | ✅ | ❌ | ❌ |
+| Gestionar cronograma semanal y lugares | ❌ | ✅ | ❌ | ❌ |
 | Vista tabla del plantel | ✅ sus categorías | ✅ | ✅ | ❌ |
 | Informe imprimible | ✅ sus categorías | ✅ | ✅ | ❌ |
 | Observatorio provincial (agregados) | ❌ | ❌ | ❌ | ✅ |

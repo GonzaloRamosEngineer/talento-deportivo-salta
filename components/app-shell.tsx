@@ -30,7 +30,7 @@ function navPara(perfil: Perfil): NavItem[] {
     return [
       { href: "/", label: "Inicio", icon: Home },
       { href: "/deportistas", label: "Deportistas", icon: Users },
-      { href: "/sesiones", label: "Sesiones", icon: CalendarDays },
+      { href: "/sesiones", label: "Agenda", icon: CalendarDays },
     ];
   }
   if (perfil === "super_admin") {
@@ -46,7 +46,7 @@ function navPara(perfil: Perfil): NavItem[] {
     { href: "/deportistas", label: "Deportistas", icon: Users },
     { href: "/medicion", label: "Medir", icon: ClipboardPlus, destacado: true },
     { href: "/entrenamiento", label: "Entrenar", icon: Dumbbell },
-    { href: "/sesiones", label: "Sesiones", icon: CalendarDays },
+    { href: "/sesiones", label: "Agenda", icon: CalendarDays },
   ];
 }
 

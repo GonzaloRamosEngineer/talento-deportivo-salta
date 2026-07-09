@@ -3,12 +3,22 @@
 import { use } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Check, ChevronRight, Target, X } from "lucide-react";
+import {
+  ArrowLeft,
+  Check,
+  ChevronRight,
+  CloudRain,
+  Dumbbell,
+  MapPin,
+  Target,
+  X,
+} from "lucide-react";
 import {
   DEPORTISTAS,
   SESIONES,
   getAtributo,
   getCategoria,
+  getLugar,
 } from "@/lib/mock-data";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { AvisoAcceso } from "@/components/aviso-acceso";
@@ -50,8 +60,9 @@ export default function PaginaSesion({
   const fecha = new Date(sesion.fecha);
   const categoria = getCategoria(sesion.categoriaId);
   const foco = sesion.atributoFocoId ? getAtributo(sesion.atributoFocoId) : null;
-  const esFutura = sesion.asistencia.length === 0;
-  const convocados = esFutura
+  const lugar = getLugar(sesion.lugarId);
+  const esProgramada = sesion.estado === "programada";
+  const convocados = esProgramada
     ? DEPORTISTAS.filter((d) => d.categoriaId === sesion.categoriaId).map(
         (d) => ({ deportistaId: d.id, presente: null as boolean | null }),
       )
@@ -85,7 +96,22 @@ export default function PaginaSesion({
         <p className="text-sm text-muted-foreground">
           {categoria?.nombre} · {sesion.entrenador}
         </p>
+        <p className="mt-0.5 flex items-center gap-1 text-sm text-muted-foreground">
+          <MapPin className="size-3.5 shrink-0" aria-hidden />
+          {lugar?.nombre}
+          {lugar?.direccion && ` · ${lugar.direccion}`}
+        </p>
       </div>
+
+      {sesion.estado === "cancelada" && (
+        <div className="flex items-start gap-2.5 rounded-xl bg-warning-soft p-3.5 text-sm text-warning">
+          <CloudRain className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <p className="font-semibold">
+            Sesión cancelada.{" "}
+            <span className="font-normal">{sesion.descripcion}</span>
+          </p>
+        </div>
+      )}
 
       {foco && (
         <div className="flex items-center gap-2.5 rounded-xl bg-secondary px-3.5 py-3 text-sm font-semibold text-secondary-foreground">
@@ -94,13 +120,26 @@ export default function PaginaSesion({
         </div>
       )}
 
-      <p className="rounded-2xl border border-border bg-card p-4 text-sm leading-relaxed">
-        {sesion.descripcion}
-      </p>
+      {sesion.estado !== "cancelada" && (
+        <p className="rounded-2xl border border-border bg-card p-4 text-sm leading-relaxed">
+          {sesion.descripcion}
+        </p>
+      )}
 
+      {esProgramada && permisos.opera && (
+        <Link
+          href={`/entrenamiento?categoria=${sesion.categoriaId}`}
+          className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground transition-transform active:scale-[0.99]"
+        >
+          <Dumbbell className="size-4.5" aria-hidden />
+          Planificar en el tablero
+        </Link>
+      )}
+
+      {sesion.estado !== "cancelada" && (
       <section className="rounded-2xl border border-border bg-card">
         <h2 className="border-b border-border px-4 py-3 text-sm font-extrabold">
-          {esFutura
+          {esProgramada
             ? `Convocados (${convocados.length})`
             : `Asistencia (${sesion.asistencia.filter((a) => a.presente).length}/${sesion.asistencia.length})`}
         </h2>
@@ -149,6 +188,7 @@ export default function PaginaSesion({
           })}
         </ul>
       </section>
+      )}
     </div>
   );
 }

@@ -55,14 +55,48 @@ export interface Categoria {
   anioNacimiento?: number;
 }
 
+export interface Lugar {
+  id: string;
+  nombre: string;
+  direccion?: string;
+}
+
+// La rutina fija de la semana por categoría (estable por temporada).
+// La agenda se arma desde acá; la sesión es la instancia de un día.
+export interface Horario {
+  categoriaId: string;
+  diaSemana: number; // 1 = lunes … 7 = domingo
+  hora: string; // "18:00"
+  lugarId: string;
+  entrenador: string;
+}
+
 export interface Sesion {
   id: string;
   fecha: string; // ISO con hora
   categoriaId: string;
   atributoFocoId: string | null;
   entrenador: string;
+  lugarId: string;
+  estado: "programada" | "realizada" | "cancelada";
   descripcion: string;
   asistencia: { deportistaId: string; presente: boolean }[];
+}
+
+// Partido: SOLO datos grupales (decisión 2026-07-09) — resultado del
+// equipo y citados; nada de minutos/goles por chico. En categorías
+// tipo "escuelita" NO se registra resultado (encuadre formativo).
+export interface Partido {
+  id: string;
+  fecha: string; // ISO con hora
+  categoriaId: string;
+  torneo: string; // "Liga Salteña — Infantiles", "Amistoso"...
+  rival: string;
+  condicion: "local" | "visitante";
+  lugarId?: string; // si es local, del catálogo del club
+  lugarTexto?: string; // si es visitante, la cancha del rival
+  citados: string[]; // deportistaIds
+  resultado?: { favor: number; contra: number };
 }
 
 export interface ClubResumen {
@@ -115,6 +149,33 @@ export const CATEGORIAS: Categoria[] = [
   { id: "div-3", nombre: "3ª División", tipo: "inferior", anioNacimiento: 2007 },
   { id: "reserva", nombre: "Reserva (La Local)", tipo: "reserva" },
   { id: "primera", nombre: "Primera", tipo: "primera" },
+];
+
+// Ancla temporal de la demo: "hoy" es jueves 9 de julio de 2026.
+// Toda la agenda mock gira alrededor de esta semana (lun 6 → dom 12).
+export const HOY_DEMO = new Date("2026-07-09T12:00:00");
+
+export const LUGARES: Lugar[] = [
+  { id: "sede", nombre: "Cancha principal — Sede", direccion: "Av. Independencia 910, Salta" },
+  { id: "predio", nombre: "Predio de inferiores", direccion: "B° El Tribuno, Salta" },
+];
+
+export const CRONOGRAMA: Horario[] = [
+  { categoriaId: "esc-2019", diaSemana: 3, hora: "17:30", lugarId: "predio", entrenador: "Lucas Herrera" },
+  { categoriaId: "esc-2019", diaSemana: 6, hora: "10:00", lugarId: "sede", entrenador: "Lucas Herrera" },
+  { categoriaId: "esc-2016", diaSemana: 3, hora: "17:30", lugarId: "predio", entrenador: "Lucas Herrera" },
+  { categoriaId: "esc-2016", diaSemana: 5, hora: "17:30", lugarId: "predio", entrenador: "Lucas Herrera" },
+  { categoriaId: "div-9", diaSemana: 2, hora: "18:00", lugarId: "predio", entrenador: "Marcela Díaz" },
+  { categoriaId: "div-9", diaSemana: 4, hora: "18:00", lugarId: "predio", entrenador: "Marcela Díaz" },
+  { categoriaId: "div-4", diaSemana: 1, hora: "19:00", lugarId: "sede", entrenador: "Jorge Paz" },
+  { categoriaId: "div-4", diaSemana: 3, hora: "19:00", lugarId: "sede", entrenador: "Jorge Paz" },
+  { categoriaId: "div-4", diaSemana: 5, hora: "19:00", lugarId: "sede", entrenador: "Jorge Paz" },
+  // Primera entrena todos los días hábiles
+  { categoriaId: "primera", diaSemana: 1, hora: "09:30", lugarId: "sede", entrenador: "Nora Fidele" },
+  { categoriaId: "primera", diaSemana: 2, hora: "09:30", lugarId: "sede", entrenador: "Nora Fidele" },
+  { categoriaId: "primera", diaSemana: 3, hora: "09:30", lugarId: "sede", entrenador: "Nora Fidele" },
+  { categoriaId: "primera", diaSemana: 4, hora: "09:30", lugarId: "sede", entrenador: "Nora Fidele" },
+  { categoriaId: "primera", diaSemana: 5, hora: "09:30", lugarId: "sede", entrenador: "Nora Fidele" },
 ];
 
 // ---------- CATÁLOGO DE ATRIBUTOS (híbrido honesto) ----------
@@ -504,22 +565,28 @@ export const DEPORTISTAS: Deportista[] = [
   }),
 ];
 
+// La semana demo (lun 6 → dom 12 de julio) sigue el CRONOGRAMA:
+// las sesiones son instancias de la rutina, con estado.
 export const SESIONES: Sesion[] = [
+  // ---- ya realizadas esta semana ----
   {
-    id: "s01", fecha: "2026-07-10T18:00:00", categoriaId: "div-9",
-    atributoFocoId: "velocidad30", entrenador: "Marcela Díaz",
-    descripcion: "Pasadas cortas y arranques. Cierre con fútbol reducido.",
-    asistencia: [],
+    id: "s01", fecha: "2026-07-06T19:00:00", categoriaId: "div-4",
+    atributoFocoId: "resistencia", entrenador: "Jorge Paz",
+    lugarId: "sede", estado: "realizada",
+    descripcion: "Test de Cooper + trabajo aeróbico por estaciones.",
+    asistencia: [
+      { deportistaId: "d03", presente: true },
+      { deportistaId: "d05", presente: true },
+      { deportistaId: "d08", presente: true },
+      { deportistaId: "d11", presente: true },
+      { deportistaId: "d31", presente: true },
+      { deportistaId: "d32", presente: false },
+    ],
   },
   {
-    id: "s02", fecha: "2026-07-11T17:30:00", categoriaId: "esc-2016",
-    atributoFocoId: "control", entrenador: "Lucas Herrera",
-    descripcion: "Circuito de conducción y juegos con pelota.",
-    asistencia: [],
-  },
-  {
-    id: "s03", fecha: "2026-07-06T18:00:00", categoriaId: "div-9",
+    id: "s02", fecha: "2026-07-07T18:00:00", categoriaId: "div-9",
     atributoFocoId: "pases", entrenador: "Marcela Díaz",
+    lugarId: "predio", estado: "realizada",
     descripcion: "Rondos y pase a distancia. Jornada de medición de pase.",
     asistencia: [
       { deportistaId: "d01", presente: true },
@@ -533,22 +600,10 @@ export const SESIONES: Sesion[] = [
     ],
   },
   {
-    id: "s04", fecha: "2026-07-05T19:00:00", categoriaId: "div-4",
-    atributoFocoId: "resistencia", entrenador: "Jorge Paz",
-    descripcion: "Test de Cooper + trabajo aeróbico por estaciones.",
-    asistencia: [
-      { deportistaId: "d03", presente: true },
-      { deportistaId: "d05", presente: true },
-      { deportistaId: "d08", presente: true },
-      { deportistaId: "d11", presente: true },
-      { deportistaId: "d31", presente: true },
-      { deportistaId: "d32", presente: false },
-    ],
-  },
-  {
-    id: "s05", fecha: "2026-07-03T17:30:00", categoriaId: "esc-2019",
-    atributoFocoId: null, entrenador: "Lucas Herrera",
-    descripcion: "Encuentro recreativo con familias.",
+    id: "s03", fecha: "2026-07-08T17:30:00", categoriaId: "esc-2019",
+    atributoFocoId: "control", entrenador: "Lucas Herrera",
+    lugarId: "predio", estado: "realizada",
+    descripcion: "Circuito de conducción y juegos con pelota.",
     asistencia: [
       { deportistaId: "d04", presente: true },
       { deportistaId: "d09", presente: false },
@@ -559,19 +614,16 @@ export const SESIONES: Sesion[] = [
     ],
   },
   {
-    id: "s06", fecha: "2026-07-01T18:00:00", categoriaId: "div-4",
+    id: "s04", fecha: "2026-07-08T19:00:00", categoriaId: "div-4",
     atributoFocoId: "salto", entrenador: "Jorge Paz",
-    descripcion: "Pliometría y salto vertical. Jornada de medición.",
-    asistencia: [
-      { deportistaId: "d03", presente: true },
-      { deportistaId: "d05", presente: false },
-      { deportistaId: "d08", presente: true },
-      { deportistaId: "d11", presente: true },
-    ],
+    lugarId: "sede", estado: "cancelada",
+    descripcion: "Suspendida por lluvia — se reprograma el trabajo de pliometría.",
+    asistencia: [],
   },
   {
-    id: "s07", fecha: "2026-07-04T10:00:00", categoriaId: "primera",
+    id: "s05", fecha: "2026-07-09T09:30:00", categoriaId: "primera",
     atributoFocoId: "balon_parado", entrenador: "Nora Fidele",
+    lugarId: "sede", estado: "realizada",
     descripcion: "Pelota parada ofensiva y defensiva. Definición por sectores.",
     asistencia: [
       { deportistaId: "p01", presente: true },
@@ -581,6 +633,73 @@ export const SESIONES: Sesion[] = [
       { deportistaId: "p10", presente: false },
       { deportistaId: "p11", presente: true },
     ],
+  },
+  // ---- lo que viene ----
+  {
+    id: "s06", fecha: "2026-07-09T18:00:00", categoriaId: "div-9",
+    atributoFocoId: "velocidad30", entrenador: "Marcela Díaz",
+    lugarId: "predio", estado: "programada",
+    descripcion: "Pasadas cortas y arranques. Cierre con fútbol reducido.",
+    asistencia: [],
+  },
+  {
+    id: "s07", fecha: "2026-07-10T09:30:00", categoriaId: "primera",
+    atributoFocoId: null, entrenador: "Nora Fidele",
+    lugarId: "sede", estado: "programada",
+    descripcion: "Táctico previo al partido del domingo.",
+    asistencia: [],
+  },
+  {
+    id: "s08", fecha: "2026-07-10T17:30:00", categoriaId: "esc-2016",
+    atributoFocoId: "control", entrenador: "Lucas Herrera",
+    lugarId: "predio", estado: "programada",
+    descripcion: "Conducción y juegos reducidos.",
+    asistencia: [],
+  },
+  {
+    id: "s09", fecha: "2026-07-10T19:00:00", categoriaId: "div-4",
+    atributoFocoId: "salto", entrenador: "Jorge Paz",
+    lugarId: "sede", estado: "programada",
+    descripcion: "Pliometría (reprogramada tras la lluvia del miércoles).",
+    asistencia: [],
+  },
+];
+
+export const PARTIDOS: Partido[] = [
+  // ---- jugados (fin de semana pasado) ----
+  {
+    id: "pt01", fecha: "2026-07-04T10:00:00", categoriaId: "div-9",
+    torneo: "Liga Salteña — Infantiles", rival: "Juventud Unida",
+    condicion: "local", lugarId: "sede",
+    citados: ["d01", "d02", "d07", "d10", "d27", "d28", "d29", "d30"],
+    resultado: { favor: 3, contra: 1 },
+  },
+  {
+    id: "pt02", fecha: "2026-07-05T15:00:00", categoriaId: "div-4",
+    torneo: "Liga Salteña — Juveniles", rival: "Central Norte",
+    condicion: "visitante", lugarTexto: "Cancha de Central Norte",
+    citados: ["d03", "d05", "d08", "d11", "d31", "d32"],
+    resultado: { favor: 1, contra: 2 },
+  },
+  // Encuentro de escuelita: SIN resultado (encuadre formativo)
+  {
+    id: "pt03", fecha: "2026-07-04T09:30:00", categoriaId: "esc-2016",
+    torneo: "Encuentro de escuelitas", rival: "Escuela Municipal",
+    condicion: "local", lugarId: "predio",
+    citados: ["d06", "d24", "d25", "d26"],
+  },
+  // ---- este fin de semana ----
+  {
+    id: "pt04", fecha: "2026-07-11T10:00:00", categoriaId: "div-9",
+    torneo: "Liga Salteña — Infantiles", rival: "Gimnasia y Tiro",
+    condicion: "visitante", lugarTexto: "Predio de Gimnasia y Tiro",
+    citados: ["d01", "d02", "d07", "d27", "d28", "d29", "d30"],
+  },
+  {
+    id: "pt05", fecha: "2026-07-12T16:00:00", categoriaId: "primera",
+    torneo: "Liga Salteña — Primera A", rival: "San Antonio",
+    condicion: "local", lugarId: "sede",
+    citados: ["p01", "p02", "p03", "p04", "p05", "p06", "p07", "p08", "p09", "p10", "p11"],
   },
 ];
 
@@ -630,5 +749,49 @@ export function formatFecha(iso: string): string {
 export function sesionesDe(deportistaId: string): Sesion[] {
   return SESIONES.filter((s) =>
     s.asistencia.some((a) => a.deportistaId === deportistaId),
+  );
+}
+
+// ---------- agenda ----------
+
+export function getLugar(id?: string) {
+  return id ? LUGARES.find((l) => l.id === id) : undefined;
+}
+
+export function getPartido(id: string) {
+  return PARTIDOS.find((p) => p.id === id);
+}
+
+export function lugarDePartido(p: Partido): string {
+  return p.condicion === "local"
+    ? (getLugar(p.lugarId)?.nombre ?? "Sede")
+    : (p.lugarTexto ?? "Cancha del rival");
+}
+
+export type Evento =
+  | { tipo: "sesion"; fecha: string; sesion: Sesion }
+  | { tipo: "partido"; fecha: string; partido: Partido };
+
+/** Sesiones + partidos del alcance, ordenados por fecha. */
+export function eventosDe(categorias: string[] | null): Evento[] {
+  const enAlcance = (c: string) => !categorias || categorias.includes(c);
+  const eventos: Evento[] = [
+    ...SESIONES.filter((s) => enAlcance(s.categoriaId)).map(
+      (sesion): Evento => ({ tipo: "sesion", fecha: sesion.fecha, sesion }),
+    ),
+    ...PARTIDOS.filter((p) => enAlcance(p.categoriaId)).map(
+      (partido): Evento => ({ tipo: "partido", fecha: partido.fecha, partido }),
+    ),
+  ];
+  return eventos.sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
+
+export const DIAS = [
+  "lunes", "martes", "miércoles", "jueves", "viernes", "sábado", "domingo",
+];
+
+export function cronogramaDe(categorias: string[] | null): Horario[] {
+  return CRONOGRAMA.filter(
+    (h) => !categorias || categorias.includes(h.categoriaId),
   );
 }

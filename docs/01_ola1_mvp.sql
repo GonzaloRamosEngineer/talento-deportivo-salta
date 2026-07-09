@@ -398,3 +398,65 @@ create policy "asistencia_escritura" on sesion_asistencia
 -- (en medicion vía join a deportista o denormalizando categoria_id);
 -- la escritura sigue exigiendo puede_operar() Y alcance de categoría.
 -- Decidir antes de conectar Supabase.
+
+-- ============================================================
+-- ⚠ PROPUESTA v7 (2026-07-09, pendiente de decisión — NO incluida
+-- en el DDL de arriba): agenda real del club — lugares, cronograma
+-- semanal recurrente y partidos. Decidido con el usuario: partidos
+-- SOLO con datos grupales (resultado + citación), sin estadísticas
+-- individuales de menores; en categorías tipo 'escuelita' NO se
+-- registra resultado (regla de APLICACIÓN, no constraint, para
+-- permitir excepciones conscientes del club).
+-- ============================================================
+-- create table lugar (
+--   id        uuid primary key default gen_random_uuid(),
+--   club_id   uuid not null references club(id) on delete cascade,
+--   nombre    text not null,
+--   direccion text,
+--   creado_en timestamptz not null default now(),
+--   unique (club_id, nombre)
+-- );
+--
+-- -- La rutina fija por categoría (estable por temporada). La sesión
+-- -- es la instancia de un día; se crea prellenada desde acá.
+-- create table horario_entrenamiento (
+--   id           uuid primary key default gen_random_uuid(),
+--   club_id      uuid not null references club(id) on delete cascade,
+--   categoria_id uuid not null references categoria(id) on delete cascade,
+--   dia_semana   int  not null check (dia_semana between 1 and 7), -- 1=lunes
+--   hora         time not null,
+--   lugar_id     uuid references lugar(id) on delete set null,
+--   creado_en    timestamptz not null default now()
+-- );
+--
+-- alter table sesion_entrenamiento
+--   add column lugar_id uuid references lugar(id) on delete set null,
+--   add column estado   text not null default 'programada'
+--     check (estado in ('programada','realizada','cancelada'));
+--
+-- create table partido (
+--   id           uuid primary key default gen_random_uuid(),
+--   club_id      uuid not null references club(id) on delete cascade,
+--   categoria_id uuid not null references categoria(id) on delete cascade,
+--   fecha        timestamptz not null,
+--   torneo       text,                -- 'Liga Salteña — Infantiles', 'Amistoso'...
+--   rival        text not null,
+--   condicion    text not null check (condicion in ('local','visitante')),
+--   lugar_id     uuid references lugar(id) on delete set null, -- si es local
+--   lugar_texto  text,                -- si es visitante (cancha del rival)
+--   goles_favor  int,                 -- null en escuelitas (regla de app)
+--   goles_contra int,
+--   creado_en    timestamptz not null default now()
+-- );
+--
+-- create table partido_citacion (
+--   partido_id    uuid not null references partido(id) on delete cascade,
+--   deportista_id uuid not null references deportista(id) on delete cascade,
+--   presente      boolean not null default true,
+--   primary key (partido_id, deportista_id)
+-- );
+--
+-- RLS: misma matriz de docs/PERFILES.md — lectura es_miembro_de /
+-- alcanza_categoria; escritura de partido/citación = puede_operar()
+-- (+ alcance de categoría si se aprueba v6); lugar y
+-- horario_entrenamiento los gestiona es_admin_de(), lectura miembros.
