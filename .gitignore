@@ -1,0 +1,16 @@
+# Dependencias y build
+node_modules/
+.next/
+out/
+
+# Entorno — NUNCA commitear credenciales de Supabase
+.env
+.env*.local
+
+# Vercel / Supabase CLI
+.vercel/
+supabase/.temp/
+
+# Sistema
+.DS_Store
+*.tsbuildinfo
