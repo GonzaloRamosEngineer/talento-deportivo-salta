@@ -1,18 +1,42 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState } from "react";
+import { PROFE_DEMO } from "@/lib/mock-data";
 
-// Selector de perfil DEMO: sin auth real. Refleja el modelo de acceso
-// del esquema (membresia.rol) + el super admin de plataforma, para
-// poder demostrar permisos y la visión multi-club en el prototipo.
+// Selector de perfil DEMO: sin auth real. Refleja la matriz de acceso
+// de docs/PERFILES.md (en producción la aplica el RLS, nunca la UI).
 export type Perfil = "profesor" | "admin_club" | "comision" | "super_admin";
 
 export const PERFILES: { id: Perfil; label: string; descripcion: string }[] = [
-  { id: "profesor", label: "Profesor/a", descripcion: "Carga mediciones y planifica entrenamientos" },
-  { id: "admin_club", label: "Admin del club", descripcion: "Gestiona categorías, staff y consentimientos" },
-  { id: "comision", label: "Comisión directiva", descripcion: "Consulta todo, solo lectura" },
-  { id: "super_admin", label: "Plataforma (super admin)", descripcion: "Observatorio interclubes, solo datos agregados" },
+  { id: "profesor", label: "Profesor/a (Marcela)", descripcion: "Solo sus categorías: 9ª División y Escuelita 2016 — carga y planifica" },
+  { id: "admin_club", label: "Admin del club", descripcion: "Todo el club: opera y además gestiona categorías, staff y consentimientos" },
+  { id: "comision", label: "Comisión directiva", descripcion: "Todo el club, solo consulta — no carga ni edita" },
+  { id: "super_admin", label: "Plataforma (super admin)", descripcion: "Observatorio interclubes: solo agregados, sin acceso a fichas" },
 ];
+
+export interface Permisos {
+  /** puede cargar mediciones, planificar, registrar consentimientos */
+  opera: boolean;
+  /** gestiona categorías, staff, borrado de deportistas (admin) */
+  gestiona: boolean;
+  /** accede a datos individuales del club */
+  veClub: boolean;
+  /** null = todas las categorías del club; lista = solo esas */
+  categorias: string[] | null;
+}
+
+export function permisosDe(perfil: Perfil): Permisos {
+  switch (perfil) {
+    case "profesor":
+      return { opera: true, gestiona: false, veClub: true, categorias: PROFE_DEMO.categorias };
+    case "admin_club":
+      return { opera: true, gestiona: true, veClub: true, categorias: null };
+    case "comision":
+      return { opera: false, gestiona: false, veClub: true, categorias: null };
+    case "super_admin":
+      return { opera: false, gestiona: false, veClub: false, categorias: [] };
+  }
+}
 
 const PerfilContext = createContext<{
   perfil: Perfil;

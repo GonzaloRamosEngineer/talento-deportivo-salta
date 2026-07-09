@@ -37,11 +37,15 @@
    consentimientos) = cualquier miembro.
 
 4. **Solo `membresia` tiene login** (roles: `admin_club`,
-   `entrenador`, `comision_directiva` — este último es consulta pura,
-   sin escritura: las policies de escritura usan `puede_operar()`).
-   Deportistas y tutores NUNCA tienen fila en `auth.users` en esta
-   etapa. No implementar ningún flujo de autenticación para
-   deportistas/tutores sin discutirlo antes.
+   `entrenador`, `comision_directiva`). La matriz completa de qué ve
+   y hace cada perfil es `docs/PERFILES.md` — fuente de verdad, la UI
+   y el RLS deben reflejarla. Claves: comisión directiva es consulta
+   pura (`puede_operar()` en las policies de escritura); el entrenador
+   accede SOLO a sus categorías asignadas (propuesta v6:
+   `membresia_categoria`); el super admin de plataforma NUNCA accede a
+   datos individuales, solo agregados. Deportistas y tutores NUNCA
+   tienen fila en `auth.users` en esta etapa; no implementar auth para
+   ellos sin discutirlo antes.
 
 5. **IDs como UUID**, no seriales autoincrementales.
 

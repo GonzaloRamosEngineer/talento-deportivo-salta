@@ -17,6 +17,7 @@ import {
 import type { Deportista } from "@/lib/mock-data";
 import {
   ATRIBUTOS,
+  CATEGORIAS,
   edad,
   formatFecha,
   getAtributo,
@@ -30,7 +31,8 @@ import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { EvolutionChart } from "@/components/evolution-chart";
 import { NivelBar } from "@/components/nivel-bar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { usePerfil, puedeCargar } from "@/components/perfil-context";
+import { usePerfil, permisosDe } from "@/components/perfil-context";
+import { AvisoAcceso } from "@/components/aviso-acceso";
 import { cn } from "@/lib/utils";
 
 // Flecha chica de tendencia para las filas de habilidades
@@ -53,6 +55,10 @@ export function FichaDeportista({
   atributoInicial?: string;
 }) {
   const { perfil } = usePerfil();
+  const permisos = permisosDe(perfil);
+  // Demo: registrar la firma del consentimiento solo cambia estado local
+  const [consentimientoDemo, setConsentimientoDemo] = useState(false);
+  const consentimientoOk = deportista.consentimientoOk || consentimientoDemo;
   const medidos = ATRIBUTOS.filter((a) => deportista.mediciones[a.id]?.length);
   const [atributoId, setAtributoId] = useState(
     atributoInicial && deportista.mediciones[atributoInicial]
@@ -79,6 +85,34 @@ export function FichaDeportista({
     setAtributoId(id);
     setTab("evolucion");
   };
+
+  // Espejo del RLS: la plataforma no ve fichas; el profesor solo las
+  // de sus categorías asignadas.
+  if (!permisos.veClub) {
+    return (
+      <AvisoAcceso
+        titulo="La plataforma no accede a fichas"
+        detalle="Los datos individuales de los deportistas nunca salen de su club. El perfil de plataforma solo ve el observatorio con agregados."
+        accionHref="/observatorio"
+        accionLabel="Ir al observatorio"
+      />
+    );
+  }
+  if (permisos.categorias && !permisos.categorias.includes(deportista.categoriaId)) {
+    const asignadas = CATEGORIAS.filter((c) =>
+      permisos.categorias!.includes(c.id),
+    )
+      .map((c) => c.nombre)
+      .join(" y ");
+    return (
+      <AvisoAcceso
+        titulo="Fuera de tus categorías"
+        detalle={`${deportista.nombre} ${deportista.apellido} pertenece a ${categoria?.nombre}. Tu perfil accede solo a ${asignadas}.`}
+        accionHref="/deportistas"
+        accionLabel="Ver tus deportistas"
+      />
+    );
+  }
 
   return (
     <div className="flex flex-col gap-4">
@@ -108,14 +142,31 @@ export function FichaDeportista({
         </Link>
       </div>
 
-      {!deportista.consentimientoOk && (
-        <div className="flex items-start gap-2.5 rounded-xl bg-warning-soft p-3.5 text-sm text-warning">
+      {!consentimientoOk && (
+        <div className="flex flex-wrap items-start gap-2.5 rounded-xl bg-warning-soft p-3.5 text-sm text-warning">
           <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <p className="font-semibold">
+          <p className="min-w-0 flex-1 font-semibold">
             Consentimiento del tutor pendiente.{" "}
             <span className="font-normal">
               Registrá el formulario firmado antes de seguir cargando datos.
             </span>
+          </p>
+          {permisos.opera && (
+            <button
+              onClick={() => setConsentimientoDemo(true)}
+              className="h-9 shrink-0 rounded-lg bg-warning px-3 text-xs font-bold text-white"
+            >
+              Registrar firma (demo)
+            </button>
+          )}
+        </div>
+      )}
+      {consentimientoDemo && (
+        <div className="flex items-start gap-2.5 rounded-xl bg-success-soft p-3 text-xs text-success">
+          <ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <p>
+            Firma registrada (demo — no se guarda en esta etapa). En
+            producción queda asociada al tutor, con fecha y quién la registró.
           </p>
         </div>
       )}
@@ -353,7 +404,7 @@ export function FichaDeportista({
             </section>
           )}
 
-          {puedeCargar(perfil) && (
+          {permisos.opera && (
             <Link
               href={`/medicion?atributo=${atributoId}&categoria=${deportista.categoriaId}`}
               className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground transition-transform active:scale-[0.99]"
@@ -393,7 +444,7 @@ export function FichaDeportista({
             ))}
             <div className="flex items-center justify-between px-4 py-3 text-sm">
               <span className="text-muted-foreground">Consentimiento</span>
-              {deportista.consentimientoOk ? (
+              {consentimientoOk ? (
                 <span className="flex items-center gap-1.5 font-semibold text-success">
                   <ShieldCheck className="size-4" aria-hidden /> Firmado
                 </span>

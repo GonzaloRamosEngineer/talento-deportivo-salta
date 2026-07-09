@@ -359,3 +359,42 @@ create policy "asistencia_escritura" on sesion_asistencia
 --   (:futbol_id, 'Atajando',         'tecnico', 'subjetivo', 'escala', 1, 10, 'mayor_mejor', 'Arqueros: atajadas, anticipo y decisiones'),
 --   (:futbol_id, 'Balón parado',     'tecnico', 'subjetivo', 'escala', 1, 10, 'mayor_mejor', 'Córners, tiros libres y penales'),
 --   (:futbol_id, 'Visión de juego',  'tecnico', 'subjetivo', 'escala', 1, 10, 'mayor_mejor', 'Lectura del juego y pases posibles que detecta');
+
+-- ============================================================
+-- ⚠ PROPUESTA v6 (2026-07-09, pendiente de decisión — NO incluida
+-- en el DDL de arriba): alcance por categoría para entrenadores.
+-- Matriz completa en docs/PERFILES.md. Racional: minimización de
+-- datos de menores — un profe de escuelita no necesita las fichas
+-- de Primera. El prototipo ya lo refleja en la UI (PROFE_DEMO).
+-- ============================================================
+-- create table membresia_categoria (
+--   membresia_id  uuid not null references membresia(id) on delete cascade,
+--   categoria_id  uuid not null references categoria(id) on delete cascade,
+--   creado_en     timestamptz not null default now(),
+--   primary key (membresia_id, categoria_id)
+-- );
+-- alter table membresia_categoria enable row level security;
+--
+-- Helper: ¿el usuario tiene la categoría asignada (o es admin/comisión,
+-- que ven todo el club)?
+-- create or replace function alcanza_categoria(p_club uuid, p_categoria uuid)
+-- returns boolean language sql stable security definer set search_path = public
+-- as $$
+--   select exists (
+--     select 1 from membresia m
+--     where m.club_id = p_club and m.auth_user_id = auth.uid()
+--       and (
+--         m.rol in ('admin_club','comision_directiva')
+--         or exists (select 1 from membresia_categoria mc
+--                    where mc.membresia_id = m.id
+--                      and mc.categoria_id = p_categoria)
+--       )
+--   )
+-- $$;
+--
+-- Cambio de policies asociado (esbozado): en deportista, medicion,
+-- sesion_entrenamiento y asistencia, el SELECT del entrenador pasa de
+-- es_miembro_de(club_id) a alcanza_categoria(club_id, categoria_id)
+-- (en medicion vía join a deportista o denormalizando categoria_id);
+-- la escritura sigue exigiendo puede_operar() Y alcance de categoría.
+-- Decidir antes de conectar Supabase.

@@ -1,6 +1,10 @@
+"use client";
+
 import Link from "next/link";
 import { ChevronRight, Target } from "lucide-react";
 import { SESIONES, getAtributo, getCategoria } from "@/lib/mock-data";
+import { AvisoAcceso } from "@/components/aviso-acceso";
+import { usePerfil, permisosDe } from "@/components/perfil-context";
 
 function TarjetaSesion({ id }: { id: string }) {
   const s = SESIONES.find((x) => x.id === id)!;
@@ -48,8 +52,26 @@ function TarjetaSesion({ id }: { id: string }) {
 }
 
 export default function Sesiones() {
+  const { perfil } = usePerfil();
+  const permisos = permisosDe(perfil);
+
+  if (!permisos.veClub) {
+    return (
+      <AvisoAcceso
+        titulo="La plataforma no ve sesiones de clubes"
+        detalle="Las sesiones y su asistencia son operación interna de cada club. El perfil de plataforma solo ve el observatorio con agregados."
+        accionHref="/observatorio"
+        accionLabel="Ir al observatorio"
+      />
+    );
+  }
+
   const hoy = new Date("2026-07-06T00:00:00");
-  const ordenadas = [...SESIONES].sort((a, b) => b.fecha.localeCompare(a.fecha));
+  // El profesor ve solo las sesiones de sus categorías asignadas
+  const alcance = permisos.categorias
+    ? SESIONES.filter((s) => permisos.categorias!.includes(s.categoriaId))
+    : SESIONES;
+  const ordenadas = [...alcance].sort((a, b) => b.fecha.localeCompare(a.fecha));
   const proximas = ordenadas
     .filter((s) => new Date(s.fecha) >= hoy)
     .reverse();

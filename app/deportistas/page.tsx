@@ -25,6 +25,8 @@ import {
 import { tendenciaGeneral } from "@/lib/tendencia";
 import { EstadoBadge } from "@/components/estado-badge";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
+import { AvisoAcceso } from "@/components/aviso-acceso";
+import { usePerfil, permisosDe } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
 type Orden = { col: string; dir: 1 | -1 };
@@ -38,6 +40,8 @@ function valorDeColumna(d: Deportista, col: string): number | string | null {
 function Deportistas() {
   const router = useRouter();
   const sp = useSearchParams();
+  const { perfil } = usePerfil();
+  const permisos = permisosDe(perfil);
   const [busqueda, setBusqueda] = useState("");
   const [categoria, setCategoria] = useState<string | null>(
     CATEGORIAS.some((c) => c.id === sp.get("categoria"))
@@ -49,8 +53,24 @@ function Deportistas() {
   );
   const [orden, setOrden] = useState<Orden>({ col: "nombre", dir: 1 });
 
+  // Alcance por perfil: el profesor solo ve sus categorías asignadas
+  const categoriasVisibles = useMemo(
+    () =>
+      permisos.categorias
+        ? CATEGORIAS.filter((c) => permisos.categorias!.includes(c.id))
+        : CATEGORIAS,
+    [permisos.categorias],
+  );
+  const visibles = useMemo(
+    () =>
+      permisos.categorias
+        ? DEPORTISTAS.filter((d) => permisos.categorias!.includes(d.categoriaId))
+        : DEPORTISTAS,
+    [permisos.categorias],
+  );
+
   const lista = useMemo(() => {
-    const filtrados = DEPORTISTAS.filter((d) => {
+    const filtrados = visibles.filter((d) => {
       const coincideTexto = `${d.nombre} ${d.apellido}`
         .toLowerCase()
         .includes(busqueda.toLowerCase().trim());
@@ -68,7 +88,7 @@ function Deportistas() {
       }
       return (va - vb) * orden.dir;
     });
-  }, [busqueda, categoria, orden]);
+  }, [busqueda, categoria, orden, visibles]);
 
   // Máximo por columna (única énfasis de la tabla: bold, sin semáforos)
   const maximos = useMemo(() => {
@@ -92,13 +112,28 @@ function Deportistas() {
         : { col, dir: col === "nombre" ? 1 : -1 },
     );
 
+  if (!permisos.veClub) {
+    return (
+      <AvisoAcceso
+        titulo="La plataforma no accede a fichas"
+        detalle="Los datos individuales de los deportistas —en su mayoría menores— nunca salen de su club. El perfil de plataforma solo ve el observatorio con datos agregados."
+        accionHref="/observatorio"
+        accionLabel="Ir al observatorio"
+      />
+    );
+  }
+
   return (
     <div className="flex flex-col gap-4">
       <div className="flex items-end justify-between gap-3">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">Deportistas</h1>
           <p className="text-sm text-muted-foreground">
-            {DEPORTISTAS.length} en total · tocá para ver la ficha y su evolución
+            {visibles.length}{" "}
+            {permisos.categorias
+              ? "en tus categorías asignadas"
+              : "en total"}{" "}
+            · tocá para ver la ficha y su evolución
           </p>
         </div>
         <div
@@ -159,7 +194,7 @@ function Deportistas() {
         >
           Todas
         </button>
-        {CATEGORIAS.map((c) => (
+        {categoriasVisibles.map((c) => (
           <button
             key={c.id}
             onClick={() => setCategoria(categoria === c.id ? null : c.id)}

@@ -12,17 +12,25 @@ import {
   plantelDe,
 } from "@/lib/mock-data";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
+import { AvisoAcceso } from "@/components/aviso-acceso";
+import { usePerfil, permisosDe } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
 function JornadaDeMedicion() {
   const sp = useSearchParams();
+  const { perfil } = usePerfil();
+  const permisos = permisosDe(perfil);
+  // El profesor solo carga en sus categorías asignadas
+  const categoriasDisponibles = permisos.categorias
+    ? CATEGORIAS.filter((c) => permisos.categorias!.includes(c.id))
+    : CATEGORIAS;
   const [atributoId, setAtributoId] = useState<string | null>(
     sp.get("atributo") && getAtributo(sp.get("atributo")!)
       ? sp.get("atributo")
       : null,
   );
   const [categoriaId, setCategoriaId] = useState<string | null>(
-    CATEGORIAS.some((c) => c.id === sp.get("categoria"))
+    categoriasDisponibles.some((c) => c.id === sp.get("categoria"))
       ? sp.get("categoria")
       : null,
   );
@@ -41,6 +49,17 @@ function JornadaDeMedicion() {
   );
   const cargados = plantel.filter((d) => valores[d.id]?.trim()).length;
   const listo = atributo && categoriaId && cargados > 0;
+
+  if (!permisos.opera) {
+    return (
+      <AvisoAcceso
+        titulo="Tu perfil no carga mediciones"
+        detalle="La carga de datos es de profesores y administración del club. Comisión directiva consulta; la plataforma solo ve agregados."
+        accionHref="/deportistas"
+        accionLabel="Ver deportistas"
+      />
+    );
+  }
 
   if (guardada) {
     return (
@@ -125,7 +144,7 @@ function JornadaDeMedicion() {
       <section>
         <h2 className="mb-2 text-sm font-extrabold">2 · ¿Qué categoría?</h2>
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {CATEGORIAS.map((c) => {
+          {categoriasDisponibles.map((c) => {
             const n = plantelDe(c.id).length;
             return (
               <button

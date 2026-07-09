@@ -209,7 +209,15 @@ export const ATRIBUTOS: Atributo[] = [
   },
 ];
 
-const ENTRENADORES = ["Marcela Díaz", "Jorge Paz", "Lucas Herrera", "Nora Fidele"];
+export const ENTRENADORES = ["Marcela Díaz", "Jorge Paz", "Lucas Herrera", "Nora Fidele"];
+
+// El perfil "Profesor/a" del selector demo encarna a Marcela Díaz,
+// asignada a estas categorías (ver docs/PERFILES.md). En producción
+// esto sale de la tabla propuesta membresia_categoria.
+export const PROFE_DEMO = {
+  nombre: "Marcela Díaz",
+  categorias: ["div-9", "esc-2016"],
+};
 
 // Serie determinística: base + progresión + oscilación fija.
 // (fechas quincenales hacia atrás desde jun-2026)

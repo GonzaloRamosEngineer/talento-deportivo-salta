@@ -5,14 +5,20 @@ import {
   ChevronRight,
   ClipboardPlus,
   Dumbbell,
+  Eye,
+  Landmark,
   ShieldAlert,
+  UserRound,
   CalendarDays,
 } from "lucide-react";
-import { usePerfil, puedeCargar } from "@/components/perfil-context";
 import {
   ATRIBUTOS,
   CATEGORIAS,
+  CLUB,
+  CLUBES,
   DEPORTISTAS,
+  ENTRENADORES,
+  PROFE_DEMO,
   SESIONES,
   formatFecha,
   getAtributo,
@@ -22,24 +28,98 @@ import { tendencia } from "@/lib/tendencia";
 import { EstadoBadge } from "@/components/estado-badge";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { Sparkline } from "@/components/sparkline";
+import { usePerfil, permisosDe } from "@/components/perfil-context";
 
-// Selección curada para el prototipo: una evolución positiva, una en
-// baja y una amesetada, para mostrar los tres estados en el home.
+// Selección curada para la demo: cubre los tres estados y las
+// categorías de la profesora demo (se filtra por alcance del perfil).
 const DESTACADOS: { deportistaId: string; atributoId: string }[] = [
   { deportistaId: "d01", atributoId: "velocidad30" },
   { deportistaId: "d05", atributoId: "salto" },
   { deportistaId: "d03", atributoId: "velocidad30" },
+  { deportistaId: "d24", atributoId: "velocidad30" },
+  { deportistaId: "d29", atributoId: "remates" },
 ];
+
+function InicioPlataforma() {
+  const totales = CLUBES.reduce(
+    (acc, c) => ({
+      deportistas: acc.deportistas + c.deportistas,
+      mediciones: acc.mediciones + c.medicionesMes,
+    }),
+    { deportistas: 0, mediciones: 0 },
+  );
+  return (
+    <div className="flex flex-col gap-5">
+      <div>
+        <h1 className="text-2xl font-extrabold tracking-tight">
+          Plataforma · Provincia de Salta
+        </h1>
+        <p className="text-sm text-muted-foreground">
+          Vista de operador: solo datos agregados, sin acceso a fichas
+        </p>
+      </div>
+      <div className="grid grid-cols-3 gap-3">
+        <div className="rounded-2xl border border-border bg-card p-3.5">
+          <p className="text-2xl font-extrabold">{CLUBES.length}</p>
+          <p className="text-xs font-medium text-muted-foreground">clubes activos</p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-3.5">
+          <p className="text-2xl font-extrabold">{totales.deportistas}</p>
+          <p className="text-xs font-medium text-muted-foreground">
+            deportistas con trayectoria
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-3.5">
+          <p className="text-2xl font-extrabold">{totales.mediciones}</p>
+          <p className="text-xs font-medium text-muted-foreground">
+            mediciones este mes
+          </p>
+        </div>
+      </div>
+      <Link
+        href="/observatorio"
+        className="flex items-center gap-4 rounded-2xl bg-primary p-5 text-primary-foreground shadow-sm transition-transform active:scale-[0.99]"
+      >
+        <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-white/15">
+          <Landmark className="size-6" aria-hidden />
+        </span>
+        <span className="flex-1">
+          <span className="block text-base font-extrabold">
+            Observatorio provincial
+          </span>
+          <span className="block text-sm text-primary-foreground/80">
+            Mapa, clubes y constancia de carga
+          </span>
+        </span>
+        <ChevronRight className="size-5 shrink-0 opacity-80" aria-hidden />
+      </Link>
+      <p className="px-1 text-[11px] leading-snug text-muted-foreground">
+        Los datos individuales de los deportistas nunca salen de su club. La
+        plataforma cura el catálogo global y opera la infraestructura.
+      </p>
+    </div>
+  );
+}
 
 export default function Inicio() {
   const { perfil } = usePerfil();
+  const permisos = permisosDe(perfil);
   const hoy = new Date();
-  const proximas = SESIONES.filter((s) => new Date(s.fecha) >= hoy).sort(
-    (a, b) => a.fecha.localeCompare(b.fecha),
-  );
+
+  if (perfil === "super_admin") return <InicioPlataforma />;
+
+  // Alcance del perfil dentro del club
+  const enAlcance = (categoriaId: string) =>
+    !permisos.categorias || permisos.categorias.includes(categoriaId);
+  const deportistas = DEPORTISTAS.filter((d) => enAlcance(d.categoriaId));
+  const sesiones = SESIONES.filter((s) => enAlcance(s.categoriaId));
+
+  const proximas = sesiones
+    .filter((s) => new Date(s.fecha) >= hoy)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha));
   const proxima = proximas[0];
-  const sinConsentimiento = DEPORTISTAS.filter((d) => !d.consentimientoOk);
-  const medicionesJunio = DEPORTISTAS.reduce(
+  const sinConsentimiento = deportistas.filter((d) => !d.consentimientoOk);
+  const medicionesJunio = deportistas.reduce(
     (acc, d) =>
       acc +
       Object.values(d.mediciones)
@@ -47,22 +127,47 @@ export default function Inicio() {
         .filter((m) => m.fecha.startsWith("2026-06")).length,
     0,
   );
+  const destacados = DESTACADOS.filter((x) => {
+    const d = DEPORTISTAS.find((dd) => dd.id === x.deportistaId);
+    return d && enAlcance(d.categoriaId);
+  }).slice(0, 3);
+
+  const titulo =
+    perfil === "profesor"
+      ? `Hola, ${PROFE_DEMO.nombre.split(" ")[0]} 👋`
+      : perfil === "admin_club"
+        ? "Panel del club"
+        : "Consulta del club";
+  const subtitulo =
+    perfil === "profesor"
+      ? CATEGORIAS.filter((c) => permisos.categorias!.includes(c.id))
+          .map((c) => c.nombre)
+          .join(" · ")
+      : `${CLUB.nombre} · ${(() => {
+          const f = hoy.toLocaleDateString("es-AR", {
+            weekday: "long",
+            day: "numeric",
+            month: "long",
+          });
+          return f.charAt(0).toUpperCase() + f.slice(1);
+        })()}`;
 
   return (
     <div className="flex flex-col gap-5">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight">Hola, Marcela 👋</h1>
-        <p className="text-sm text-muted-foreground">
-          {hoy.toLocaleDateString("es-AR", {
-            weekday: "long",
-            day: "numeric",
-            month: "long",
-          })}
-        </p>
+        <h1 className="text-2xl font-extrabold tracking-tight">{titulo}</h1>
+        <p className="text-sm text-muted-foreground">{subtitulo}</p>
       </div>
 
-      {/* CTA principal: la carga es el corazón del producto */}
-      {puedeCargar(perfil) && (
+      {perfil === "comision" && (
+        <div className="flex items-center gap-2.5 rounded-xl bg-secondary px-3.5 py-2.5 text-xs font-semibold text-secondary-foreground">
+          <Eye className="size-4 shrink-0" aria-hidden />
+          Modo consulta: ves todo el club, sin cargar ni editar.
+        </div>
+      )}
+
+      {/* CTAs de operación: solo perfiles que cargan */}
+      {permisos.opera && (
         <>
           <Link
             href="/medicion"
@@ -102,12 +207,12 @@ export default function Inicio() {
         </>
       )}
 
-      {/* Stat tiles */}
+      {/* Stat tiles (siempre del alcance visible) */}
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-2xl border border-border bg-card p-3.5">
-          <p className="text-2xl font-extrabold">{DEPORTISTAS.length}</p>
+          <p className="text-2xl font-extrabold">{deportistas.length}</p>
           <p className="text-xs font-medium text-muted-foreground">
-            deportistas activos
+            {permisos.categorias ? "deportistas a cargo" : "deportistas activos"}
           </p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-3.5">
@@ -132,15 +237,69 @@ export default function Inicio() {
         </Link>
       </div>
 
+      {/* Gestión del club: SOLO admin */}
+      {permisos.gestiona && (
+        <section className="flex flex-col gap-2.5">
+          <h2 className="text-base font-extrabold">Gestión del club</h2>
+          <div className="rounded-2xl border border-border bg-card">
+            <div className="border-b border-border px-4 py-3">
+              <p className="text-sm font-bold">
+                Consentimientos pendientes ({sinConsentimiento.length})
+              </p>
+              <ul className="mt-1.5 flex flex-col gap-1">
+                {sinConsentimiento.map((d) => (
+                  <li key={d.id}>
+                    <Link
+                      href={`/deportistas/${d.id}`}
+                      className="flex items-center gap-2 text-sm text-muted-foreground transition-colors hover:text-foreground"
+                    >
+                      <ShieldAlert className="size-3.5 text-warning" aria-hidden />
+                      <span className="flex-1 truncate">
+                        {d.apellido}, {d.nombre} ·{" "}
+                        {getCategoria(d.categoriaId)?.nombre}
+                      </span>
+                      <ChevronRight className="size-3.5" aria-hidden />
+                    </Link>
+                  </li>
+                ))}
+                {sinConsentimiento.length === 0 && (
+                  <li className="text-sm text-muted-foreground">
+                    Todo el plantel tiene consentimiento firmado.
+                  </li>
+                )}
+              </ul>
+            </div>
+            <div className="px-4 py-3">
+              <p className="text-sm font-bold">Cuerpo técnico</p>
+              <ul className="mt-1.5 flex flex-col gap-1">
+                {ENTRENADORES.map((e) => (
+                  <li
+                    key={e}
+                    className="flex items-center gap-2 text-sm text-muted-foreground"
+                  >
+                    <UserRound className="size-3.5" aria-hidden />
+                    <span className="flex-1">{e}</span>
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                      Profesor/a
+                    </span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-2 text-[11px] text-muted-foreground">
+                Alta de staff y asignación de categorías: por administración de
+                la plataforma en esta etapa (demo).
+              </p>
+            </div>
+          </div>
+        </section>
+      )}
+
       {/* Próxima sesión */}
       {proxima && (
         <section className="flex flex-col gap-2.5">
           <div className="flex items-baseline justify-between">
             <h2 className="text-base font-extrabold">Próxima sesión</h2>
-            <Link
-              href="/sesiones"
-              className="text-sm font-semibold text-primary"
-            >
+            <Link href="/sesiones" className="text-sm font-semibold text-primary">
               Ver todas
             </Link>
           </div>
@@ -178,41 +337,43 @@ export default function Inicio() {
       )}
 
       {/* Evoluciones destacadas — el diferencial, visible desde el home */}
-      <section className="flex flex-col gap-2.5">
-        <div className="flex items-baseline justify-between">
-          <h2 className="text-base font-extrabold">Evoluciones para mirar</h2>
-          <Link href="/deportistas" className="text-sm font-semibold text-primary">
-            Ver todos
-          </Link>
-        </div>
-        <div className="flex flex-col gap-2">
-          {DESTACADOS.map(({ deportistaId, atributoId }) => {
-            const d = DEPORTISTAS.find((x) => x.id === deportistaId)!;
-            const a = ATRIBUTOS.find((x) => x.id === atributoId)!;
-            const serie = d.mediciones[atributoId] ?? [];
-            const t = tendencia(serie, a);
-            return (
-              <Link
-                key={deportistaId + atributoId}
-                href={`/deportistas/${d.id}?atributo=${a.id}`}
-                className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 transition-colors hover:border-primary/40"
-              >
-                <AvatarIniciales nombre={d.nombre} apellido={d.apellido} />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-bold">
-                    {d.nombre} {d.apellido}
+      {destacados.length > 0 && (
+        <section className="flex flex-col gap-2.5">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-base font-extrabold">Evoluciones para mirar</h2>
+            <Link href="/deportistas" className="text-sm font-semibold text-primary">
+              Ver todos
+            </Link>
+          </div>
+          <div className="flex flex-col gap-2">
+            {destacados.map(({ deportistaId, atributoId }) => {
+              const d = DEPORTISTAS.find((x) => x.id === deportistaId)!;
+              const a = ATRIBUTOS.find((x) => x.id === atributoId)!;
+              const serie = d.mediciones[atributoId] ?? [];
+              const t = tendencia(serie, a);
+              return (
+                <Link
+                  key={deportistaId + atributoId}
+                  href={`/deportistas/${d.id}?atributo=${a.id}`}
+                  className="flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 transition-colors hover:border-primary/40"
+                >
+                  <AvatarIniciales nombre={d.nombre} apellido={d.apellido} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-bold">
+                      {d.nombre} {d.apellido}
+                    </span>
+                    <span className="block text-xs text-muted-foreground">
+                      {a.nombre} · {getCategoria(d.categoriaId)?.nombre}
+                    </span>
                   </span>
-                  <span className="block text-xs text-muted-foreground">
-                    {a.nombre} · {CATEGORIAS.find((c) => c.id === d.categoriaId)?.nombre}
-                  </span>
-                </span>
-                <Sparkline valores={serie.map((m) => m.valor)} />
-                <EstadoBadge estado={t.estado} />
-              </Link>
-            );
-          })}
-        </div>
-      </section>
+                  <Sparkline valores={serie.map((m) => m.valor)} />
+                  <EstadoBadge estado={t.estado} />
+                </Link>
+              );
+            })}
+          </div>
+        </section>
+      )}
     </div>
   );
 }

@@ -15,13 +15,39 @@ import { tendencia } from "@/lib/tendencia";
 import { EstadoBadge } from "@/components/estado-badge";
 import { EvolutionChart } from "@/components/evolution-chart";
 import { NivelBar } from "@/components/nivel-bar";
+import { AvisoAcceso } from "@/components/aviso-acceso";
+import { usePerfil, permisosDe } from "@/components/perfil-context";
 
 // Informe de evolución de UNA página, pensado para imprimirse y
 // quedar en la mesa de una reunión. El botón imprimir desaparece en
 // papel (print:hidden); el shell de navegación se oculta vía las
 // reglas @media print de globals.css.
 export function InformeJugador({ deportista }: { deportista: Deportista }) {
+  const { perfil } = usePerfil();
+  const permisos = permisosDe(perfil);
   const categoria = getCategoria(deportista.categoriaId);
+
+  // Mismo alcance que la ficha (espejo del RLS)
+  if (!permisos.veClub) {
+    return (
+      <AvisoAcceso
+        titulo="La plataforma no accede a fichas"
+        detalle="Los informes individuales son del club. La plataforma solo ve agregados."
+        accionHref="/observatorio"
+        accionLabel="Ir al observatorio"
+      />
+    );
+  }
+  if (permisos.categorias && !permisos.categorias.includes(deportista.categoriaId)) {
+    return (
+      <AvisoAcceso
+        titulo="Fuera de tus categorías"
+        detalle={`Este informe es de ${categoria?.nombre}, fuera de tus categorías asignadas.`}
+        accionHref="/deportistas"
+        accionLabel="Ver tus deportistas"
+      />
+    );
+  }
   const medidos = ATRIBUTOS.filter((a) => deportista.mediciones[a.id]?.length);
   const fisicas = medidos.filter((a) => a.ambito === "fisico");
   const tecnicas = medidos.filter((a) => a.ambito === "tecnico");

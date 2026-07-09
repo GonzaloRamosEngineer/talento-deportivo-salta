@@ -55,11 +55,14 @@ SOLO capas 1, 2 y 3. Nada de finanzas, táctica ni gamificación avanzada
 todavía. Ver CLAUDE.md para las reglas técnicas no negociables.
 
 ## Roles del sistema
-Usuarios con login: staff del club — `admin_club` (gestiona),
-`entrenador`/profesor (carga y planifica) y `comision_directiva`
-(consulta todo su club, solo lectura). Por encima, un super admin de
-plataforma ve el observatorio interclubes con DATOS AGREGADOS
-únicamente. Deportistas y tutores NO tienen login en esta etapa.
+Matriz completa en `docs/PERFILES.md` (fuente de verdad). Resumen:
+`entrenador`/profesor carga y planifica SOLO en sus categorías
+asignadas (minimización de datos de menores); `admin_club` ve y opera
+todo el club y además gestiona categorías, staff y consentimientos;
+`comision_directiva` consulta todo su club, solo lectura; el super
+admin de plataforma ve el observatorio interclubes con DATOS AGREGADOS
+únicamente — nunca fichas individuales. Deportistas y tutores NO
+tienen login en esta etapa.
 
 ## Consideración crítica: datos de menores
 La mayoría de los deportistas registrados son niños/adolescentes.

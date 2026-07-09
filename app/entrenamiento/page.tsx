@@ -11,7 +11,7 @@ import {
   plantelDe,
 } from "@/lib/mock-data";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
-import { usePerfil, puedeCargar } from "@/components/perfil-context";
+import { usePerfil, puedeCargar, permisosDe } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
 const DESCANSO = "descanso";
@@ -19,9 +19,16 @@ const AREAS = ATRIBUTOS.filter((a) => a.entrenable);
 
 function Entrenamiento() {
   const { perfil } = usePerfil();
+  const permisos = permisosDe(perfil);
   const sp = useSearchParams();
+  // El profesor solo planifica en sus categorías asignadas
+  const categoriasDisponibles = permisos.categorias
+    ? CATEGORIAS.filter((c) => permisos.categorias!.includes(c.id))
+    : CATEGORIAS;
   const [categoriaId, setCategoriaId] = useState<string | null>(
-    sp.get("categoria") && plantelDe(sp.get("categoria")!).length > 0
+    sp.get("categoria") &&
+      categoriasDisponibles.some((c) => c.id === sp.get("categoria")) &&
+      plantelDe(sp.get("categoria")!).length > 0
       ? sp.get("categoria")
       : null,
   );
@@ -127,7 +134,7 @@ function Entrenamiento() {
 
       {/* Paso 1: categoría */}
       <div className="flex gap-2 overflow-x-auto pb-1" role="tablist" aria-label="Elegir categoría">
-        {CATEGORIAS.map((c) => {
+        {categoriasDisponibles.map((c) => {
           const n = plantelDe(c.id).length;
           return (
             <button

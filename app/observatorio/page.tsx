@@ -1,8 +1,7 @@
 "use client";
 
-import Link from "next/link";
-import { ChevronRight, Landmark, ShieldCheck } from "lucide-react";
-import { CLUBES } from "@/lib/mock-data";
+import { Landmark, ShieldCheck } from "lucide-react";
+import { ATRIBUTOS, CLUBES } from "@/lib/mock-data";
 import { usePerfil, PERFILES } from "@/components/perfil-context";
 import { MapaSalta } from "@/components/mapa-salta";
 
@@ -84,74 +83,78 @@ export default function Observatorio() {
 
       <section className="flex flex-col gap-2">
         <h2 className="text-base font-extrabold">Clubes</h2>
-        {CLUBES.map((c) => {
-          const contenido = (
-            <>
-              <span className="min-w-0 flex-1">
-                <span className="flex items-center gap-2 text-sm font-bold">
-                  <span className="truncate">{c.nombre}</span>
-                  {c.esEsteClub && (
-                    <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-secondary-foreground">
-                      Tu club
-                    </span>
-                  )}
+        {CLUBES.map((c) => (
+          <div
+            key={c.id}
+            className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4"
+          >
+            <span className="min-w-0 flex-1">
+              <span className="block truncate text-sm font-bold">{c.nombre}</span>
+              <span className="block text-xs text-muted-foreground">
+                {c.localidad} · {c.categoriasActivas} categorías activas
+              </span>
+            </span>
+            <span className="grid shrink-0 grid-cols-3 gap-3 text-center">
+              <span>
+                <span className="block text-sm font-extrabold tabular-nums">
+                  {c.deportistas}
                 </span>
-                <span className="block text-xs text-muted-foreground">
-                  {c.localidad} · {c.categoriasActivas} categorías activas
+                <span className="block text-[10px] text-muted-foreground">
+                  deport.
                 </span>
               </span>
-              <span className="grid shrink-0 grid-cols-3 gap-3 text-center">
-                <span>
-                  <span className="block text-sm font-extrabold tabular-nums">
-                    {c.deportistas}
-                  </span>
-                  <span className="block text-[10px] text-muted-foreground">
-                    deport.
-                  </span>
+              <span>
+                <span className="block text-sm font-extrabold tabular-nums">
+                  {c.medicionesMes}
                 </span>
-                <span>
-                  <span className="block text-sm font-extrabold tabular-nums">
-                    {c.medicionesMes}
-                  </span>
-                  <span className="block text-[10px] text-muted-foreground">
-                    medic./mes
-                  </span>
-                </span>
-                <span>
-                  <span className="block text-sm font-extrabold tabular-nums">
-                    {c.consentimientoPct}%
-                  </span>
-                  <span className="block text-[10px] text-muted-foreground">
-                    consent.
-                  </span>
+                <span className="block text-[10px] text-muted-foreground">
+                  medic./mes
                 </span>
               </span>
-              {c.esEsteClub && (
-                <ChevronRight
-                  className="size-4 shrink-0 text-muted-foreground"
-                  aria-hidden
-                />
-              )}
-            </>
-          );
+              <span>
+                <span className="block text-sm font-extrabold tabular-nums">
+                  {c.consentimientoPct}%
+                </span>
+                <span className="block text-[10px] text-muted-foreground">
+                  consent.
+                </span>
+              </span>
+            </span>
+          </div>
+        ))}
+        <p className="px-1 text-[11px] leading-snug text-muted-foreground">
+          Las tarjetas no se abren a propósito: para ver datos individuales se
+          requiere membresía en ese club. La plataforma no tiene esa llave.
+        </p>
+      </section>
 
-          return c.esEsteClub ? (
-            <Link
-              key={c.id}
-              href="/"
-              className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 transition-colors hover:border-primary/40"
+      {/* Catálogo global: lo único que la plataforma sí administra */}
+      <section className="rounded-2xl border border-border bg-card">
+        <h2 className="border-b border-border px-4 py-3 text-sm font-extrabold">
+          Catálogo provincial de atributos{" "}
+          <span className="font-semibold text-muted-foreground">
+            (curado por la plataforma)
+          </span>
+        </h2>
+        <ul>
+          {ATRIBUTOS.map((a) => (
+            <li
+              key={a.id}
+              className="flex items-baseline justify-between gap-3 border-b border-border px-4 py-2 text-sm last:border-0"
             >
-              {contenido}
-            </Link>
-          ) : (
-            <div
-              key={c.id}
-              className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4 opacity-80"
-            >
-              {contenido}
-            </div>
-          );
-        })}
+              <span className="font-semibold">{a.nombre}</span>
+              <span className="text-right text-xs text-muted-foreground">
+                {a.naturaleza === "objetivo"
+                  ? `objetiva · ${a.unidad}`
+                  : "subjetiva · 1-10"}
+              </span>
+            </li>
+          ))}
+        </ul>
+        <p className="px-4 py-2.5 text-[11px] leading-snug text-muted-foreground">
+          El mismo catálogo para todos los clubes: por eso “Velocidad 30m”
+          significa lo mismo en toda la provincia y los datos son comparables.
+        </p>
       </section>
 
       <p className="px-1 text-[11px] leading-snug text-muted-foreground">

@@ -1,3 +1,6 @@
+"use client";
+
+import { use } from "react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Check, ChevronRight, Target, X } from "lucide-react";
@@ -8,16 +11,41 @@ import {
   getCategoria,
 } from "@/lib/mock-data";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
+import { AvisoAcceso } from "@/components/aviso-acceso";
+import { usePerfil, permisosDe } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
-export default async function PaginaSesion({
+export default function PaginaSesion({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = await params;
+  const { id } = use(params);
+  const { perfil } = usePerfil();
+  const permisos = permisosDe(perfil);
   const sesion = SESIONES.find((s) => s.id === id);
   if (!sesion) notFound();
+
+  if (!permisos.veClub) {
+    return (
+      <AvisoAcceso
+        titulo="La plataforma no ve sesiones de clubes"
+        detalle="Las sesiones son operación interna de cada club; la plataforma solo ve agregados."
+        accionHref="/observatorio"
+        accionLabel="Ir al observatorio"
+      />
+    );
+  }
+  if (permisos.categorias && !permisos.categorias.includes(sesion.categoriaId)) {
+    return (
+      <AvisoAcceso
+        titulo="Fuera de tus categorías"
+        detalle={`Esta sesión es de ${getCategoria(sesion.categoriaId)?.nombre}, fuera de tus categorías asignadas.`}
+        accionHref="/sesiones"
+        accionLabel="Ver tus sesiones"
+      />
+    );
+  }
 
   const fecha = new Date(sesion.fecha);
   const categoria = getCategoria(sesion.categoriaId);

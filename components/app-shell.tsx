@@ -34,11 +34,11 @@ function navPara(perfil: Perfil): NavItem[] {
     ];
   }
   if (perfil === "super_admin") {
+    // La plataforma NO navega datos individuales de ningún club:
+    // su mundo es el observatorio (solo agregados).
     return [
       { href: "/", label: "Inicio", icon: Home },
-      { href: "/deportistas", label: "Deportistas", icon: Users },
       { href: "/observatorio", label: "Observatorio", icon: Landmark, destacado: true },
-      { href: "/sesiones", label: "Sesiones", icon: CalendarDays },
     ];
   }
   return [
