@@ -4,6 +4,7 @@ import { Landmark, ShieldCheck } from "lucide-react";
 import { ATRIBUTOS, CLUBES } from "@/lib/mock-data";
 import { usePerfil, PERFILES } from "@/components/perfil-context";
 import { MapaSalta } from "@/components/mapa-salta";
+import { EnElRadar, Proximamente } from "@/components/proximamente";
 
 export default function Observatorio() {
   const { perfil, setPerfil } = usePerfil();
@@ -156,6 +157,24 @@ export default function Observatorio() {
           significa lo mismo en toda la provincia y los datos son comparables.
         </p>
       </section>
+
+      <EnElRadar>
+        <Proximamente
+          titulo="Más disciplinas: vóley, básquet, hockey"
+          detalle="El modelo ya es multi-disciplina: catálogo de atributos propio por deporte, mismas trayectorias, mismo observatorio."
+          etiqueta="Próximamente"
+        />
+        <Proximamente
+          titulo="Percentiles provinciales por edad"
+          detalle="Comparar la evolución de cada cohorte contra la referencia provincial — cuando el volumen de datos lo permita y siempre en agregado."
+          etiqueta="A evaluar"
+        />
+        <Proximamente
+          titulo="Complemento federativo (Liga / COMET)"
+          detalle="Puente con el registro federativo: la Liga ve trayectorias formativas agregadas donde hoy solo ve pases y licencias."
+          etiqueta="A evaluar"
+        />
+      </EnElRadar>
 
       <p className="px-1 text-[11px] leading-snug text-muted-foreground">
         La constancia de carga (mediciones por deportista por mes) es el

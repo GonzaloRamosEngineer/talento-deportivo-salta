@@ -113,25 +113,8 @@ export interface ClubResumen {
 }
 
 export const CLUB = { nombre: "Club Atlético Antoniana", localidad: "Salta" };
-
-// Solo agregados: los datos individuales de menores nunca salen del club.
-export const CLUBES: ClubResumen[] = [
-  {
-    id: "cja", nombre: "Club Atlético Antoniana", localidad: "Salta Capital",
-    departamento: "Capital", esEsteClub: true, deportistas: 43,
-    medicionesMes: 118, consentimientoPct: 88, categoriasActivas: 5,
-  },
-  {
-    id: "smi", nombre: "Sportivo del Milagro", localidad: "Salta Capital",
-    departamento: "Capital", esEsteClub: false, deportistas: 61,
-    medicionesMes: 74, consentimientoPct: 93, categoriasActivas: 7,
-  },
-  {
-    id: "avl", nombre: "Atlético Valle de Lerma", localidad: "Cerrillos",
-    departamento: "Cerrillos", esEsteClub: false, deportistas: 28,
-    medicionesMes: 41, consentimientoPct: 100, categoriasActivas: 3,
-  },
-];
+// CLUBES se define al final del archivo: las métricas de Antoniana se
+// calculan de los propios datos mock para que nunca queden desfasadas.
 
 // ---------- CATEGORÍAS: la escalera completa del club ----------
 export const CATEGORIAS: Categoria[] = [
@@ -162,15 +145,39 @@ export const LUGARES: Lugar[] = [
 ];
 
 export const CRONOGRAMA: Horario[] = [
+  // Escuelitas: 2 veces por semana
   { categoriaId: "esc-2019", diaSemana: 3, hora: "17:30", lugarId: "predio", entrenador: "Lucas Herrera" },
   { categoriaId: "esc-2019", diaSemana: 6, hora: "10:00", lugarId: "sede", entrenador: "Lucas Herrera" },
+  { categoriaId: "esc-2018", diaSemana: 3, hora: "17:30", lugarId: "predio", entrenador: "Paula Guanca" },
+  { categoriaId: "esc-2018", diaSemana: 6, hora: "10:00", lugarId: "sede", entrenador: "Paula Guanca" },
+  { categoriaId: "esc-2017", diaSemana: 2, hora: "17:30", lugarId: "predio", entrenador: "Paula Guanca" },
+  { categoriaId: "esc-2017", diaSemana: 4, hora: "17:30", lugarId: "predio", entrenador: "Paula Guanca" },
   { categoriaId: "esc-2016", diaSemana: 3, hora: "17:30", lugarId: "predio", entrenador: "Lucas Herrera" },
   { categoriaId: "esc-2016", diaSemana: 5, hora: "17:30", lugarId: "predio", entrenador: "Lucas Herrera" },
+  { categoriaId: "esc-2015", diaSemana: 1, hora: "17:30", lugarId: "predio", entrenador: "Ramiro Ontiveros" },
+  { categoriaId: "esc-2015", diaSemana: 5, hora: "17:30", lugarId: "predio", entrenador: "Ramiro Ontiveros" },
+  { categoriaId: "esc-2014", diaSemana: 2, hora: "17:30", lugarId: "sede", entrenador: "Ramiro Ontiveros" },
+  { categoriaId: "esc-2014", diaSemana: 4, hora: "17:30", lugarId: "sede", entrenador: "Ramiro Ontiveros" },
+  // Inferiores: 2-3 veces por semana
   { categoriaId: "div-9", diaSemana: 2, hora: "18:00", lugarId: "predio", entrenador: "Marcela Díaz" },
   { categoriaId: "div-9", diaSemana: 4, hora: "18:00", lugarId: "predio", entrenador: "Marcela Díaz" },
+  { categoriaId: "div-8", diaSemana: 2, hora: "19:30", lugarId: "predio", entrenador: "Facundo Lamas" },
+  { categoriaId: "div-8", diaSemana: 4, hora: "19:30", lugarId: "predio", entrenador: "Facundo Lamas" },
+  { categoriaId: "div-7", diaSemana: 1, hora: "19:30", lugarId: "predio", entrenador: "Facundo Lamas" },
+  { categoriaId: "div-7", diaSemana: 3, hora: "19:30", lugarId: "predio", entrenador: "Facundo Lamas" },
+  { categoriaId: "div-6", diaSemana: 2, hora: "20:00", lugarId: "sede", entrenador: "Vanesa Portal" },
+  { categoriaId: "div-6", diaSemana: 4, hora: "20:00", lugarId: "sede", entrenador: "Vanesa Portal" },
+  { categoriaId: "div-5", diaSemana: 1, hora: "20:00", lugarId: "sede", entrenador: "Vanesa Portal" },
+  { categoriaId: "div-5", diaSemana: 5, hora: "20:00", lugarId: "sede", entrenador: "Vanesa Portal" },
   { categoriaId: "div-4", diaSemana: 1, hora: "19:00", lugarId: "sede", entrenador: "Jorge Paz" },
   { categoriaId: "div-4", diaSemana: 3, hora: "19:00", lugarId: "sede", entrenador: "Jorge Paz" },
   { categoriaId: "div-4", diaSemana: 5, hora: "19:00", lugarId: "sede", entrenador: "Jorge Paz" },
+  { categoriaId: "div-3", diaSemana: 2, hora: "20:30", lugarId: "sede", entrenador: "Jorge Paz" },
+  { categoriaId: "div-3", diaSemana: 4, hora: "20:30", lugarId: "sede", entrenador: "Jorge Paz" },
+  // Reserva y Primera
+  { categoriaId: "reserva", diaSemana: 1, hora: "11:00", lugarId: "sede", entrenador: "Nora Fidele" },
+  { categoriaId: "reserva", diaSemana: 3, hora: "11:00", lugarId: "sede", entrenador: "Nora Fidele" },
+  { categoriaId: "reserva", diaSemana: 5, hora: "11:00", lugarId: "sede", entrenador: "Nora Fidele" },
   // Primera entrena todos los días hábiles
   { categoriaId: "primera", diaSemana: 1, hora: "09:30", lugarId: "sede", entrenador: "Nora Fidele" },
   { categoriaId: "primera", diaSemana: 2, hora: "09:30", lugarId: "sede", entrenador: "Nora Fidele" },
@@ -271,7 +278,16 @@ export const ATRIBUTOS: Atributo[] = [
   },
 ];
 
-export const ENTRENADORES = ["Marcela Díaz", "Jorge Paz", "Lucas Herrera", "Nora Fidele"];
+export const ENTRENADORES = [
+  "Marcela Díaz",
+  "Jorge Paz",
+  "Lucas Herrera",
+  "Nora Fidele",
+  "Paula Guanca",
+  "Ramiro Ontiveros",
+  "Facundo Lamas",
+  "Vanesa Portal",
+];
 
 // El perfil "Profesor/a" del selector demo encarna a Marcela Díaz,
 // asignada a estas categorías (ver docs/PERFILES.md). En producción
@@ -564,6 +580,186 @@ export const DEPORTISTAS: Deportista[] = [
     velocidad30: [4.15, -0.02], resistencia: [2700, 20], pases: [7, 0.05],
     control: [5, 0.1],
   }),
+
+  // ---------- Escuelita 2018 (8 años) ----------
+  jugador("d33", "Mateo", "Aramayo", "esc-2018", "2018-03-14", "M", "diestro", true, {
+    talla: [126, 0.8, 6], control: [4, 0.35, 6], pases: [3.5, 0.3, 6],
+  }),
+  jugador("d34", "Olivia", "Zerpa", "esc-2018", "2018-08-02", "F", "zurdo", true, {
+    talla: [124, 0.9, 6], control: [4.5, 0.3, 6],
+  }),
+  jugador("d35", "Bautino", "Maita", "esc-2018", "2018-11-27", "M", "diestro", true, {
+    talla: [122, 0.7, 5], salto: [16, 0.6, 5], control: [3.5, 0.4, 5],
+  }),
+  jugador("d36", "Catalina", "Sulca", "esc-2018", "2018-05-19", "F", "diestro", false, {
+    talla: [125, 0.8, 4], pases: [4, 0.3, 4],
+  }),
+  jugador("d37", "Benicio", "Alancay", "esc-2018", "2018-01-08", "M", "ambidiestro", true, {
+    talla: [127, 0.8, 6], control: [4.5, 0.35, 6], remates: [3.5, 0.3, 6],
+  }),
+
+  // ---------- Escuelita 2017 (9 años) ----------
+  jugador("d38", "Emma", "Quipildor", "esc-2017", "2017-04-23", "F", "diestro", true, {
+    talla: [130, 0.9, 6], velocidad30: [6.7, -0.08, 6], control: [4.5, 0.35, 6],
+  }),
+  jugador("d39", "Salvador", "Casimiro", "esc-2017", "2017-09-11", "M", "diestro", true, {
+    talla: [129, 0.8, 6], pases: [4.5, 0.3, 6], remates: [4, 0.35, 6],
+  }),
+  jugador("d40", "Josefina", "Liendro", "esc-2017", "2017-12-05", "F", "zurdo", true, {
+    talla: [128, 0.9, 5], control: [5, 0.3, 5],
+  }),
+  jugador("d41", "Tomás", "Balderrama", "esc-2017", "2017-06-30", "M", "diestro", true, {
+    talla: [131, 0.8, 6], velocidad30: [6.6, -0.06, 6], salto: [18, 0.7, 6],
+  }),
+  jugador("d42", "Francesca", "Velázquez", "esc-2017", "2017-02-17", "F", "diestro", true, {
+    talla: [132, 0.9, 6], pases: [5, 0.25, 6], vision_juego: [4.5, 0.3, 6],
+  }),
+
+  // ---------- Escuelita 2015 (11 años) ----------
+  jugador("d43", "Valentino", "Farfán", "esc-2015", "2015-07-21", "M", "diestro", true, {
+    talla: [141, 1.0, 7], velocidad30: [6.2, -0.07, 7], control: [5.5, 0.3, 7],
+  }),
+  jugador("d44", "Guadalupe", "Soto", "esc-2015", "2015-03-09", "F", "diestro", true, {
+    talla: [143, 0.9, 7], pases: [6, 0.25, 7], vision_juego: [5.5, 0.25, 7],
+  }),
+  jugador("d45", "Ciro", "Medina", "esc-2015", "2015-10-14", "M", "zurdo", false, {
+    velocidad30: [6.3, -0.09, 6], remates: [5, 0.35, 6], salto: [22, 0.8, 6],
+  }),
+  jugador("d46", "Amparo", "Cala", "esc-2015", "2015-05-27", "F", "diestro", true, {
+    talla: [142, 1.0, 7], control: [6, 0.25, 7], entradas: [4.5, 0.3, 7],
+  }),
+  jugador("d47", "Lorenzo", "Gerónimo", "esc-2015", "2015-12-01", "M", "diestro", true, {
+    velocidad30: [6.25, -0.05, 7], atajando: [5.5, 0.35, 7], salto: [23, 0.7, 7],
+  }),
+
+  // ---------- Escuelita 2014 (12 años) ----------
+  jugador("d48", "Camilo", "Portal", "esc-2014", "2014-02-11", "M", "diestro", true, {
+    talla: [148, 1.1, 7], velocidad30: [6.0, -0.08, 7], pases: [6, 0.3, 7],
+  }),
+  jugador("d49", "Renzo", "Arias", "esc-2014", "2014-08-25", "M", "zurdo", true, {
+    velocidad30: [6.1, -0.06, 7], control: [6.5, 0.25, 7], remates: [5.5, 0.3, 7],
+  }),
+  jugador("d50", "Malena", "Salvatierra", "esc-2014", "2014-05-06", "F", "diestro", true, {
+    talla: [150, 1.0, 7], resistencia: [1700, 60, 7], vision_juego: [6, 0.25, 7],
+  }),
+  jugador("d51", "Felipe", "Choque", "esc-2014", "2014-11-18", "M", "diestro", true, {
+    velocidad30: [6.05, -0.02, 7], salto: [26, 0.4, 7], entradas: [5, 0.2, 7],
+  }),
+  jugador("d52", "Paulina", "Romero", "esc-2014", "2014-07-03", "F", "ambidiestro", true, {
+    talla: [149, 1.0, 7], pases: [6.5, 0.2, 7], balon_parado: [5, 0.3, 7],
+  }),
+
+  // ---------- 8ª División (2012, 14 años) ----------
+  jugador("d53", "Joaquín", "Lamas", "div-8", "2012-04-15", "M", "diestro", true, {
+    talla: [162, 0.8], peso: [52, 0.5], velocidad30: [5.5, -0.06],
+    pases: [6, 0.25], entradas: [5.5, 0.25],
+  }),
+  jugador("d54", "Milo", "Flores", "div-8", "2012-09-28", "M", "zurdo", true, {
+    velocidad30: [5.45, -0.07], salto: [34, 0.9], remates: [6, 0.25],
+  }),
+  jugador("d55", "Abril", "Guanca", "div-8", "2012-01-30", "F", "diestro", true, {
+    talla: [159, 0.6], resistencia: [2100, 55], vision_juego: [6.5, 0.2],
+  }),
+  jugador("d56", "Thiago", "Vargas", "div-8", "2012-06-12", "M", "diestro", true, {
+    velocidad30: [5.6, 0.01], control: [6, 0.05], pases_largos: [5.5, 0.1],
+  }),
+  jugador("d57", "Jazmín", "Torres", "div-8", "2012-12-08", "F", "diestro", true, {
+    velocidad30: [5.55, -0.05], entradas: [6, 0.25], salto: [31, 0.7],
+  }),
+  jugador("d58", "Iker", "Paz", "div-8", "2012-03-22", "M", "diestro", true, {
+    atajando: [6.5, 0.3], salto: [36, 0.8], pases_largos: [5, 0.2], talla: [168, 0.7],
+  }),
+
+  // ---------- 7ª División (2011, 15 años) ----------
+  jugador("d59", "Bruno", "Ríos", "div-7", "2011-05-17", "M", "diestro", true, {
+    velocidad30: [5.3, -0.05], resistencia: [2300, 45], pases: [6.5, 0.2],
+  }),
+  jugador("d60", "Agustina", "Herrera", "div-7", "2011-10-02", "F", "zurdo", true, {
+    velocidad30: [5.35, -0.06], control: [7, 0.15], vision_juego: [6.5, 0.2],
+  }),
+  jugador("d61", "Dylan", "Cruz", "div-7", "2011-02-25", "M", "diestro", false, {
+    velocidad30: [5.25, -0.03], remates: [6.5, 0.2], cabezazos: [5.5, 0.25],
+  }),
+  jugador("d62", "Luca", "Mamaní", "div-7", "2011-08-09", "M", "diestro", true, {
+    talla: [169, 0.5], salto: [40, 0.6], entradas: [6.5, 0.15],
+  }),
+  jugador("d63", "Martina", "Díaz", "div-7", "2011-12-19", "F", "diestro", true, {
+    resistencia: [2350, 40], pases_largos: [6, 0.2], balon_parado: [5.5, 0.25],
+  }),
+  jugador("d64", "Gino", "Villagrán", "div-7", "2011-04-04", "M", "ambidiestro", true, {
+    velocidad30: [5.28, -0.04], control: [6.5, 0.2], pases: [6, 0.2],
+  }),
+
+  // ---------- 6ª División (2010, 16 años) ----------
+  jugador("d65", "Lisandro", "Ontiveros", "div-6", "2010-06-08", "M", "diestro", true, {
+    velocidad30: [5.1, -0.04], resistencia: [2450, 40], remates: [6.5, 0.15],
+  }),
+  jugador("d66", "Delfina", "Chauque", "div-6", "2010-01-14", "F", "diestro", true, {
+    velocidad30: [5.2, -0.05], vision_juego: [7, 0.15], pases: [7, 0.1],
+  }),
+  jugador("d67", "Iñaki", "Burgos", "div-6", "2010-09-21", "M", "zurdo", true, {
+    salto: [44, 0.5], cabezazos: [6.5, 0.2], entradas: [6.5, 0.15],
+  }),
+  jugador("d68", "Julián", "Colque", "div-6", "2010-04-30", "M", "diestro", true, {
+    velocidad30: [5.05, 0.0], control: [7, 0.05], pases_largos: [6.5, 0.1],
+  }),
+  jugador("d69", "Ámbar", "Gutiérrez", "div-6", "2010-11-11", "F", "diestro", true, {
+    resistencia: [2500, 35], balon_parado: [6, 0.2], pases: [6.5, 0.15],
+  }),
+
+  // ---------- 5ª División (2009, 17 años) ----------
+  jugador("d70", "Máximo", "Yapura", "div-5", "2009-03-19", "M", "diestro", true, {
+    velocidad30: [4.95, -0.03], resistencia: [2550, 35], remates: [7, 0.1],
+  }),
+  jugador("d71", "Bianca", "Copa", "div-5", "2009-08-27", "F", "zurdo", false, {
+    velocidad30: [5.05, -0.04], control: [7.5, 0.1], vision_juego: [7, 0.1],
+  }),
+  jugador("d72", "Santino", "Arjona", "div-5", "2009-12-13", "M", "diestro", true, {
+    salto: [47, 0.4], cabezazos: [7, 0.15], entradas: [7, 0.1],
+  }),
+  jugador("d73", "Andrés", "Nievas", "div-5", "2009-05-05", "M", "diestro", true, {
+    atajando: [7.5, 0.15], salto: [50, 0.5], pases_largos: [6, 0.15], talla: [181, 0.3],
+  }),
+  jugador("d74", "Morena", "Saravia", "div-5", "2009-10-23", "F", "diestro", true, {
+    resistencia: [2600, 30], pases: [7, 0.1], balon_parado: [6.5, 0.15],
+  }),
+
+  // ---------- 3ª División (2007, 19 años) ----------
+  jugador("d75", "Ezequiel", "Figueroa", "div-3", "2007-04-08", "M", "diestro", true, {
+    velocidad30: [4.6, -0.02], resistencia: [2700, 20], pases: [7, 0.05],
+  }),
+  jugador("d76", "Nahuel", "Tolaba", "div-3", "2007-09-16", "M", "zurdo", true, {
+    velocidad30: [4.55, -0.01], remates: [7.5, 0.05], control: [7, 0.05],
+  }),
+  jugador("d77", "Rocío", "Cardozo", "div-3", "2007-01-29", "F", "diestro", true, {
+    velocidad30: [4.75, -0.03], vision_juego: [7.5, 0.05], pases_largos: [7, 0.05],
+  }),
+  jugador("d78", "Facundo", "Guaymás", "div-3", "2007-07-12", "M", "diestro", true, {
+    salto: [52, 0.3], cabezazos: [7.5, 0.05], entradas: [7, 0.05],
+  }),
+  jugador("d79", "Kevin", "Zalazar", "div-3", "2007-11-24", "M", "diestro", true, {
+    atajando: [8, 0.05], salto: [54, 0.3], pases_largos: [6.5, 0.1],
+  }),
+
+  // ---------- Reserva "La Local" (2003-2006) ----------
+  jugador("d80", "Marcos", "Aguirre", "reserva", "2005-02-18", "M", "diestro", true, {
+    velocidad30: [4.5, 0.0], resistencia: [2750, 10], pases: [7, 0.02],
+  }),
+  jugador("d81", "Rodrigo", "Peralta", "reserva", "2004-06-24", "M", "zurdo", true, {
+    velocidad30: [4.45, -0.01], remates: [7.5, 0.02], control: [7.5, 0.02],
+  }),
+  jugador("d82", "Gonzalo", "Núñez", "reserva", "2006-10-07", "M", "diestro", true, {
+    velocidad30: [4.4, -0.02], resistencia: [2800, 15], vision_juego: [7, 0.05],
+  }),
+  jugador("d83", "Matías", "Villagra", "reserva", "2003-12-15", "M", "diestro", true, {
+    salto: [55, 0.1], cabezazos: [8, 0.0], entradas: [7.5, 0.02],
+  }),
+  jugador("d84", "Leandro", "Ruiz", "reserva", "2005-08-30", "M", "diestro", true, {
+    atajando: [8, 0.05], salto: [56, 0.2], pases_largos: [7, 0.05],
+  }),
+  jugador("d85", "Federico", "Ortiz", "reserva", "2004-03-11", "M", "ambidiestro", true, {
+    velocidad30: [4.48, -0.01], pases: [7.5, 0.02], balon_parado: [7, 0.05],
+  }),
 ];
 
 // La semana demo (lun 6 → dom 12 de julio) sigue el CRONOGRAMA:
@@ -664,6 +860,74 @@ export const SESIONES: Sesion[] = [
     descripcion: "Pliometría (reprogramada tras la lluvia del miércoles).",
     asistencia: [],
   },
+  {
+    id: "s10", fecha: "2026-07-06T19:30:00", categoriaId: "div-7",
+    atributoFocoId: "entradas", entrenador: "Facundo Lamas",
+    lugarId: "predio", estado: "realizada",
+    descripcion: "Duelos 1v1 y recuperación tras pérdida.",
+    asistencia: [
+      { deportistaId: "d59", presente: true },
+      { deportistaId: "d60", presente: true },
+      { deportistaId: "d61", presente: true },
+      { deportistaId: "d62", presente: false },
+      { deportistaId: "d63", presente: true },
+      { deportistaId: "d64", presente: true },
+    ],
+  },
+  {
+    id: "s11", fecha: "2026-07-07T17:30:00", categoriaId: "esc-2014",
+    atributoFocoId: "pases", entrenador: "Ramiro Ontiveros",
+    lugarId: "sede", estado: "realizada",
+    descripcion: "Rondos por estaciones y pase al espacio.",
+    asistencia: [
+      { deportistaId: "d48", presente: true },
+      { deportistaId: "d49", presente: true },
+      { deportistaId: "d50", presente: false },
+      { deportistaId: "d51", presente: true },
+      { deportistaId: "d52", presente: true },
+    ],
+  },
+  {
+    id: "s12", fecha: "2026-07-07T17:30:00", categoriaId: "esc-2017",
+    atributoFocoId: "control", entrenador: "Paula Guanca",
+    lugarId: "predio", estado: "realizada",
+    descripcion: "Conducción con obstáculos y juegos con arqueros.",
+    asistencia: [
+      { deportistaId: "d38", presente: true },
+      { deportistaId: "d39", presente: true },
+      { deportistaId: "d40", presente: true },
+      { deportistaId: "d41", presente: false },
+      { deportistaId: "d42", presente: true },
+    ],
+  },
+  {
+    id: "s16", fecha: "2026-07-09T17:30:00", categoriaId: "esc-2017",
+    atributoFocoId: "pases", entrenador: "Paula Guanca",
+    lugarId: "predio", estado: "programada",
+    descripcion: "Pases en parejas y juegos de posesión.",
+    asistencia: [],
+  },
+  {
+    id: "s13", fecha: "2026-07-09T19:30:00", categoriaId: "div-8",
+    atributoFocoId: "pases_largos", entrenador: "Facundo Lamas",
+    lugarId: "predio", estado: "programada",
+    descripcion: "Cambio de frente y centros. Jornada de medición.",
+    asistencia: [],
+  },
+  {
+    id: "s14", fecha: "2026-07-10T11:00:00", categoriaId: "reserva",
+    atributoFocoId: null, entrenador: "Nora Fidele",
+    lugarId: "sede", estado: "programada",
+    descripcion: "Fútbol táctico con la Primera, previa del domingo.",
+    asistencia: [],
+  },
+  {
+    id: "s15", fecha: "2026-07-10T20:00:00", categoriaId: "div-5",
+    atributoFocoId: "resistencia", entrenador: "Vanesa Portal",
+    lugarId: "sede", estado: "programada",
+    descripcion: "Intermitente aeróbico + salida jugada.",
+    asistencia: [],
+  },
 ];
 
 export const PARTIDOS: Partido[] = [
@@ -689,12 +953,50 @@ export const PARTIDOS: Partido[] = [
     condicion: "local", lugarId: "predio",
     citados: ["d06", "d24", "d25", "d26"],
   },
+  {
+    id: "pt06", fecha: "2026-07-04T11:30:00", categoriaId: "div-7",
+    torneo: "Liga Salteña — Inferiores", rival: "Pellegrini",
+    condicion: "local", lugarId: "predio",
+    citados: ["d59", "d60", "d61", "d62", "d63", "d64"],
+    resultado: { favor: 2, contra: 2 },
+  },
+  {
+    id: "pt07", fecha: "2026-07-05T10:30:00", categoriaId: "div-6",
+    torneo: "Liga Salteña — Inferiores", rival: "Atlas",
+    condicion: "visitante", lugarTexto: "Cancha de Atlas",
+    citados: ["d65", "d66", "d67", "d68", "d69"],
+    resultado: { favor: 4, contra: 0 },
+  },
   // ---- este fin de semana ----
   {
     id: "pt04", fecha: "2026-07-11T10:00:00", categoriaId: "div-9",
     torneo: "Liga Salteña — Infantiles", rival: "Gimnasia y Tiro",
     condicion: "visitante", lugarTexto: "Predio de Gimnasia y Tiro",
     citados: ["d01", "d02", "d07", "d27", "d28", "d29", "d30"],
+  },
+  {
+    id: "pt08", fecha: "2026-07-11T09:30:00", categoriaId: "esc-2015",
+    torneo: "Encuentro de escuelitas", rival: "Libertad",
+    condicion: "local", lugarId: "predio",
+    citados: ["d43", "d44", "d45", "d46", "d47"],
+  },
+  {
+    id: "pt09", fecha: "2026-07-11T15:00:00", categoriaId: "div-4",
+    torneo: "Liga Salteña — Juveniles", rival: "Villa San Antonio",
+    condicion: "local", lugarId: "sede",
+    citados: ["d03", "d05", "d08", "d11", "d31", "d32"],
+  },
+  {
+    id: "pt10", fecha: "2026-07-12T10:00:00", categoriaId: "div-8",
+    torneo: "Liga Salteña — Inferiores", rival: "Deportivo Cachorros",
+    condicion: "visitante", lugarTexto: "Cancha de Cachorros",
+    citados: ["d53", "d54", "d55", "d56", "d57", "d58"],
+  },
+  {
+    id: "pt11", fecha: "2026-07-12T14:00:00", categoriaId: "reserva",
+    torneo: "Liga Salteña — Reserva", rival: "San Antonio",
+    condicion: "local", lugarId: "sede",
+    citados: ["d80", "d81", "d82", "d83", "d84", "d85"],
   },
   {
     id: "pt05", fecha: "2026-07-12T16:00:00", categoriaId: "primera",
@@ -796,3 +1098,40 @@ export function cronogramaDe(categorias: string[] | null): Horario[] {
     (h) => !categorias || categorias.includes(h.categoriaId),
   );
 }
+
+// ---------- clubes del observatorio (solo agregados) ----------
+// Las métricas de Antoniana salen de los datos mock reales; los otros
+// clubes son ficticios y solo existen como totales.
+const medicionesUltimoMes = DEPORTISTAS.reduce(
+  (acc, d) =>
+    acc +
+    Object.values(d.mediciones)
+      .flat()
+      .filter((m) => m.fecha.startsWith("2026-06")).length,
+  0,
+);
+
+export const CLUBES: ClubResumen[] = [
+  {
+    id: "cja", nombre: "Club Atlético Antoniana", localidad: "Salta Capital",
+    departamento: "Capital", esEsteClub: true,
+    deportistas: DEPORTISTAS.length,
+    medicionesMes: medicionesUltimoMes,
+    consentimientoPct: Math.round(
+      (DEPORTISTAS.filter((d) => d.consentimientoOk).length /
+        DEPORTISTAS.length) *
+        100,
+    ),
+    categoriasActivas: categoriasConPlantel().length,
+  },
+  {
+    id: "smi", nombre: "Sportivo del Milagro", localidad: "Salta Capital",
+    departamento: "Capital", esEsteClub: false, deportistas: 88,
+    medicionesMes: 121, consentimientoPct: 93, categoriasActivas: 9,
+  },
+  {
+    id: "avl", nombre: "Atlético Valle de Lerma", localidad: "Cerrillos",
+    departamento: "Cerrillos", esEsteClub: false, deportistas: 34,
+    medicionesMes: 52, consentimientoPct: 100, categoriasActivas: 4,
+  },
+];

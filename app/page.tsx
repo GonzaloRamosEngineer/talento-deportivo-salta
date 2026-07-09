@@ -23,6 +23,7 @@ import {
   getCategoria,
 } from "@/lib/mock-data";
 import { EventoCard } from "@/components/evento-card";
+import { EnElRadar, Proximamente } from "@/components/proximamente";
 import { tendencia } from "@/lib/tendencia";
 import { EstadoBadge } from "@/components/estado-badge";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
@@ -351,6 +352,43 @@ export default function Inicio() {
           </div>
         </section>
       )}
+
+      {/* Probadita del roadmap, según el perfil */}
+      <EnElRadar>
+        {permisos.opera && (
+          <Proximamente
+            titulo="Modo sin señal"
+            detalle="Cargá mediciones y asistencia en la cancha sin conexión; se sincroniza solo al volver la señal."
+            etiqueta="Próximamente"
+          />
+        )}
+        {permisos.gestiona && (
+          <Proximamente
+            titulo="Exportación de todos tus datos (CSV)"
+            detalle="El club es dueño de su información: descargá deportistas, mediciones y asistencia cuando quieras."
+            etiqueta="Próximamente"
+          />
+        )}
+        {(permisos.gestiona || !permisos.opera) && (
+          <Proximamente
+            titulo="Informe mensual por categoría (PDF)"
+            detalle="Resumen automático de constancia de carga, asistencia y evoluciones destacadas, listo para la reunión de comisión."
+            etiqueta="Próximamente"
+          />
+        )}
+        {permisos.opera && !permisos.gestiona && (
+          <Proximamente
+            titulo="Sugerencias de foco de entrenamiento"
+            detalle="A partir de la evolución del plantel, la plataforma sugiere qué áreas conviene trabajar esta semana."
+            etiqueta="A evaluar"
+          />
+        )}
+        <Proximamente
+          titulo="Acceso para familias (solo lectura)"
+          detalle="Que cada familia vea la evolución de su hijo/a con un enlace seguro, sin cuenta. Se define después del piloto."
+          etiqueta="A evaluar"
+        />
+      </EnElRadar>
     </div>
   );
 }

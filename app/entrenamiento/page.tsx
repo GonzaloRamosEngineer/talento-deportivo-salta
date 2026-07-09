@@ -12,6 +12,7 @@ import {
 } from "@/lib/mock-data";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { usePerfil, puedeCargar, permisosDe } from "@/components/perfil-context";
+import { Proximamente } from "@/components/proximamente";
 import { cn } from "@/lib/utils";
 
 const DESCANSO = "descanso";
@@ -324,6 +325,12 @@ function Entrenamiento() {
               lo devuelve a descanso.
             </p>
           </div>
+
+          <Proximamente
+            titulo="Táctica y formaciones"
+            detalle="Armar la formación del partido arrastrando jugadores a la cancha, conectada con este tablero. Es la Ola 3 del roadmap."
+            etiqueta="A evaluar"
+          />
 
           <div className="sticky bottom-20 z-20 md:bottom-4">
             <button
