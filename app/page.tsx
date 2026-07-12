@@ -88,10 +88,10 @@ export default function Landing() {
               Privacidad
             </a>
             <Link
-              href="/panel"
+              href="/login"
               className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-transform hover:scale-[1.03] active:scale-[0.98]"
             >
-              Ver la demo
+              Ingresar
               <ArrowRight className="size-4" aria-hidden />
             </Link>
           </nav>
@@ -149,7 +149,7 @@ export default function Landing() {
               style={{ animationDelay: "0.45s" }}
             >
               <Link
-                href="/panel"
+                href="/login"
                 className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-bold text-primary-foreground shadow-sm transition-transform hover:scale-[1.03] active:scale-[0.98]"
               >
                 Entrá a la demo
@@ -587,7 +587,7 @@ export default function Landing() {
               </p>
               <div className="mt-8 flex justify-center">
                 <Link
-                  href="/panel"
+                  href="/login"
                   className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3.5 text-base font-bold text-primary-foreground shadow-sm transition-transform hover:scale-[1.03] active:scale-[0.98]"
                 >
                   Entrá a la demo

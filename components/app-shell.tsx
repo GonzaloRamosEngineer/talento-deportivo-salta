@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Home,
   Users,
@@ -10,13 +10,65 @@ import {
   ClipboardPlus,
   Dumbbell,
   Landmark,
+  LogIn,
+  LogOut,
   Volleyball,
   Check,
   ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { CLUB } from "@/lib/mock-data";
+import { crearClienteBrowser } from "@/lib/supabase/client";
 import { PERFILES, usePerfil, type Perfil } from "@/components/perfil-context";
+
+/** Estado de sesión real: "Salir" si hay sesión, "Ingresar" si no. */
+function BotonSesion({ compacto = false }: { compacto?: boolean }) {
+  const router = useRouter();
+  const [email, setEmail] = useState<string | null>(null);
+  const [cargando, setCargando] = useState(true);
+
+  useEffect(() => {
+    const supabase = crearClienteBrowser();
+    supabase.auth.getUser().then(({ data }) => {
+      setEmail(data.user?.email ?? null);
+      setCargando(false);
+    });
+  }, []);
+
+  if (cargando) return null;
+
+  if (!email) {
+    return (
+      <Link
+        href="/login"
+        className={cn(
+          "flex items-center gap-2 rounded-lg text-xs font-bold text-muted-foreground transition-colors hover:text-foreground",
+          compacto ? "px-2 py-1" : "px-3 py-2",
+        )}
+      >
+        <LogIn className="size-3.5" aria-hidden />
+        Ingresar
+      </Link>
+    );
+  }
+
+  return (
+    <button
+      onClick={async () => {
+        await crearClienteBrowser().auth.signOut();
+        router.push("/login");
+      }}
+      className={cn(
+        "flex items-center gap-2 rounded-lg text-left text-xs font-bold text-muted-foreground transition-colors hover:text-foreground",
+        compacto ? "px-2 py-1" : "px-3 py-2",
+      )}
+      title={email}
+    >
+      <LogOut className="size-3.5 shrink-0" aria-hidden />
+      <span className="truncate">Salir ({email.split("@")[0]})</span>
+    </button>
+  );
+}
 
 interface NavItem {
   href: string;
@@ -120,8 +172,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { perfil } = usePerfil();
   const nav = navPara(perfil);
 
-  // La landing pública (/) vive fuera del shell de la app.
-  if (pathname === "/") {
+  // La landing pública (/) y el login viven fuera del shell de la app.
+  if (pathname === "/" || pathname === "/login") {
     return <>{children}</>;
   }
 
@@ -164,6 +216,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="flex flex-col gap-2 px-4 py-4">
           <SelectorPerfil />
+          <BotonSesion />
           <p className="text-[11px] leading-snug text-muted-foreground">
             Prototipo visual · datos de ejemplo, sin conexión a base de datos
           </p>
