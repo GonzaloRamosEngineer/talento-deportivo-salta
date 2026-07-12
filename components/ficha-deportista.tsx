@@ -31,7 +31,7 @@ import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { EvolutionChart } from "@/components/evolution-chart";
 import { NivelBar } from "@/components/nivel-bar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { usePerfil, permisosDe } from "@/components/perfil-context";
+import { usePerfil } from "@/components/perfil-context";
 import { AvisoAcceso } from "@/components/aviso-acceso";
 import { cn } from "@/lib/utils";
 
@@ -54,8 +54,7 @@ export function FichaDeportista({
   deportista: Deportista;
   atributoInicial?: string;
 }) {
-  const { perfil } = usePerfil();
-  const permisos = permisosDe(perfil);
+  const { permisos } = usePerfil();
   // Demo: registrar la firma del consentimiento solo cambia estado local
   const [consentimientoDemo, setConsentimientoDemo] = useState(false);
   const consentimientoOk = deportista.consentimientoOk || consentimientoDemo;

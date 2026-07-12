@@ -12,7 +12,7 @@ import {
 } from "@/lib/mock-data";
 import { EventoCard } from "@/components/evento-card";
 import { AvisoAcceso } from "@/components/aviso-acceso";
-import { usePerfil, permisosDe } from "@/components/perfil-context";
+import { usePerfil } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
 function mismaFecha(a: Date, b: Date) {
@@ -24,8 +24,7 @@ function mismaFecha(a: Date, b: Date) {
 }
 
 export default function Agenda() {
-  const { perfil } = usePerfil();
-  const permisos = permisosDe(perfil);
+  const { permisos } = usePerfil();
 
   if (!permisos.veClub) {
     return (

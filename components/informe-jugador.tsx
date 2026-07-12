@@ -16,15 +16,14 @@ import { EstadoBadge } from "@/components/estado-badge";
 import { EvolutionChart } from "@/components/evolution-chart";
 import { NivelBar } from "@/components/nivel-bar";
 import { AvisoAcceso } from "@/components/aviso-acceso";
-import { usePerfil, permisosDe } from "@/components/perfil-context";
+import { usePerfil } from "@/components/perfil-context";
 
 // Informe de evolución de UNA página, pensado para imprimirse y
 // quedar en la mesa de una reunión. El botón imprimir desaparece en
 // papel (print:hidden); el shell de navegación se oculta vía las
 // reglas @media print de globals.css.
 export function InformeJugador({ deportista }: { deportista: Deportista }) {
-  const { perfil } = usePerfil();
-  const permisos = permisosDe(perfil);
+  const { permisos } = usePerfil();
   const categoria = getCategoria(deportista.categoriaId);
 
   // Mismo alcance que la ficha (espejo del RLS)

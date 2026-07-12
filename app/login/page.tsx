@@ -18,7 +18,6 @@ import {
   Volleyball,
 } from "lucide-react";
 import { crearClienteBrowser } from "@/lib/supabase/client";
-import type { Perfil } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
 /**
@@ -34,35 +33,30 @@ const PASSWORD_DEMO = "TalentoDemo26";
 
 const ACCESOS_DEMO: {
   email: string;
-  perfil: Perfil;
   titulo: string;
   detalle: string;
   icon: React.ElementType;
 }[] = [
   {
     email: "profe@demo.talento.ar",
-    perfil: "profesor",
     titulo: "Soy profe de una categoría",
     detalle: "Marcela · 9ª División y Escuelita 2016",
     icon: Megaphone,
   },
   {
     email: "admin@demo.talento.ar",
-    perfil: "admin_club",
     titulo: "Administro un club",
     detalle: "Categorías, staff y consentimientos",
     icon: ClipboardList,
   },
   {
     email: "comision@demo.talento.ar",
-    perfil: "comision",
     titulo: "Estoy en la comisión directiva",
     detalle: "Todo el club, solo consulta",
     icon: UserRound,
   },
   {
     email: "plataforma@demo.talento.ar",
-    perfil: "super_admin",
     titulo: "Liga / Secretaría de Deportes",
     detalle: "Observatorio provincial, solo agregados",
     icon: Landmark,
@@ -99,11 +93,7 @@ export default function LoginPage() {
     });
   };
 
-  const entrar = async (
-    mail: string,
-    pass: string,
-    perfil?: Perfil,
-  ): Promise<void> => {
+  const entrar = async (mail: string, pass: string): Promise<void> => {
     setEstado("checking");
     setError("");
     const supabase = crearClienteBrowser();
@@ -122,9 +112,8 @@ export default function LoginPage() {
       setTimeout(() => setEstado("idle"), 1600);
       return;
     }
-    // Sincroniza el selector de perfil de la demo con el rol real,
-    // para que las pantallas (aún con mocks) muestren la vista correcta.
-    if (perfil) window.localStorage.setItem("tds-perfil", perfil);
+    // El rol de la pantalla ya no lo decide este flag: lo lee
+    // PerfilProvider desde `membresia` (RLS) al detectar la sesión.
     setEstado("success");
     setTimeout(() => router.push("/panel"), 400);
   };
@@ -132,8 +121,7 @@ export default function LoginPage() {
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (estado === "checking") return;
-    const conocido = ACCESOS_DEMO.find((a) => a.email === email.trim());
-    void entrar(email.trim(), password, conocido?.perfil);
+    void entrar(email.trim(), password);
   };
 
   return (
@@ -217,14 +205,14 @@ export default function LoginPage() {
               elegí quién sos y entrá ↓
             </p>
             <div className="mt-4 flex flex-col gap-2.5">
-              {ACCESOS_DEMO.map(({ email: mail, perfil, titulo, detalle, icon: Icon }) => (
+              {ACCESOS_DEMO.map(({ email: mail, titulo, detalle, icon: Icon }) => (
                 <button
                   key={mail}
                   type="button"
                   disabled={estado === "checking"}
                   onClick={() => {
                     setDemoActivo(mail);
-                    void entrar(mail, PASSWORD_DEMO, perfil);
+                    void entrar(mail, PASSWORD_DEMO);
                   }}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3.5 text-left transition-all hover:border-primary/50 hover:bg-secondary/50 active:scale-[0.99] disabled:opacity-60",

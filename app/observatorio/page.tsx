@@ -7,7 +7,7 @@ import { MapaSalta } from "@/components/mapa-salta";
 import { EnElRadar, Proximamente } from "@/components/proximamente";
 
 export default function Observatorio() {
-  const { perfil, setPerfil } = usePerfil();
+  const { perfil, setPerfil, sesionReal } = usePerfil();
 
   if (perfil !== "super_admin") {
     return (
@@ -15,15 +15,18 @@ export default function Observatorio() {
         <Landmark className="size-10 text-muted-foreground" aria-hidden />
         <h1 className="text-xl font-extrabold">Observatorio provincial</h1>
         <p className="max-w-xs text-sm text-muted-foreground">
-          Esta vista pertenece al perfil de plataforma. Cambiá de perfil para
-          verla.
+          {sesionReal
+            ? "Esta vista pertenece al rol de plataforma. Tu sesión no tiene ese acceso."
+            : "Esta vista pertenece al perfil de plataforma. Cambiá de perfil para verla."}
         </p>
-        <button
-          onClick={() => setPerfil("super_admin")}
-          className="h-11 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
-        >
-          Ver como {PERFILES.find((p) => p.id === "super_admin")?.label}
-        </button>
+        {!sesionReal && (
+          <button
+            onClick={() => setPerfil("super_admin")}
+            className="h-11 rounded-xl bg-primary px-5 text-sm font-bold text-primary-foreground"
+          >
+            Ver como {PERFILES.find((p) => p.id === "super_admin")?.label}
+          </button>
+        )}
       </div>
     );
   }

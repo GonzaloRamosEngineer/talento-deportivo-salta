@@ -107,9 +107,27 @@ function esActiva(pathname: string, href: string) {
 }
 
 function SelectorPerfil({ compacto = false }: { compacto?: boolean }) {
-  const { perfil, setPerfil } = usePerfil();
+  const { perfil, setPerfil, sesionReal } = usePerfil();
   const [abierto, setAbierto] = useState(false);
   const actual = PERFILES.find((p) => p.id === perfil)!;
+
+  // Con sesión real el rol lo decide la base (membresía/RLS), no un
+  // selector de UI: se muestra como badge de solo lectura.
+  if (sesionReal) {
+    return (
+      <span
+        className={cn(
+          "flex items-center gap-1.5 rounded-full bg-secondary font-bold text-secondary-foreground",
+          compacto
+            ? "px-2.5 py-1 text-[10px] uppercase tracking-wide"
+            : "w-full justify-center rounded-lg px-3 py-2.5 text-xs",
+        )}
+        title="Rol de tu sesión — no se puede cambiar desde acá"
+      >
+        {actual.label}
+      </span>
+    );
+  }
 
   return (
     <div className="relative">

@@ -26,7 +26,7 @@ import { tendenciaGeneral } from "@/lib/tendencia";
 import { EstadoBadge } from "@/components/estado-badge";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { AvisoAcceso } from "@/components/aviso-acceso";
-import { usePerfil, permisosDe } from "@/components/perfil-context";
+import { usePerfil } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
 type Orden = { col: string; dir: 1 | -1 };
@@ -40,8 +40,7 @@ function valorDeColumna(d: Deportista, col: string): number | string | null {
 function Deportistas() {
   const router = useRouter();
   const sp = useSearchParams();
-  const { perfil } = usePerfil();
-  const permisos = permisosDe(perfil);
+  const { permisos } = usePerfil();
   const [busqueda, setBusqueda] = useState("");
   const [categoria, setCategoria] = useState<string | null>(
     CATEGORIAS.some((c) => c.id === sp.get("categoria"))

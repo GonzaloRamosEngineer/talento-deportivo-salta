@@ -13,13 +13,12 @@ import {
 } from "@/lib/mock-data";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { AvisoAcceso } from "@/components/aviso-acceso";
-import { usePerfil, permisosDe } from "@/components/perfil-context";
+import { usePerfil } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
 function JornadaDeMedicion() {
   const sp = useSearchParams();
-  const { perfil } = usePerfil();
-  const permisos = permisosDe(perfil);
+  const { permisos } = usePerfil();
   // El profesor solo carga en sus categorías asignadas
   const categoriasDisponibles = permisos.categorias
     ? CATEGORIAS.filter((c) => permisos.categorias!.includes(c.id))

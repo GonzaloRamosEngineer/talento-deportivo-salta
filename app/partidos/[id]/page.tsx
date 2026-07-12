@@ -13,7 +13,7 @@ import {
 } from "@/lib/mock-data";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { AvisoAcceso } from "@/components/aviso-acceso";
-import { usePerfil, permisosDe } from "@/components/perfil-context";
+import { usePerfil } from "@/components/perfil-context";
 
 export default function PaginaPartido({
   params,
@@ -21,8 +21,7 @@ export default function PaginaPartido({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { perfil } = usePerfil();
-  const permisos = permisosDe(perfil);
+  const { permisos } = usePerfil();
   const partido = getPartido(id);
   if (!partido) notFound();
 

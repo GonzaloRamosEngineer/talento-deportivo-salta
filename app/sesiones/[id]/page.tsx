@@ -22,7 +22,7 @@ import {
 } from "@/lib/mock-data";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { AvisoAcceso } from "@/components/aviso-acceso";
-import { usePerfil, permisosDe } from "@/components/perfil-context";
+import { usePerfil } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
 export default function PaginaSesion({
@@ -31,8 +31,7 @@ export default function PaginaSesion({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const { perfil } = usePerfil();
-  const permisos = permisosDe(perfil);
+  const { permisos } = usePerfil();
   const sesion = SESIONES.find((s) => s.id === id);
   if (!sesion) notFound();
 

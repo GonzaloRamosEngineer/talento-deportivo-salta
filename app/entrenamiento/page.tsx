@@ -11,7 +11,7 @@ import {
   plantelDe,
 } from "@/lib/mock-data";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
-import { usePerfil, puedeCargar, permisosDe } from "@/components/perfil-context";
+import { usePerfil, puedeCargar } from "@/components/perfil-context";
 import { Proximamente } from "@/components/proximamente";
 import { cn } from "@/lib/utils";
 
@@ -19,8 +19,7 @@ const DESCANSO = "descanso";
 const AREAS = ATRIBUTOS.filter((a) => a.entrenable);
 
 function Entrenamiento() {
-  const { perfil } = usePerfil();
-  const permisos = permisosDe(perfil);
+  const { perfil, permisos } = usePerfil();
   const sp = useSearchParams();
   // El profesor solo planifica en sus categorías asignadas
   const categoriasDisponibles = permisos.categorias

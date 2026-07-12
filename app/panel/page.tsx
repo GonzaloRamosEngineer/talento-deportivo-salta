@@ -28,7 +28,7 @@ import { tendencia } from "@/lib/tendencia";
 import { EstadoBadge } from "@/components/estado-badge";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { Sparkline } from "@/components/sparkline";
-import { usePerfil, permisosDe } from "@/components/perfil-context";
+import { usePerfil } from "@/components/perfil-context";
 
 // Selección curada para la demo: cubre los tres estados y las
 // categorías de la profesora demo (se filtra por alcance del perfil).
@@ -102,8 +102,7 @@ function InicioPlataforma() {
 }
 
 export default function Inicio() {
-  const { perfil } = usePerfil();
-  const permisos = permisosDe(perfil);
+  const { perfil, permisos } = usePerfil();
   const hoy = new Date();
 
   if (perfil === "super_admin") return <InicioPlataforma />;
