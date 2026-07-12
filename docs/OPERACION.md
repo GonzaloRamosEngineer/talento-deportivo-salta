@@ -44,25 +44,30 @@ El admin define la estructura real del club sobre el catálogo global:
 RLS ya lo permite (`categoria_insert_admin`). Las 15 de Antoniana ya
 están sembradas.
 
-- **Hoy**: existen en la base; NO hay pantalla de gestión.
-- **Falta (fase wiring)**: pantalla "Categorías" del admin — alta,
-  edición, archivado. Con plantilla de un toque: "generar estructura
-  estándar de fútbol formativo" (escuelitas + 9ª→3ª + Reserva +
-  Primera, cohortes calculadas según el año actual).
+- **Hoy (construido 2026-07-12)**: pantalla `/club/categorias` — alta,
+  edición y eliminación (solo si la categoría no tiene deportistas),
+  más el botón "generar estructura estándar" (escuelitas + 9ª→3ª +
+  Reserva + Primera, cohortes calculadas según el año actual; solo
+  crea las que faltan). Verificada e2e contra la base real.
 
 ### 4-5 · Profes y sus categorías — LOS INVITA EL ADMIN
 
 El admin crea la membresía del profe (`rol=entrenador`) y le asigna
 categorías en `membresia_categoria`. El profe SOLO ve y opera esas
-categorías (RLS v6, no es configurable por UI). La invitación real
-requiere crear el usuario en Auth → eso lo hace el server con la
-secret key (`supabase.auth.admin.inviteUserByEmail`), gateado a que
-quien pide sea `es_admin_de(club)`.
+categorías (RLS v6, no es configurable por UI).
 
-- **Hoy**: script demo (Marcela con 9ª y Escuelita 2016).
-- **Falta (fase wiring)**: pantalla "Staff" del admin — invitar por
-  email, elegir rol, tildar categorías. El profe recibe el mail,
-  define su contraseña y entra.
+- **Hoy (construido 2026-07-12)**: pantalla `/club/staff` — invitar
+  (nombre, email, rol, categorías tildadas), editar las categorías de
+  cada profe, quitar del staff (no a uno mismo), y badge "todavía no
+  entró" para los pendientes. La invitación es **por LINK, no por
+  mail**: el server genera el link de acceso
+  (`auth.admin.generateLink`, gateado a que quien pide sea admin de su
+  club) y el admin lo comparte por WhatsApp — evita el límite del SMTP
+  default de Supabase (~2 mails/hora) y calza con cómo se comunica un
+  club. El link (`/auth/confirmar?token_hash=…`, vence a las 24 h,
+  regenerable desde la lista) valida el token, deja la sesión y lleva
+  a `/cuenta/clave` a crear la contraseña. Cuando haya SMTP propio
+  (Resend), el envío por mail es un paso más, no un cambio de modelo.
 
 ### 6 · Deportistas — LOS CARGA EL PROFE (de sus categorías) O EL ADMIN
 
@@ -71,11 +76,19 @@ consentimiento del tutor como parte del MISMO flujo (si falta, queda
 visible como pendiente — nunca bloquea en el piloto, nunca se
 esconde). Sin DNI real: `doc_interno`.
 
-- **Hoy**: esquema completo (deportista + tutor + consentimiento);
-  la UI de /deportistas es mock de solo lectura.
-- **Falta (fase wiring)**: el formulario de alta + edición. Para la
+- **Hoy (construido 2026-07-12)**: formulario `/deportistas/nuevo` —
+  deportista + tutor + consentimiento en el mismo paso; si el
+  consentimiento falta, el alta no se bloquea pero queda marcado
+  pendiente. El profe solo puede dar de alta en sus categorías (el
+  select ni ofrece las otras; RLS lo garantiza igual), con sugerencia
+  de categoría por cohorte al elegir la fecha de nacimiento. Queda
+  listo para cargar al siguiente de la misma categoría. La lista de
+  /deportistas sigue siendo mock (fase wiring pendiente). Para la
   carga masiva inicial de un club real: planilla → script con
   service role (como hicimos en DMGFit), no UI.
+- **Prueba e2e**: `scripts/limpiar-e2e.mjs` verifica y limpia los
+  datos del recorrido completo (admin crea categoría → invita profe →
+  profe entra por link y da de alta con consentimiento).
 
 ### 7-8 · Mediciones, sesiones, asistencia — EL DÍA A DÍA DEL PROFE
 

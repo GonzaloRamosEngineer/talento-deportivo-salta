@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -73,6 +73,20 @@ export default function LoginPage() {
   const [estado, setEstado] = useState<Estado>("idle");
   const [error, setError] = useState("");
   const [demoActivo, setDemoActivo] = useState<string | null>(null);
+
+  // Aviso de /auth/confirmar cuando un link de acceso venció
+  // (diferido a un tick para no setear estado sincrónico en el effect)
+  useEffect(() => {
+    if (new URLSearchParams(window.location.search).get("aviso") !== "link-vencido") return;
+    const t = setTimeout(
+      () =>
+        setError(
+          "Ese link de acceso venció o ya se usó. Pedile al admin de tu club que te genere uno nuevo.",
+        ),
+      0,
+    );
+    return () => clearTimeout(t);
+  }, []);
 
   // Tilt + glow (el gesto del login de DMGFit)
   const cardRef = useRef<HTMLDivElement>(null);

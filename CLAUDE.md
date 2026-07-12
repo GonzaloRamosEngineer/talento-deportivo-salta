@@ -95,7 +95,17 @@ tácticas, alta/onboarding de nuevos clubes (se siembra un solo club
 —Antoniana— a mano), multi-disciplina por deportista, historial de
 cambio de categoría, offline-sync real.
 
-## Etapa actual: backend real creado, UI aún en mocks (transición)
+## Etapa actual: backend real creado, UI en transición mock→real
+El circuito de gestión del admin YA es real (2026-07-12): `/club`
+(hub), `/club/categorias` (alta/edición/borrado + estructura
+estándar), `/club/staff` (invitación por LINK vía server actions
+gateadas a admin + asignación de categorías) y `/deportistas/nuevo`
+(deportista + tutor + consentimiento en un paso). El flujo del
+invitado es `/auth/confirmar` (route handler que valida el token y
+ata las cookies a la respuesta) → `/cuenta/clave`. La secuencia
+operativa completa está en `docs/OPERACION.md`. El resto de las
+pantallas (listas, medición, agenda) sigue en mocks.
+
 El 2026-07-12 se aplicó la migración inicial al proyecto Supabase real
 (v5 + v6 alcance por categoría + v7 agenda/partidos, con RLS completo)
 y se sembró el catálogo global + club Antoniana + 15 categorías +

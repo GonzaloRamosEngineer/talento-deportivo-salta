@@ -9,6 +9,7 @@ import {
   ArrowUp,
   ArrowDown,
   List,
+  Plus,
   Search,
   ShieldAlert,
   Table2,
@@ -135,6 +136,14 @@ function Deportistas() {
             · tocá para ver la ficha y su evolución
           </p>
         </div>
+        {permisos.opera && (
+          <Link
+            href="/deportistas/nuevo"
+            className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-sm font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
+          >
+            <Plus className="size-4" aria-hidden /> Nuevo
+          </Link>
+        )}
         <div
           className="flex shrink-0 rounded-lg border border-border bg-card p-0.5"
           role="tablist"

@@ -10,6 +10,7 @@ import {
   ClipboardPlus,
   Dumbbell,
   Landmark,
+  Settings,
   LogIn,
   LogOut,
   Volleyball,
@@ -93,13 +94,18 @@ function navPara(perfil: Perfil): NavItem[] {
       { href: "/observatorio", label: "Observatorio", icon: Landmark, destacado: true },
     ];
   }
-  return [
+  const base: NavItem[] = [
     { href: "/panel", label: "Inicio", icon: Home },
     { href: "/deportistas", label: "Deportistas", icon: Users },
     { href: "/medicion", label: "Medir", icon: ClipboardPlus, destacado: true },
     { href: "/entrenamiento", label: "Entrenar", icon: Dumbbell },
     { href: "/sesiones", label: "Agenda", icon: CalendarDays },
   ];
+  if (perfil === "admin_club") {
+    // Gestión del club (categorías, staff, altas) — pantallas reales
+    base.push({ href: "/club", label: "Club", icon: Settings });
+  }
+  return base;
 }
 
 function esActiva(pathname: string, href: string) {
@@ -236,7 +242,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <SelectorPerfil />
           <BotonSesion />
           <p className="text-[11px] leading-snug text-muted-foreground">
-            Prototipo visual · datos de ejemplo, sin conexión a base de datos
+            Demo · la gestión del club (Club) guarda en la base real; los
+            paneles siguen con datos de ejemplo
           </p>
         </div>
       </aside>
