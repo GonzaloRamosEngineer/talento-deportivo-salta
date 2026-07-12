@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from "next";
-import { Manrope } from "next/font/google";
+import { Caveat, Manrope } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 import { PerfilProvider } from "@/components/perfil-context";
@@ -8,6 +8,13 @@ const manrope = Manrope({
   variable: "--font-sans",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700", "800"],
+});
+
+// Letra "de marcador" — solo para las anotaciones a mano de la landing
+const caveat = Caveat({
+  variable: "--font-marker",
+  subsets: ["latin"],
+  weight: ["400", "700"],
 });
 
 export const metadata: Metadata = {
@@ -28,7 +35,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="es" className={`${manrope.variable} h-full antialiased`}>
+    <html
+      lang="es"
+      className={`${manrope.variable} ${caveat.variable} h-full antialiased`}
+    >
       <body className="min-h-full flex flex-col">
         <PerfilProvider>
           <AppShell>{children}</AppShell>

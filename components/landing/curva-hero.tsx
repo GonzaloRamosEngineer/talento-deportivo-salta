@@ -153,9 +153,10 @@ export function CurvaHero() {
           Mejorando
         </span>
         <span className="text-muted-foreground">
-          −0,88&nbsp;s en 16 meses · basado en las últimas 3 mediciones ·
-          en Velocidad 30m,{" "}
-          <strong className="font-bold text-foreground">bajar es mejorar</strong>
+          −0,88&nbsp;s en 16 meses · basado en las últimas 3 mediciones
+        </span>
+        <span className="font-marker rotate-[-1deg] text-xl font-bold text-primary">
+          sí, la línea baja: son segundos. Acá bajar es ganar ↘
         </span>
       </figcaption>
     </figure>

@@ -256,3 +256,11 @@
     transition: none;
   }
 }
+
+/* Anotaciones "a mano" de la landing (fuente Caveat) */
+.font-marker {
+  font-family: var(--font-marker), "Comic Sans MS", cursive;
+}
+.landing-cinta:hover {
+  animation-play-state: paused;
+}

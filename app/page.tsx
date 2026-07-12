@@ -6,18 +6,18 @@ import {
   ClipboardPlus,
   Dumbbell,
   Landmark,
-  LineChart,
   Lock,
   ShieldCheck,
   Volleyball,
 } from "lucide-react";
 import { CurvaHero } from "@/components/landing/curva-hero";
+import { Pelota } from "@/components/landing/pelota";
 import { Reveal } from "@/components/landing/reveal";
 
 export const metadata: Metadata = {
   title: "Talento Deportivo Salta — el talento no es una foto, es una curva",
   description:
-    "La plataforma pública que registra la evolución física y técnica de cada deportista de club formador. Medición a medición, año a año. Una iniciativa de Fundación Evolución Antoniana y Digital Match Global.",
+    "La plataforma pública que guarda la evolución física y técnica de cada deportista de club formador. Hecha por gente de club, para gente de club. Fundación Evolución Antoniana × Digital Match Global.",
 };
 
 const CATEGORIAS_CINTA = [
@@ -38,63 +38,27 @@ const CATEGORIAS_CINTA = [
   "Primera",
 ];
 
-const FEATURES = [
-  {
-    icon: LineChart,
-    titulo: "La curva de evolución",
-    texto:
-      "Cada atributo es una serie temporal: talla, velocidad, salto, técnica. El estado —creciendo, amesetado, en baja— se muestra explícito y explicado, nunca como algoritmo opaco.",
-  },
-  {
-    icon: ClipboardPlus,
-    titulo: "Jornada de medición",
-    texto:
-      "El flujo estrella: atributo → categoría → carga de corrido. Doce chicos en menos de dos minutos, desde el celular, en el borde de la cancha.",
-  },
-  {
-    icon: CalendarDays,
-    titulo: "Agenda del club",
-    texto:
-      "Cronograma semanal por categoría, sesiones con estado y lugar, y los partidos del fin de semana. En escuelitas no hay marcador: son encuentros formativos.",
-  },
-  {
-    icon: Dumbbell,
-    titulo: "Tablero de entrenamiento",
-    texto:
-      "Planificá el foco de cada sesión y asigná jugadores por área con un tap. Funciona igual en el celular del profe y en el proyector de la reunión.",
-  },
-  {
-    icon: Landmark,
-    titulo: "Observatorio provincial",
-    texto:
-      "Cuando varios clubes miden con el mismo estándar, la provincia ve el mapa completo del deporte de base — siempre con datos agregados, nunca fichas.",
-  },
-  {
-    icon: ShieldCheck,
-    titulo: "Consentimiento primero",
-    texto:
-      "Tutores y consentimientos son parte del alta, no un anexo. Lo pendiente queda visible hasta resolverse, y los datos se minimizan por diseño.",
-  },
-];
-
-const ROLES = [
-  {
-    rol: "Profe",
-    texto: "Carga y ve SOLO sus categorías. Su memoria deja de irse con él.",
-  },
-  {
-    rol: "Club",
-    texto: "Administra categorías, staff y consentimientos. Ve todo su club.",
-  },
-  {
-    rol: "Comisión",
-    texto: "Supervisa en solo-lectura. Decide con la curva, no con la anécdota.",
-  },
-  {
-    rol: "Provincia",
-    texto: "Ve agregados del observatorio. Nunca un dato individual de un menor.",
-  },
-];
+/* Número de paso con el círculo dibujado a mano */
+function NumeroGarabato({ n }: { n: string }) {
+  return (
+    <span className="relative inline-flex size-14 items-center justify-center">
+      <svg
+        viewBox="0 0 56 56"
+        className="absolute inset-0 rotate-[-4deg]"
+        fill="none"
+        aria-hidden
+      >
+        <path
+          d="M28,5 C43,4 52,13 51,27 C50,43 41,52 27,51 C12,50 4,42 5,27 C6,13 15,6 30,5.5"
+          stroke="var(--primary)"
+          strokeWidth="2.5"
+          strokeLinecap="round"
+        />
+      </svg>
+      <span className="font-marker text-3xl font-bold text-primary">{n}</span>
+    </span>
+  );
+}
 
 export default function Landing() {
   return (
@@ -125,7 +89,7 @@ export default function Landing() {
             </a>
             <Link
               href="/panel"
-              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-opacity hover:opacity-90"
+              className="inline-flex items-center gap-1.5 rounded-full bg-primary px-4 py-2 text-sm font-bold text-primary-foreground transition-transform hover:scale-[1.03] active:scale-[0.98]"
             >
               Ver la demo
               <ArrowRight className="size-4" aria-hidden />
@@ -136,7 +100,7 @@ export default function Landing() {
 
       <main>
         {/* ---------- Hero ---------- */}
-        <section className="mx-auto max-w-6xl px-4 pb-14 pt-14 md:px-8 md:pb-20 md:pt-24">
+        <section className="mx-auto max-w-6xl px-4 pt-14 md:px-8 md:pt-24">
           <div className="max-w-3xl">
             <p
               className="landing-entrada text-xs font-extrabold uppercase tracking-[0.18em] text-primary"
@@ -150,16 +114,35 @@ export default function Landing() {
             >
               El talento no es una foto.
               <br />
-              <span className="text-primary">Es una curva.</span>
+              <span className="relative inline-block text-primary">
+                Es una curva.
+                <svg
+                  className="absolute -bottom-3 left-0 w-full"
+                  viewBox="0 0 300 14"
+                  fill="none"
+                  aria-hidden
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d="M4,9 C60,3 110,12 165,7 C210,3 255,10 296,6"
+                    stroke="var(--primary)"
+                    strokeWidth="5"
+                    strokeLinecap="round"
+                    className="landing-curva-trazo"
+                    style={{ "--largo-trazo": 300 } as React.CSSProperties}
+                  />
+                </svg>
+              </span>
             </h1>
             <p
-              className="landing-entrada mt-5 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg"
+              className="landing-entrada mt-7 max-w-2xl text-base leading-relaxed text-muted-foreground md:text-lg"
               style={{ animationDelay: "0.3s" }}
             >
-              La plataforma pública que registra la evolución física y técnica
-              de cada deportista de club formador — medición a medición, año a
-              año. Para que ningún pibe dependa de la memoria del profe que se
-              fue.
+              Un pibe de 11 años corre los 30 metros un martes a la tarde en
+              el predio. Ese dato hoy no se anota, o muere en un papel. Acá se
+              guarda, se suma al de la vez anterior, y de a poco aparece lo
+              que ninguna foto muestra: <strong className="font-bold text-foreground">su
+              historia</strong>.
             </p>
             <div
               className="landing-entrada mt-8 flex flex-wrap items-center gap-3"
@@ -167,9 +150,9 @@ export default function Landing() {
             >
               <Link
                 href="/panel"
-                className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+                className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-base font-bold text-primary-foreground shadow-sm transition-transform hover:scale-[1.03] active:scale-[0.98]"
               >
-                Explorar la demo
+                Entrá a la demo
                 <ArrowRight className="size-4.5" aria-hidden />
               </Link>
               <a
@@ -178,30 +161,33 @@ export default function Landing() {
               >
                 Cómo funciona
               </a>
-              <span className="basis-full text-xs text-muted-foreground md:basis-auto">
-                Demo pública · datos de ejemplo
+              <span className="font-marker basis-full rotate-[-1deg] text-lg text-muted-foreground md:basis-auto">
+                (es una demo, tocá todo tranquilo)
               </span>
             </div>
           </div>
 
           {/* La curva es el héroe */}
           <div
-            className="landing-entrada mt-12 rounded-2xl border border-border bg-card p-5 shadow-sm md:mt-16 md:p-8"
+            className="landing-entrada relative mt-12 rounded-2xl border border-border bg-card p-5 shadow-sm md:mt-16 md:p-8"
             style={{ animationDelay: "0.55s" }}
           >
+            <p className="font-marker absolute -top-4 right-6 rotate-[2deg] text-xl text-primary md:text-2xl">
+              16 meses de laburo, una sola imagen ↓
+            </p>
             <div className="mb-4 flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="text-sm font-extrabold md:text-base">
                 Velocidad 30m —{" "}
                 <span className="text-muted-foreground">
-                  un deportista, 16 meses de registro
+                  un deportista de 9ª División
                 </span>
               </h2>
-              <span className="rounded-full bg-secondary px-3 py-1 text-[11px] font-bold uppercase tracking-wide text-secondary-foreground">
-                Serie real de demo
-              </span>
             </div>
             <CurvaHero />
           </div>
+
+          {/* La canchita: la pelota se patea */}
+          <Pelota />
         </section>
 
         {/* ---------- Cinta de categorías ---------- */}
@@ -231,50 +217,100 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* ---------- El problema ---------- */}
+        {/* ---------- El problema: la planilla ---------- */}
         <section className="mx-auto max-w-6xl px-4 py-16 md:px-8 md:py-24">
-          <div className="grid gap-10 md:grid-cols-2 md:gap-16">
+          <div className="grid items-center gap-12 md:grid-cols-2 md:gap-16">
             <Reveal>
               <h2 className="text-3xl font-extrabold leading-tight tracking-tight md:text-4xl">
-                El estado del arte en el club formador es una planilla vieja.
-                <span className="text-muted-foreground"> Cuando existe.</span>
+                ¿Sabés dónde está guardada la historia deportiva de un chico
+                de 12 años?
               </h2>
+              <p className="mt-5 leading-relaxed text-muted-foreground">
+                En la cabeza del profe. Con suerte, en una planilla que armó
+                alguien que ya no está en el club. Cuando el profe se va — y
+                los profes se van — se lleva años de trabajo formativo que no
+                vuelven más.
+              </p>
+              <p className="mt-4 leading-relaxed text-muted-foreground">
+                Y sin registro no hay pregunta que se pueda responder en
+                serio: ¿mejoró o solo creció? ¿se amesetó o lo estamos
+                mirando mal? ¿en qué invierte la provincia cuando invierte en
+                deporte de base?
+              </p>
+              <p className="mt-6 text-lg font-extrabold">
+                Lo que no se registra, se pierde.{" "}
+                <span className="font-marker text-2xl font-bold text-primary">
+                  Así de simple.
+                </span>
+              </p>
             </Reveal>
-            <div className="flex flex-col gap-6">
-              {[
-                {
-                  titulo: "La evolución no se ve",
-                  texto:
-                    "Sin serie temporal nadie sabe si el chico mejoró, se amesetó o simplemente creció. La foto de hoy no cuenta la historia.",
-                },
-                {
-                  titulo: "La memoria se va con el profe",
-                  texto:
-                    "Años de trabajo formativo viven en la cabeza de una persona. Cambia el profe, y el club arranca de cero.",
-                },
-                {
-                  titulo: "La provincia decide a ciegas",
-                  texto:
-                    "Sin datos comparables entre clubes, invertir en deporte de base es apostar. Con un estándar común, es planificar.",
-                },
-              ].map((item, i) => (
-                <Reveal key={item.titulo} demora={i * 120}>
-                  <div className="border-l-2 border-primary pl-5">
-                    <h3 className="text-lg font-extrabold">{item.titulo}</h3>
-                    <p className="mt-1 leading-relaxed text-muted-foreground">
-                      {item.texto}
+
+            {/* La planilla vieja, tachada */}
+            <Reveal demora={150}>
+              <div className="relative mx-auto max-w-md">
+                <div className="rotate-[-1.5deg] overflow-hidden rounded-lg border border-border bg-white shadow-md">
+                  <div className="flex items-center gap-2 border-b border-border bg-[#edf0ec] px-3 py-2">
+                    <span className="size-2.5 rounded-full bg-[#d9e0d8]" />
+                    <span className="size-2.5 rounded-full bg-[#d9e0d8]" />
+                    <p className="ml-1 truncate text-xs font-semibold text-muted-foreground">
+                      planilla_inferiores_FINAL(2).xls
                     </p>
                   </div>
-                </Reveal>
-              ))}
-            </div>
+                  <table className="w-full text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-border text-muted-foreground">
+                        <th className="px-3 py-2 font-semibold">Jugador</th>
+                        <th className="px-2 py-2 font-semibold">Veloc.</th>
+                        <th className="px-2 py-2 font-semibold">2023</th>
+                        <th className="px-2 py-2 font-semibold">2024</th>
+                      </tr>
+                    </thead>
+                    <tbody className="text-foreground/80">
+                      {[
+                        ["Fernández T.", "5,9", "—", "¿5,4?"],
+                        ["Aguirre M.", "6,1", "—", "—"],
+                        ["Guantay S.", "s/d", "—", "5,8"],
+                        ["Cardozo L.", "5,7", "—", "—"],
+                        ["(ilegible)", "—", "—", "—"],
+                      ].map(([n, a, b, c]) => (
+                        <tr key={n} className="border-b border-border/60">
+                          <td className="px-3 py-2">{n}</td>
+                          <td className="px-2 py-2">{a}</td>
+                          <td className="px-2 py-2">{b}</td>
+                          <td className="px-2 py-2">{c}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                {/* El tachón */}
+                <svg
+                  className="pointer-events-none absolute inset-0"
+                  viewBox="0 0 400 260"
+                  fill="none"
+                  aria-hidden
+                  preserveAspectRatio="none"
+                >
+                  <path
+                    d="M30,40 C120,90 280,160 375,225 M370,45 C280,100 120,170 25,220"
+                    stroke="var(--destructive)"
+                    strokeWidth="5"
+                    strokeLinecap="round"
+                    opacity="0.75"
+                  />
+                </svg>
+                <p className="font-marker absolute -bottom-9 right-0 rotate-[-2deg] text-xl font-bold text-destructive">
+                  ¿y las mediciones de 2023? nadie sabe.
+                </p>
+              </div>
+            </Reveal>
           </div>
         </section>
 
-        {/* ---------- Cómo funciona: la jornada de medición ---------- */}
+        {/* ---------- Cómo funciona ---------- */}
         <section
           id="como-funciona"
-          className="border-y border-border bg-card scroll-mt-16"
+          className="scroll-mt-16 border-y border-border bg-card"
         >
           <div className="mx-auto max-w-6xl px-4 py-16 md:px-8 md:py-24">
             <Reveal>
@@ -282,42 +318,44 @@ export default function Landing() {
                 La funcionalidad estrella
               </p>
               <h2 className="mt-3 max-w-2xl text-3xl font-extrabold leading-tight tracking-tight md:text-4xl">
-                Doce chicos medidos en menos de dos minutos.{" "}
-                <span className="text-muted-foreground">Con una mano.</span>
+                Medir tiene que ser más rápido que anotar en papel.
+                <span className="text-muted-foreground">
+                  {" "}
+                  Si no, no pasa.
+                </span>
               </h2>
               <p className="mt-4 max-w-2xl leading-relaxed text-muted-foreground">
-                Si medir es un trámite, el club deja de medir — y sin
-                mediciones no hay curva. Por eso la carga se diseñó primero,
-                para el celular del profe en el borde de la cancha.
+                Lo dijimos desde el día uno: si cargar datos es un trámite, el
+                profe deja de cargar y se acabó el proyecto. Por eso la
+                pantalla más trabajada de toda la plataforma es la de carga.
+                Celular, una mano, cronómetro en la otra.
               </p>
             </Reveal>
             <div className="mt-12 grid gap-6 md:grid-cols-3">
               {[
                 {
-                  paso: "01",
-                  titulo: "Elegí el atributo",
+                  n: "1",
+                  titulo: "Elegís qué medir",
                   texto:
-                    "Velocidad 30m, salto, talla, control de balón… Un catálogo estandarizado, con protocolo escrito para que la medición sea comparable.",
+                    "Velocidad 30m, salto, talla, control de balón. Cada atributo tiene su protocolo escrito: se mide igual acá y en cualquier club.",
                 },
                 {
-                  paso: "02",
-                  titulo: "Elegí la categoría",
+                  n: "2",
+                  titulo: "Elegís la categoría",
                   texto:
-                    "La Escuelita 2016, la 9ª, la Reserva. Aparece la lista completa del plantel, lista para recorrer de corrido.",
+                    "La Escuelita 2016, la 9ª, la Reserva. Te aparece el plantel completo, listo para recorrer de corrido.",
                 },
                 {
-                  paso: "03",
-                  titulo: "Cargá de corrido",
+                  n: "3",
+                  titulo: "Cargás de corrido",
                   texto:
-                    "Inputs numéricos grandes, teclado decimal, progreso visible y guardado al final. La curva de cada chico se actualiza sola.",
+                    "Números grandes, teclado decimal, guardás al final. La curva de cada pibe se actualiza sola.",
                 },
               ].map((item, i) => (
-                <Reveal key={item.paso} demora={i * 140}>
+                <Reveal key={item.n} demora={i * 140}>
                   <div className="flex h-full flex-col rounded-2xl border border-border bg-background p-6">
-                    <span className="text-4xl font-extrabold tracking-tight text-primary/25">
-                      {item.paso}
-                    </span>
-                    <h3 className="mt-3 text-lg font-extrabold">
+                    <NumeroGarabato n={item.n} />
+                    <h3 className="mt-4 text-lg font-extrabold">
                       {item.titulo}
                     </h3>
                     <p className="mt-2 leading-relaxed text-muted-foreground">
@@ -327,22 +365,94 @@ export default function Landing() {
                 </Reveal>
               ))}
             </div>
+            <Reveal demora={300}>
+              <p className="font-marker mt-8 rotate-[-1deg] text-2xl font-bold text-primary">
+                12 pibes medidos en menos de 2 minutos. Probado. ✓
+              </p>
+            </Reveal>
           </div>
         </section>
 
-        {/* ---------- Features ---------- */}
+        {/* ---------- Qué hace (bento) ---------- */}
         <section className="mx-auto max-w-6xl px-4 py-16 md:px-8 md:py-24">
           <Reveal>
             <h2 className="max-w-2xl text-3xl font-extrabold leading-tight tracking-tight md:text-4xl">
-              Todo lo que el club formador necesita.
-              <span className="text-muted-foreground">
-                {" "}
-                Nada de lo que no.
-              </span>
+              Lo que el club formador necesita.
+              <span className="text-muted-foreground"> Nada más.</span>
             </h2>
           </Reveal>
-          <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {FEATURES.map(({ icon: Icon, titulo, texto }, i) => (
+          <div className="mt-12 grid gap-6 md:grid-cols-3">
+            {/* La curva, protagonista: doble de ancho */}
+            <Reveal className="md:col-span-2">
+              <div className="relative flex h-full flex-col justify-between overflow-hidden rounded-2xl border border-border bg-card p-6 transition-shadow hover:shadow-md md:p-8">
+                <div className="max-w-md">
+                  <h3 className="text-xl font-extrabold">
+                    La curva de evolución
+                  </h3>
+                  <p className="mt-2 leading-relaxed text-muted-foreground">
+                    Cada atributo es una serie en el tiempo. El estado —
+                    creciendo, amesetado, en baja — se muestra con su
+                    explicación al lado: «basado en tus últimas 3
+                    mediciones». Sin algoritmos misteriosos, sin humo.
+                  </p>
+                </div>
+                <svg
+                  viewBox="0 0 320 80"
+                  className="mt-6 w-full max-w-sm self-end opacity-90"
+                  fill="none"
+                  aria-hidden
+                >
+                  <path
+                    d="M8,62 C50,58 70,44 110,42 C150,40 165,48 200,38 C240,26 270,20 312,12"
+                    stroke="var(--primary)"
+                    strokeWidth="2.5"
+                    strokeLinecap="round"
+                  />
+                  {[
+                    [8, 62],
+                    [110, 42],
+                    [200, 38],
+                    [312, 12],
+                  ].map(([cx, cy]) => (
+                    <circle
+                      key={cx}
+                      cx={cx}
+                      cy={cy}
+                      r="5"
+                      fill="var(--primary)"
+                      stroke="var(--card)"
+                      strokeWidth="2"
+                    />
+                  ))}
+                </svg>
+              </div>
+            </Reveal>
+            {[
+              {
+                icon: ClipboardPlus,
+                titulo: "Jornada de medición",
+                texto:
+                  "La carga rápida de toda una categoría, pensada para el borde de la cancha.",
+              },
+              {
+                icon: CalendarDays,
+                titulo: "Agenda y partidos",
+                texto:
+                  "El cronograma semanal, las sesiones y los partidos. En escuelitas no hay marcador: son encuentros formativos.",
+              },
+              {
+                icon: Dumbbell,
+                titulo: "Tablero de entrenamiento",
+                texto:
+                  "El foco de cada sesión y los jugadores por área, con un tap. Sirve igual en el celu y en el proyector.",
+              },
+              {
+                icon: Landmark,
+                titulo: "Observatorio provincial",
+                texto:
+                  "Cuando muchos clubes miden igual, la provincia por fin ve el mapa. Siempre agregado, nunca fichas.",
+              },
+            ].map(({ icon: Icon, titulo, texto }, i) => (
               <Reveal key={titulo} demora={(i % 3) * 120}>
                 <div className="flex h-full flex-col rounded-2xl border border-border bg-card p-6 transition-shadow hover:shadow-md">
                   <span className="flex size-10 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
@@ -355,6 +465,24 @@ export default function Landing() {
                 </div>
               </Reveal>
             ))}
+            {/* Cierre a lo ancho: el tema pesado merece la fila entera */}
+            <Reveal className="md:col-span-3">
+              <div className="flex h-full flex-col gap-4 rounded-2xl border border-border bg-card p-6 transition-shadow hover:shadow-md sm:flex-row sm:items-center md:p-8">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
+                  <ShieldCheck className="size-5" aria-hidden />
+                </span>
+                <div>
+                  <h3 className="text-lg font-extrabold">
+                    Consentimiento primero
+                  </h3>
+                  <p className="mt-1 max-w-3xl leading-relaxed text-muted-foreground">
+                    Tutores y permisos son parte del alta de cada deportista,
+                    no un anexo que alguien completa después. Lo pendiente
+                    queda a la vista hasta que se resuelve.
+                  </p>
+                </div>
+              </div>
+            </Reveal>
           </div>
         </section>
 
@@ -367,23 +495,27 @@ export default function Landing() {
                   <Lock className="size-5" aria-hidden />
                 </span>
                 <h2 className="mt-5 text-3xl font-extrabold leading-tight tracking-tight text-background md:text-4xl">
-                  Los datos individuales de los menores nunca salen del club.
+                  Los datos de los pibes nunca salen del club.
                 </h2>
                 <p className="mt-4 max-w-xl leading-relaxed text-background/70">
-                  No es una promesa de marketing: es la arquitectura. El
-                  control de acceso vive en la base de datos, fila por fila,
-                  desde el primer día — no en la buena voluntad de una
-                  pantalla.
+                  Acá hay datos de menores, y eso nos obliga. No es una
+                  promesa de marketing: el control de acceso vive en la base
+                  de datos, fila por fila, desde el primer día. Ni siquiera
+                  nosotros, los que operamos la plataforma, podemos ver una
+                  ficha individual.
+                </p>
+                <p className="font-marker mt-6 rotate-[-1deg] text-2xl text-background/80">
+                  — esto está escrito en el código, no en un folleto
                 </p>
               </Reveal>
               <div className="flex flex-col gap-4">
                 {[
-                  "El profe accede solo a sus categorías asignadas.",
-                  "La comisión directiva consulta, no edita.",
-                  "La provincia ve agregados. Nunca una ficha.",
-                  "Consentimiento de tutores como requisito estructural.",
+                  "El profe ve solo sus categorías asignadas.",
+                  "La comisión directiva consulta, no toca.",
+                  "La provincia ve totales y promedios. Jamás un nombre.",
+                  "El consentimiento del tutor es parte del alta, no un anexo.",
                   "Ningún chico tiene precio: acá no existe la valorización monetaria de menores.",
-                  "Registramos tendencias observadas. No vendemos promesas causales.",
+                  "Registramos tendencias. No prometemos que el entrenamiento «hizo» al jugador: los pibes también crecen solos.",
                 ].map((linea, i) => (
                   <Reveal key={linea} demora={i * 90}>
                     <p className="border-l-2 border-primary pl-4 font-semibold leading-snug text-background/90">
@@ -396,18 +528,39 @@ export default function Landing() {
           </div>
         </section>
 
-        {/* ---------- Roles ---------- */}
+        {/* ---------- Para quién ---------- */}
         <section className="mx-auto max-w-6xl px-4 py-16 md:px-8 md:py-24">
           <Reveal>
             <h2 className="text-3xl font-extrabold leading-tight tracking-tight md:text-4xl">
-              Una plataforma, cuatro miradas.
+              ¿Vos desde dónde lo mirás?
             </h2>
           </Reveal>
           <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            {ROLES.map(({ rol, texto }, i) => (
+            {[
+              {
+                rol: "¿Sos profe?",
+                texto:
+                  "Cargás en 2 minutos y te llevás la curva de cada pibe tuyo. Tu laburo deja de perderse.",
+              },
+              {
+                rol: "¿Manejás el club?",
+                texto:
+                  "Categorías, staff y consentimientos en un solo lugar. Y la historia queda en el club, no en un celular ajeno.",
+              },
+              {
+                rol: "¿Estás en la comisión?",
+                texto:
+                  "Ves todo, sin poder romper nada. Decidís mirando curvas, no anécdotas de asado.",
+              },
+              {
+                rol: "¿Sos de la provincia?",
+                texto:
+                  "El observatorio agregado del deporte de base. Dónde invertir, con datos y sin nombres.",
+              },
+            ].map(({ rol, texto }, i) => (
               <Reveal key={rol} demora={i * 110}>
                 <div className="h-full rounded-2xl border border-border bg-card p-6">
-                  <p className="text-xs font-extrabold uppercase tracking-[0.15em] text-primary">
+                  <p className="font-marker text-2xl font-bold text-primary">
                     {rol}
                   </p>
                   <p className="mt-3 font-semibold leading-snug">{texto}</p>
@@ -425,22 +578,25 @@ export default function Landing() {
                 Infraestructura pública del deporte
               </p>
               <h2 className="mx-auto mt-4 max-w-3xl text-3xl font-extrabold leading-tight tracking-tight md:text-5xl">
-                El estándar provincial de datos del deporte formativo.
+                El estándar salteño de datos del deporte formativo.
               </h2>
               <p className="mx-auto mt-4 max-w-xl leading-relaxed text-muted-foreground">
-                Gratuito para los clubes, sostenido por adopción
-                institucional. Empieza en Salta, con un club piloto y una
-                convicción: lo que no se registra, se pierde.
+                Gratis para los clubes, sostenido por adopción institucional.
+                Arranca en un club piloto de Salta, como tiene que ser:
+                probándolo en la cancha antes de contarlo en un escritorio.
               </p>
               <div className="mt-8 flex justify-center">
                 <Link
                   href="/panel"
-                  className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3.5 text-base font-bold text-primary-foreground shadow-sm transition-opacity hover:opacity-90"
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-8 py-3.5 text-base font-bold text-primary-foreground shadow-sm transition-transform hover:scale-[1.03] active:scale-[0.98]"
                 >
-                  Explorar la demo
+                  Entrá a la demo
                   <ArrowRight className="size-4.5" aria-hidden />
                 </Link>
               </div>
+              <p className="font-marker mx-auto mt-8 max-w-md rotate-[-1deg] text-2xl text-muted-foreground">
+                hecho por gente de club, para gente de club
+              </p>
             </Reveal>
           </div>
         </section>
