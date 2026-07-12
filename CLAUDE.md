@@ -95,11 +95,14 @@ tácticas, alta/onboarding de nuevos clubes (se siembra un solo club
 —Antoniana— a mano), multi-disciplina por deportista, historial de
 cambio de categoría, offline-sync real.
 
-## Etapa actual: prototipo visual (sin backend)
-La app corre 100% con datos mock hardcodeados en `lib/mock-data.ts`.
-NO conectar Supabase todavía: el objetivo de esta etapa es validar
-navegación, jerarquía visual y el timeline de evolución como
-funcionalidad estrella. La dirección de diseño está en `docs/DESIGN.md`.
+## Etapa actual: backend real creado, UI aún en mocks (transición)
+El 2026-07-12 se aplicó la migración inicial al proyecto Supabase real
+(v5 + v6 alcance por categoría + v7 agenda/partidos, con RLS completo)
+y se sembró el catálogo global + club Antoniana + 15 categorías +
+lugares. La UI sigue corriendo 100% con `lib/mock-data.ts`; el próximo
+paso es migrar pantallas a datos reales (Auth de staff primero).
+Credenciales en `.env.local` (gitignored) y en Vercel env; falta la
+publishable key. La dirección de diseño está en `docs/DESIGN.md`.
 Iteración 2 (2026-07-09) sumó: categorías por cohorte de nacimiento,
 catálogo futbolero híbrido (objetivas con protocolo + técnicas 1-10
 subjetivas), tab Habilidades en la ficha, vista tabla ordenable,
@@ -108,10 +111,15 @@ tablero de entrenamiento (/entrenamiento), observatorio multi-club
 sin auth real — es solo visibilidad de UI).
 
 ## Esquema de base de datos
-Los scripts SQL de referencia están en `docs/`, organizados por
-olas (01 = MVP actual y única a ejecutar sobre la base real; 02 y 03
-son documentos de roadmap, NO ejecutar sus scripts en el MVP).
-`01_ola1_mvp.sql` es la fuente de verdad del esquema actual.
+La fuente de verdad del esquema REAL es
+`supabase/migrations/` (aplicadas vía `supabase db push`, nunca a
+mano en el SQL Editor) + `supabase/seed.sql` (idempotente, se corre
+con conexión directa/service role). Los scripts en `docs/` quedan
+como documentos de diseño y roadmap (02 finanzas y 03 táctica NO se
+ejecutan en el MVP). Nota de red: la conexión directa del proyecto es
+IPv6-only; desde redes IPv4 usar el session pooler
+(`aws-0-ca-central-1.pooler.supabase.com:5432`, user
+`postgres.<project-ref>`).
 
 ## Estilo de trabajo esperado
 - Priorizar simplicidad y velocidad de entrega: esto es un MVP para

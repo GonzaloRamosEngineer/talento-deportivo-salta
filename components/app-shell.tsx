@@ -28,7 +28,7 @@ interface NavItem {
 function navPara(perfil: Perfil): NavItem[] {
   if (perfil === "comision") {
     return [
-      { href: "/", label: "Inicio", icon: Home },
+      { href: "/panel", label: "Inicio", icon: Home },
       { href: "/deportistas", label: "Deportistas", icon: Users },
       { href: "/sesiones", label: "Agenda", icon: CalendarDays },
     ];
@@ -37,12 +37,12 @@ function navPara(perfil: Perfil): NavItem[] {
     // La plataforma NO navega datos individuales de ningún club:
     // su mundo es el observatorio (solo agregados).
     return [
-      { href: "/", label: "Inicio", icon: Home },
+      { href: "/panel", label: "Inicio", icon: Home },
       { href: "/observatorio", label: "Observatorio", icon: Landmark, destacado: true },
     ];
   }
   return [
-    { href: "/", label: "Inicio", icon: Home },
+    { href: "/panel", label: "Inicio", icon: Home },
     { href: "/deportistas", label: "Deportistas", icon: Users },
     { href: "/medicion", label: "Medir", icon: ClipboardPlus, destacado: true },
     { href: "/entrenamiento", label: "Entrenar", icon: Dumbbell },
@@ -51,7 +51,7 @@ function navPara(perfil: Perfil): NavItem[] {
 }
 
 function esActiva(pathname: string, href: string) {
-  return href === "/" ? pathname === "/" : pathname.startsWith(href);
+  return href === "/panel" ? pathname === "/panel" : pathname.startsWith(href);
 }
 
 function SelectorPerfil({ compacto = false }: { compacto?: boolean }) {
@@ -119,6 +119,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { perfil } = usePerfil();
   const nav = navPara(perfil);
+
+  // La landing pública (/) vive fuera del shell de la app.
+  if (pathname === "/") {
+    return <>{children}</>;
+  }
 
   return (
     <div className="flex min-h-dvh w-full">

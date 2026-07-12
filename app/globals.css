@@ -166,3 +166,93 @@
     background: #fff;
   }
 }
+/* ==========================================================
+   Landing (/) — animaciones. La curva se dibuja sola: es el
+   producto contado en un gesto. Todo respeta reduced-motion.
+   ========================================================== */
+@keyframes trazo-curva {
+  from {
+    stroke-dashoffset: var(--largo-trazo, 1200);
+  }
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes punto-curva {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+@keyframes subir-suave {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@keyframes cinta-categorias {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+.landing-curva-trazo {
+  stroke-dasharray: var(--largo-trazo, 1200);
+  stroke-dashoffset: var(--largo-trazo, 1200);
+  animation: trazo-curva 2.2s cubic-bezier(0.4, 0, 0.2, 1) 0.3s forwards;
+}
+.landing-curva-punto {
+  opacity: 0;
+  transform-origin: center;
+  transform-box: fill-box;
+  animation: punto-curva 0.4s ease-out forwards;
+}
+.landing-entrada {
+  opacity: 0;
+  animation: subir-suave 0.7s ease-out forwards;
+}
+.landing-cinta {
+  animation: cinta-categorias 36s linear infinite;
+}
+
+/* Revelado on-scroll (activado por components/landing/reveal.tsx) */
+.revelable {
+  opacity: 0;
+  transform: translateY(22px);
+  transition:
+    opacity 0.65s ease-out,
+    transform 0.65s ease-out;
+}
+.revelable.revelado {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .landing-curva-trazo,
+  .landing-curva-punto,
+  .landing-entrada {
+    animation: none;
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+  .landing-cinta {
+    animation: none;
+  }
+  .revelable {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+}
