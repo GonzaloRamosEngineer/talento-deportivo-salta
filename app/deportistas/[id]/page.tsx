@@ -1,8 +1,6 @@
 import Link from "next/link";
 import { ArrowLeft } from "lucide-react";
-import { notFound } from "next/navigation";
-import { getDeportista } from "@/lib/mock-data";
-import { FichaDeportista } from "@/components/ficha-deportista";
+import { FichaCliente } from "@/components/ficha-deportista";
 
 export default async function PaginaDeportista({
   params,
@@ -13,8 +11,6 @@ export default async function PaginaDeportista({
 }) {
   const { id } = await params;
   const { atributo } = await searchParams;
-  const deportista = getDeportista(id);
-  if (!deportista) notFound();
 
   return (
     <div className="flex flex-col gap-3">
@@ -25,7 +21,7 @@ export default async function PaginaDeportista({
         <ArrowLeft className="size-4" aria-hidden />
         Deportistas
       </Link>
-      <FichaDeportista deportista={deportista} atributoInicial={atributo} />
+      <FichaCliente id={id} atributoInicial={atributo} />
     </div>
   );
 }

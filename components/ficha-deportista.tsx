@@ -7,6 +7,7 @@ import {
   ChevronRight,
   ClipboardPlus,
   Info,
+  Loader2,
   Printer,
   ShieldAlert,
   ShieldCheck,
@@ -16,15 +17,14 @@ import {
 } from "lucide-react";
 import type { Deportista } from "@/lib/mock-data";
 import {
-  ATRIBUTOS,
-  CATEGORIAS,
-  edad,
+  edadLabel,
   formatFecha,
-  getAtributo,
-  getCategoria,
+  getDeportista,
   nivelActual,
   sesionesDe,
 } from "@/lib/mock-data";
+import { useDatos, type Datos } from "@/lib/use-datos";
+import { crearClienteBrowser } from "@/lib/supabase/client";
 import { tendencia, type Estado } from "@/lib/tendencia";
 import { EstadoBadge } from "@/components/estado-badge";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
@@ -47,18 +47,76 @@ function TrendIcon({ estado }: { estado: Estado }) {
   return null;
 }
 
+// Carga la ficha desde la fuente que corresponda: el mock (visitante
+// demo) o Supabase vía useDatos() (sesión real, ids = UUID). Si el id
+// no aparece, puede ser inexistente O fuera del alcance del rol: el
+// RLS no distingue y la UI tampoco debe.
+export function FichaCliente({
+  id,
+  atributoInicial,
+}: {
+  id: string;
+  atributoInicial?: string;
+}) {
+  const datos = useDatos();
+
+  if (datos.cargando) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-24 text-sm font-semibold text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+        Cargando ficha…
+      </div>
+    );
+  }
+  if (datos.error) {
+    return (
+      <AvisoAcceso
+        titulo="No pudimos cargar la ficha"
+        detalle={datos.error}
+        accionHref="/deportistas"
+        accionLabel="Volver a deportistas"
+      />
+    );
+  }
+
+  const deportista = datos.real
+    ? datos.deportistas.find((d) => d.id === id)
+    : getDeportista(id);
+  if (!deportista) {
+    return (
+      <AvisoAcceso
+        titulo="Ficha no encontrada"
+        detalle="Este deportista no existe o está fuera de tus categorías asignadas."
+        accionHref="/deportistas"
+        accionLabel="Ver tus deportistas"
+      />
+    );
+  }
+  return (
+    <FichaDeportista
+      deportista={deportista}
+      atributoInicial={atributoInicial}
+      datos={datos}
+    />
+  );
+}
+
 export function FichaDeportista({
   deportista,
   atributoInicial,
+  datos,
 }: {
   deportista: Deportista;
   atributoInicial?: string;
+  datos: Datos;
 }) {
   const { permisos } = usePerfil();
-  // Demo: registrar la firma del consentimiento solo cambia estado local
+  // Demo: cambia estado local. Real: además insertó en `consentimiento`.
   const [consentimientoDemo, setConsentimientoDemo] = useState(false);
+  const [firmando, setFirmando] = useState(false);
+  const [errorFirma, setErrorFirma] = useState<string | null>(null);
   const consentimientoOk = deportista.consentimientoOk || consentimientoDemo;
-  const medidos = ATRIBUTOS.filter((a) => deportista.mediciones[a.id]?.length);
+  const medidos = datos.atributos.filter((a) => deportista.mediciones[a.id]?.length);
   const [atributoId, setAtributoId] = useState(
     atributoInicial && deportista.mediciones[atributoInicial]
       ? atributoInicial
@@ -71,11 +129,13 @@ export function FichaDeportista({
   );
   const [infoAbierta, setInfoAbierta] = useState<string | null>(null);
 
-  const atributo = getAtributo(atributoId);
+  const atributo = datos.atributos.find((a) => a.id === atributoId);
   const serie = atributo ? (deportista.mediciones[atributo.id] ?? []) : [];
   const t = atributo ? tendencia(serie, atributo) : null;
-  const categoria = getCategoria(deportista.categoriaId);
-  const sesiones = sesionesDe(deportista.id);
+  const categoria = datos.categorias.find((c) => c.id === deportista.categoriaId);
+  // La agenda todavía no está wireada a la base: con sesión real la
+  // ficha muestra el vacío honesto, no las sesiones del mock.
+  const sesiones = datos.real ? [] : sesionesDe(deportista.id);
 
   const fisicas = medidos.filter((a) => a.ambito === "fisico");
   const tecnicas = medidos.filter((a) => a.ambito === "tecnico");
@@ -85,8 +145,30 @@ export function FichaDeportista({
     setTab("evolucion");
   };
 
+  async function registrarFirma() {
+    if (!datos.real) {
+      setConsentimientoDemo(true);
+      return;
+    }
+    setFirmando(true);
+    setErrorFirma(null);
+    const { error } = await crearClienteBrowser().from("consentimiento").insert({
+      deportista_id: deportista.id,
+      otorgado: true,
+      observacion: "Registrado desde la ficha",
+    });
+    setFirmando(false);
+    if (error) {
+      setErrorFirma(`No se pudo registrar la firma (${error.message}).`);
+      return;
+    }
+    setConsentimientoDemo(true);
+    datos.recargar();
+  }
+
   // Espejo del RLS: la plataforma no ve fichas; el profesor solo las
-  // de sus categorías asignadas.
+  // de sus categorías asignadas. (Con sesión real el gate de
+  // categorías ya lo aplicó el RLS: un id ajeno ni siquiera llega acá.)
   if (!permisos.veClub) {
     return (
       <AvisoAcceso
@@ -97,16 +179,16 @@ export function FichaDeportista({
       />
     );
   }
-  if (permisos.categorias && !permisos.categorias.includes(deportista.categoriaId)) {
-    const asignadas = CATEGORIAS.filter((c) =>
-      permisos.categorias!.includes(c.id),
-    )
-      .map((c) => c.nombre)
-      .join(" y ");
+  if (
+    !datos.real &&
+    permisos.categorias &&
+    !permisos.categorias.includes(deportista.categoriaId)
+  ) {
+    const asignadas = datos.categorias.map((c) => c.nombre).join(" y ");
     return (
       <AvisoAcceso
         titulo="Fuera de tus categorías"
-        detalle={`${deportista.nombre} ${deportista.apellido} pertenece a ${categoria?.nombre}. Tu perfil accede solo a ${asignadas}.`}
+        detalle={`${deportista.nombre} ${deportista.apellido} pertenece a ${categoria?.nombre ?? "otra categoría"}. Tu perfil accede solo a ${asignadas}.`}
         accionHref="/deportistas"
         accionLabel="Ver tus deportistas"
       />
@@ -127,8 +209,13 @@ export function FichaDeportista({
             {deportista.nombre} {deportista.apellido}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {categoria?.nombre} · {edad(deportista.fechaNacimiento)} años ·{" "}
-            {deportista.lateralidad}
+            {[
+              categoria?.nombre ?? "Sin categoría",
+              edadLabel(deportista.fechaNacimiento),
+              deportista.lateralidad,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
         </div>
         <Link
@@ -152,20 +239,29 @@ export function FichaDeportista({
           </p>
           {permisos.opera && (
             <button
-              onClick={() => setConsentimientoDemo(true)}
-              className="h-9 shrink-0 rounded-lg bg-warning px-3 text-xs font-bold text-white"
+              onClick={() => void registrarFirma()}
+              disabled={firmando}
+              className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-warning px-3 text-xs font-bold text-white disabled:opacity-60"
             >
-              Registrar firma (demo)
+              {firmando && <Loader2 className="size-3.5 animate-spin" aria-hidden />}
+              {datos.real ? "Registrar firma" : "Registrar firma (demo)"}
             </button>
           )}
+        </div>
+      )}
+      {errorFirma && (
+        <div className="flex items-start gap-2.5 rounded-xl bg-danger-soft p-3 text-xs font-semibold text-danger">
+          <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <p>{errorFirma}</p>
         </div>
       )}
       {consentimientoDemo && (
         <div className="flex items-start gap-2.5 rounded-xl bg-success-soft p-3 text-xs text-success">
           <ShieldCheck className="mt-0.5 size-4 shrink-0" aria-hidden />
           <p>
-            Firma registrada (demo — no se guarda en esta etapa). En
-            producción queda asociada al tutor, con fecha y quién la registró.
+            {datos.real
+              ? "Firma registrada con fecha de hoy. Quedó asociada al deportista; el formulario en papel se archiva en el club."
+              : "Firma registrada (demo — no se guarda en esta etapa). En producción queda asociada al tutor, con fecha y quién la registró."}
           </p>
         </div>
       )}
@@ -418,19 +514,33 @@ export function FichaDeportista({
         <TabsContent value="ficha" className="mt-3">
           <section className="rounded-2xl border border-border bg-card">
             {[
-              ["Documento interno", `AT-${deportista.id.slice(1).padStart(4, "0")}`],
+              [
+                "Documento interno",
+                datos.real
+                  ? (deportista.docInterno ?? "—")
+                  : `AT-${deportista.id.slice(1).padStart(4, "0")}`,
+              ],
               [
                 "Nacimiento",
-                new Date(
-                  deportista.fechaNacimiento + "T12:00:00",
-                ).toLocaleDateString("es-AR", {
-                  day: "numeric",
-                  month: "long",
-                  year: "numeric",
-                }),
+                deportista.fechaNacimiento
+                  ? new Date(
+                      deportista.fechaNacimiento + "T12:00:00",
+                    ).toLocaleDateString("es-AR", {
+                      day: "numeric",
+                      month: "long",
+                      year: "numeric",
+                    })
+                  : "—",
               ],
-              ["Sexo", deportista.sexo === "F" ? "Femenino" : "Masculino"],
-              ["Lateralidad", deportista.lateralidad],
+              [
+                "Sexo",
+                deportista.sexo === "F"
+                  ? "Femenino"
+                  : deportista.sexo === "M"
+                    ? "Masculino"
+                    : (deportista.sexo ?? "—"),
+              ],
+              ["Lateralidad", deportista.lateralidad ?? "—"],
               ["Categoría", categoria?.nombre ?? "—"],
             ].map(([k, v]) => (
               <div
@@ -485,7 +595,7 @@ export function FichaDeportista({
                   <span className="block text-sm font-bold">
                     {formatFecha(s.fecha)} ·{" "}
                     {s.atributoFocoId
-                      ? getAtributo(s.atributoFocoId)?.nombre
+                      ? datos.atributos.find((a) => a.id === s.atributoFocoId)?.nombre
                       : "General"}
                   </span>
                   <span className="block truncate text-xs text-muted-foreground">

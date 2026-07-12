@@ -103,8 +103,24 @@ gateadas a admin + asignación de categorías) y `/deportistas/nuevo`
 (deportista + tutor + consentimiento en un paso). El flujo del
 invitado es `/auth/confirmar` (route handler que valida el token y
 ata las cookies a la respuesta) → `/cuenta/clave`. La secuencia
-operativa completa está en `docs/OPERACION.md`. El resto de las
-pantallas (listas, medición, agenda) sigue en mocks.
+operativa completa está en `docs/OPERACION.md`.
+
+El corazón del producto también es real (2026-07-12): `/medicion`
+(jornada con upsert por deportista/atributo/día, fecha LOCAL — nunca
+current_date del server UTC—, `registrado_por` = membresía),
+`/deportistas` (lista/tabla), la ficha `/deportistas/[id]` (curva de
+evolución + tendencia "últimas 3" calculadas de la serie real, firma
+de consentimiento) y el informe imprimible. Todo pasa por
+`lib/use-datos.ts`: hook DUAL que para el visitante anónimo devuelve
+el mock (la demo pública sigue viva) y con sesión real arma
+`Deportista`/`Atributo`/`Categoria` (las MISMAS interfaces del mock)
+desde Supabase con UUIDs reales — RLS + categorías asignadas acotan
+el alcance, sin filtro cliente propio. Al escribir pantallas nuevas:
+consumir `useDatos()`, NUNCA importar `DEPORTISTAS`/`CATEGORIAS`
+directo (los ids del mock no son los de la base). Siguen en mock:
+home/panel, agenda (sesiones/partidos), tablero de entrenamiento y
+observatorio. `scripts/sembrar-demo-9na.mjs [--limpiar]` siembra 3
+deportistas demo con historial para mostrar la curva.
 
 El 2026-07-12 se aplicó la migración inicial al proyecto Supabase real
 (v5 + v6 alcance por categoría + v7 agenda/partidos, con RLS completo)

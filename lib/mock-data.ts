@@ -38,9 +38,10 @@ export interface Deportista {
   nombre: string;
   apellido: string;
   categoriaId: string;
-  fechaNacimiento: string;
-  sexo: "M" | "F";
-  lateralidad: "diestro" | "zurdo" | "ambidiestro";
+  fechaNacimiento: string; // "" = sin dato (la fila real lo permite)
+  sexo: "M" | "F" | "X" | null;
+  lateralidad: "diestro" | "zurdo" | "ambidiestro" | null;
+  docInterno?: string | null;
   consentimientoOk: boolean;
   mediciones: Record<string, Medicion[]>; // atributoId -> serie ordenada por fecha
   // Hitos de la trayectoria (cambios de categoría, ingreso al club):
@@ -51,7 +52,7 @@ export interface Deportista {
 export interface Categoria {
   id: string;
   nombre: string;
-  tipo: "escuelita" | "inferior" | "reserva" | "primera";
+  tipo: "escuelita" | "inferior" | "reserva" | "primera" | null;
   anioNacimiento?: number;
 }
 
@@ -1033,13 +1034,21 @@ export function categoriasConPlantel(): Categoria[] {
   return CATEGORIAS.filter((c) => plantelDe(c.id).length > 0);
 }
 
-export function edad(fechaNacimiento: string): number {
+export function edad(fechaNacimiento: string | null): number | null {
+  if (!fechaNacimiento) return null;
   const hoy = new Date();
   const nac = new Date(fechaNacimiento);
+  if (Number.isNaN(nac.getTime())) return null;
   let e = hoy.getFullYear() - nac.getFullYear();
   const m = hoy.getMonth() - nac.getMonth();
   if (m < 0 || (m === 0 && hoy.getDate() < nac.getDate())) e--;
   return e;
+}
+
+/** "12 años" o "edad s/d" para encabezados y listas */
+export function edadLabel(fechaNacimiento: string | null): string {
+  const e = edad(fechaNacimiento);
+  return e === null ? "edad s/d" : `${e} años`;
 }
 
 export function formatFecha(iso: string): string {

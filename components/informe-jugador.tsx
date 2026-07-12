@@ -1,16 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Printer, ShieldCheck, Volleyball } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  Printer,
+  ShieldCheck,
+  Volleyball,
+} from "lucide-react";
 import type { Deportista } from "@/lib/mock-data";
 import {
-  ATRIBUTOS,
   CLUB,
-  edad,
+  edadLabel,
   formatFecha,
-  getCategoria,
+  getDeportista,
   nivelActual,
 } from "@/lib/mock-data";
+import { useDatos, type Datos } from "@/lib/use-datos";
 import { tendencia } from "@/lib/tendencia";
 import { EstadoBadge } from "@/components/estado-badge";
 import { EvolutionChart } from "@/components/evolution-chart";
@@ -18,13 +24,50 @@ import { NivelBar } from "@/components/nivel-bar";
 import { AvisoAcceso } from "@/components/aviso-acceso";
 import { usePerfil } from "@/components/perfil-context";
 
+// Igual que FichaCliente: resuelve la fuente (mock demo o Supabase).
+export function InformeCliente({ id }: { id: string }) {
+  const datos = useDatos();
+
+  if (datos.cargando) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-24 text-sm font-semibold text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+        Preparando el informe…
+      </div>
+    );
+  }
+  const deportista = datos.real
+    ? datos.deportistas.find((d) => d.id === id)
+    : getDeportista(id);
+  if (datos.error || !deportista) {
+    return (
+      <AvisoAcceso
+        titulo="No pudimos armar este informe"
+        detalle={
+          datos.error ??
+          "Este deportista no existe o está fuera de tus categorías asignadas."
+        }
+        accionHref="/deportistas"
+        accionLabel="Ver tus deportistas"
+      />
+    );
+  }
+  return <InformeJugador deportista={deportista} datos={datos} />;
+}
+
 // Informe de evolución de UNA página, pensado para imprimirse y
 // quedar en la mesa de una reunión. El botón imprimir desaparece en
 // papel (print:hidden); el shell de navegación se oculta vía las
 // reglas @media print de globals.css.
-export function InformeJugador({ deportista }: { deportista: Deportista }) {
+export function InformeJugador({
+  deportista,
+  datos,
+}: {
+  deportista: Deportista;
+  datos: Datos;
+}) {
   const { permisos } = usePerfil();
-  const categoria = getCategoria(deportista.categoriaId);
+  const categoria = datos.categorias.find((c) => c.id === deportista.categoriaId);
 
   // Mismo alcance que la ficha (espejo del RLS)
   if (!permisos.veClub) {
@@ -37,17 +80,21 @@ export function InformeJugador({ deportista }: { deportista: Deportista }) {
       />
     );
   }
-  if (permisos.categorias && !permisos.categorias.includes(deportista.categoriaId)) {
+  if (
+    !datos.real &&
+    permisos.categorias &&
+    !permisos.categorias.includes(deportista.categoriaId)
+  ) {
     return (
       <AvisoAcceso
         titulo="Fuera de tus categorías"
-        detalle={`Este informe es de ${categoria?.nombre}, fuera de tus categorías asignadas.`}
+        detalle="Este informe es de una categoría fuera de tus asignadas."
         accionHref="/deportistas"
         accionLabel="Ver tus deportistas"
       />
     );
   }
-  const medidos = ATRIBUTOS.filter((a) => deportista.mediciones[a.id]?.length);
+  const medidos = datos.atributos.filter((a) => deportista.mediciones[a.id]?.length);
   const fisicas = medidos.filter((a) => a.ambito === "fisico");
   const tecnicas = medidos.filter((a) => a.ambito === "tecnico");
 
@@ -92,7 +139,8 @@ export function InformeJugador({ deportista }: { deportista: Deportista }) {
                 Informe de evolución deportiva
               </span>
               <span className="block text-xs text-muted-foreground">
-                {CLUB.nombre} · {CLUB.localidad}
+                {datos.clubNombre}
+                {!datos.real && ` · ${CLUB.localidad}`}
               </span>
             </span>
           </div>
@@ -112,9 +160,16 @@ export function InformeJugador({ deportista }: { deportista: Deportista }) {
             {deportista.nombre} {deportista.apellido}
           </h1>
           <p className="text-sm text-muted-foreground">
-            {categoria?.nombre} · {edad(deportista.fechaNacimiento)} años ·{" "}
-            {deportista.lateralidad} · doc. interno AT-
-            {deportista.id.slice(1).padStart(4, "0")}
+            {[
+              categoria?.nombre ?? "Sin categoría",
+              edadLabel(deportista.fechaNacimiento),
+              deportista.lateralidad,
+              datos.real
+                ? deportista.docInterno && `doc. interno ${deportista.docInterno}`
+                : `doc. interno AT-${deportista.id.slice(1).padStart(4, "0")}`,
+            ]
+              .filter(Boolean)
+              .join(" · ")}
           </p>
         </div>
 
@@ -237,8 +292,8 @@ export function InformeJugador({ deportista }: { deportista: Deportista }) {
             Registro longitudinal de evolución observada — no implica
             atribución causal del entrenamiento. Documento de uso interno del
             club; contiene datos de un menor amparados por consentimiento de
-            su tutor/a. Plataforma Talento Deportivo Salta · prototipo con
-            datos de ejemplo.
+            su tutor/a. Plataforma Talento Deportivo Salta
+            {!datos.real && " · prototipo con datos de ejemplo"}.
           </p>
         </div>
       </div>

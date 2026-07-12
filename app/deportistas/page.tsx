@@ -9,20 +9,14 @@ import {
   ArrowUp,
   ArrowDown,
   List,
+  Loader2,
   Plus,
   Search,
   ShieldAlert,
   Table2,
 } from "lucide-react";
-import {
-  ATRIBUTOS,
-  CATEGORIAS,
-  DEPORTISTAS,
-  edad,
-  getCategoria,
-  nivelActual,
-  type Deportista,
-} from "@/lib/mock-data";
+import { edad, edadLabel, nivelActual, type Deportista } from "@/lib/mock-data";
+import { useDatos } from "@/lib/use-datos";
 import { tendenciaGeneral } from "@/lib/tendencia";
 import { EstadoBadge } from "@/components/estado-badge";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
@@ -42,31 +36,26 @@ function Deportistas() {
   const router = useRouter();
   const sp = useSearchParams();
   const { permisos } = usePerfil();
+  const datos = useDatos();
   const [busqueda, setBusqueda] = useState("");
-  const [categoria, setCategoria] = useState<string | null>(
-    CATEGORIAS.some((c) => c.id === sp.get("categoria"))
-      ? sp.get("categoria")
-      : null,
-  );
+  // Se valida contra los datos cargados recién al filtrar (con sesión
+  // real las categorías llegan async y el param puede ser un UUID)
+  const [categoria, setCategoria] = useState<string | null>(sp.get("categoria"));
   const [vista, setVista] = useState<"lista" | "tabla">(
     sp.get("vista") === "tabla" ? "tabla" : "lista",
   );
   const [orden, setOrden] = useState<Orden>({ col: "nombre", dir: 1 });
 
-  // Alcance por perfil: el profesor solo ve sus categorías asignadas
-  const categoriasVisibles = useMemo(
-    () =>
-      permisos.categorias
-        ? CATEGORIAS.filter((c) => permisos.categorias!.includes(c.id))
-        : CATEGORIAS,
-    [permisos.categorias],
-  );
-  const visibles = useMemo(
-    () =>
-      permisos.categorias
-        ? DEPORTISTAS.filter((d) => permisos.categorias!.includes(d.categoriaId))
-        : DEPORTISTAS,
-    [permisos.categorias],
+  // El alcance ya viene acotado del hook: RLS + categorías asignadas
+  // con sesión real; permisos del selector demo sin sesión.
+  const categoriasVisibles = datos.categorias;
+  const visibles = datos.deportistas;
+  const categoriaActiva = categoriasVisibles.some((c) => c.id === categoria)
+    ? categoria
+    : null;
+  const catPorId = useMemo(
+    () => new Map(categoriasVisibles.map((c) => [c.id, c])),
+    [categoriasVisibles],
   );
 
   const lista = useMemo(() => {
@@ -74,7 +63,7 @@ function Deportistas() {
       const coincideTexto = `${d.nombre} ${d.apellido}`
         .toLowerCase()
         .includes(busqueda.toLowerCase().trim());
-      const coincideCategoria = !categoria || d.categoriaId === categoria;
+      const coincideCategoria = !categoriaActiva || d.categoriaId === categoriaActiva;
       return coincideTexto && coincideCategoria;
     });
     return filtrados.sort((a, b) => {
@@ -88,12 +77,12 @@ function Deportistas() {
       }
       return (va - vb) * orden.dir;
     });
-  }, [busqueda, categoria, orden, visibles]);
+  }, [busqueda, categoriaActiva, orden, visibles]);
 
   // Máximo por columna (única énfasis de la tabla: bold, sin semáforos)
   const maximos = useMemo(() => {
     const m: Record<string, number> = {};
-    for (const a of ATRIBUTOS) {
+    for (const a of datos.atributos) {
       const valores = lista
         .map((d) => nivelActual(d, a.id))
         .filter((v): v is number => v !== null);
@@ -103,7 +92,7 @@ function Deportistas() {
       }
     }
     return m;
-  }, [lista]);
+  }, [lista, datos.atributos]);
 
   const ordenarPor = (col: string) =>
     setOrden((o) =>
@@ -119,6 +108,25 @@ function Deportistas() {
         detalle="Los datos individuales de los deportistas —en su mayoría menores— nunca salen de su club. El perfil de plataforma solo ve el observatorio con datos agregados."
         accionHref="/observatorio"
         accionLabel="Ir al observatorio"
+      />
+    );
+  }
+
+  if (datos.cargando) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-24 text-sm font-semibold text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+        Cargando deportistas…
+      </div>
+    );
+  }
+  if (datos.error) {
+    return (
+      <AvisoAcceso
+        titulo="No pudimos cargar los datos"
+        detalle={datos.error}
+        accionHref="/deportistas"
+        accionLabel="Reintentar"
       />
     );
   }
@@ -195,7 +203,7 @@ function Deportistas() {
           onClick={() => setCategoria(null)}
           className={cn(
             "h-9 shrink-0 rounded-full border px-4 text-sm font-semibold transition-colors",
-            categoria === null
+            categoriaActiva === null
               ? "border-primary bg-primary text-primary-foreground"
               : "border-border bg-card text-muted-foreground",
           )}
@@ -205,10 +213,10 @@ function Deportistas() {
         {categoriasVisibles.map((c) => (
           <button
             key={c.id}
-            onClick={() => setCategoria(categoria === c.id ? null : c.id)}
+            onClick={() => setCategoria(categoriaActiva === c.id ? null : c.id)}
             className={cn(
               "h-9 shrink-0 rounded-full border px-4 text-sm font-semibold transition-colors",
-              categoria === c.id
+              categoriaActiva === c.id
                 ? "border-primary bg-primary text-primary-foreground"
                 : "border-border bg-card text-muted-foreground",
             )}
@@ -222,8 +230,8 @@ function Deportistas() {
       {vista === "lista" && (
         <ul className="flex flex-col gap-2">
           {lista.map((d) => {
-            const t = tendenciaGeneral(d.mediciones, ATRIBUTOS);
-            const cat = getCategoria(d.categoriaId);
+            const t = tendenciaGeneral(d.mediciones, datos.atributos);
+            const cat = catPorId.get(d.categoriaId);
             return (
               <li key={d.id}>
                 <Link
@@ -244,7 +252,7 @@ function Deportistas() {
                       )}
                     </span>
                     <span className="block text-xs text-muted-foreground">
-                      {cat?.nombre} · {edad(d.fechaNacimiento)} años
+                      {cat?.nombre ?? "Sin categoría"} · {edadLabel(d.fechaNacimiento)}
                     </span>
                   </span>
                   <EstadoBadge estado={t.estado} />
@@ -257,8 +265,18 @@ function Deportistas() {
             );
           })}
           {lista.length === 0 && (
-            <li className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-              No hay deportistas para este filtro.
+            <li className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+              {visibles.length === 0
+                ? "Todavía no hay deportistas cargados."
+                : "No hay deportistas para este filtro."}
+              {visibles.length === 0 && permisos.opera && (
+                <Link
+                  href="/deportistas/nuevo"
+                  className="flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
+                >
+                  <Plus className="size-4" aria-hidden /> Dar de alta el primero
+                </Link>
+              )}
             </li>
           )}
         </ul>
@@ -291,7 +309,7 @@ function Deportistas() {
                       centrado
                     />
                   </th>
-                  {ATRIBUTOS.map((a) => (
+                  {datos.atributos.map((a) => (
                     <th key={a.id} className="px-1.5 py-2.5" title={`${a.nombre} (${a.unidad})`}>
                       <BotonOrden
                         label={a.abrev}
@@ -325,12 +343,12 @@ function Deportistas() {
                       </span>
                     </td>
                     <td className="whitespace-nowrap px-2 py-2.5 text-xs text-muted-foreground">
-                      {getCategoria(d.categoriaId)?.nombre.replace("Escuelita ", "Esc. ")}
+                      {catPorId.get(d.categoriaId)?.nombre.replace("Escuelita ", "Esc. ") ?? "—"}
                     </td>
                     <td className="px-2 py-2.5 text-center tabular-nums text-muted-foreground">
-                      {edad(d.fechaNacimiento)}
+                      {edad(d.fechaNacimiento) ?? "–"}
                     </td>
-                    {ATRIBUTOS.map((a) => {
+                    {datos.atributos.map((a) => {
                       const v = nivelActual(d, a.id);
                       const esMax = v !== null && maximos[a.id] === v;
                       return (
