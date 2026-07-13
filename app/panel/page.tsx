@@ -15,6 +15,7 @@ import {
 import { CLUBES, ENTRENADORES, PROFE_DEMO } from "@/lib/mock-data";
 import { useDatos } from "@/lib/use-datos";
 import { useAgenda } from "@/lib/use-agenda";
+import { AlertasRegistro } from "@/components/alertas-registro";
 import { EventoCard } from "@/components/evento-card";
 import { EnElRadar, Proximamente } from "@/components/proximamente";
 import { tendencia } from "@/lib/tendencia";
@@ -282,6 +283,9 @@ export default function Inicio() {
           </p>
         </Link>
       </div>
+
+      {/* Constancia de registro: el producto reclama solo */}
+      <AlertasRegistro datos={datos} hoy={hoy} opera={permisos.opera} />
 
       {/* Gestión del club: SOLO admin */}
       {permisos.gestiona && (

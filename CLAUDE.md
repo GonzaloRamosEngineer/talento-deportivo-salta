@@ -141,6 +141,18 @@ oculto en el panel con sesión real) y observatorio.
 con historial; `scripts/limpiar-e2e-agenda.mjs [--verificar]` verifica
 y limpia el e2e de agenda.
 
+Ciclo de vida del deportista completo (2026-07-12):
+`/deportistas/[id]/editar` (lápiz en la ficha, solo sesión real +
+perfil que opera) corrige datos, mueve de categoría (el select ya
+viene acotado al alcance del rol; el RLS exige operar también la de
+destino) y tiene DOS bajas con confirmación en dos pasos: desactivar
+(`activo=false`, conserva historial — cualquier operador) y borrado
+definitivo con cascada (solo admin). El panel además muestra "Para
+estar encima" (`components/alertas-registro.tsx`): categorías con
+plantel sin medir hace 3+ semanas o sin mediciones, y deportistas sin
+primera medición — todo computado de useDatos, con copy de AUSENCIA
+de registro (nunca de rendimiento, framing honesto).
+
 El 2026-07-12 se aplicó la migración inicial al proyecto Supabase real
 (v5 + v6 alcance por categoría + v7 agenda/partidos, con RLS completo)
 y se sembró el catálogo global + club Antoniana + 15 categorías +

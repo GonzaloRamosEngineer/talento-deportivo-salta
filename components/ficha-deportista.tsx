@@ -8,6 +8,7 @@ import {
   ClipboardPlus,
   Info,
   Loader2,
+  Pencil,
   Printer,
   ShieldAlert,
   ShieldCheck,
@@ -228,6 +229,16 @@ export function FichaDeportista({
               .join(" · ")}
           </p>
         </div>
+        {datos.real && permisos.opera && (
+          <Link
+            href={`/deportistas/${deportista.id}/editar`}
+            aria-label="Editar deportista"
+            title="Editar deportista"
+            className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+          >
+            <Pencil className="size-4.5" aria-hidden />
+          </Link>
+        )}
         <Link
           href={`/deportistas/${deportista.id}/informe`}
           aria-label="Informe imprimible"
