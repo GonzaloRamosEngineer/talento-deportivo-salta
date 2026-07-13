@@ -15,10 +15,10 @@ import {
   Megaphone,
   ShieldCheck,
   UserRound,
-  Volleyball,
 } from "lucide-react";
 import { crearClienteBrowser } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
+import { LogoTalento } from "@/components/logo";
 
 /**
  * Login real (Supabase Auth) con el lenguaje visual del login de
@@ -159,11 +159,7 @@ export default function LoginPage() {
           <div
             className={cn(
               "mb-4 inline-flex size-16 items-center justify-center rounded-2xl border border-white/60 shadow-lg transition-colors duration-300",
-              estado === "success"
-                ? "bg-primary"
-                : estado === "error"
-                  ? "bg-destructive"
-                  : "bg-foreground",
+              estado === "error" ? "bg-destructive" : "bg-primary",
             )}
           >
             {estado === "success" ? (
@@ -171,7 +167,7 @@ export default function LoginPage() {
             ) : estado === "error" ? (
               <AlertCircle className="size-8 text-white" aria-hidden />
             ) : (
-              <Volleyball className="size-8 text-white" aria-hidden />
+              <LogoTalento variante="curva" className="size-11" />
             )}
           </div>
           <h1 className="text-3xl font-extrabold tracking-tight">

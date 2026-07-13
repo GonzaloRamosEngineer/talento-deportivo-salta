@@ -8,8 +8,8 @@ import {
   Landmark,
   Lock,
   ShieldCheck,
-  Volleyball,
 } from "lucide-react";
+import { LogoTalento } from "@/components/logo";
 import { CurvaHero } from "@/components/landing/curva-hero";
 import { Pelota } from "@/components/landing/pelota";
 import { Reveal } from "@/components/landing/reveal";
@@ -66,14 +66,12 @@ export default function Landing() {
       {/* ---------- Nav ---------- */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/85 backdrop-blur">
         <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 md:px-8">
-          <div className="flex items-center gap-2.5">
-            <span className="flex size-9 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <Volleyball className="size-4.5" aria-hidden />
-            </span>
+          <Link href="/" className="flex items-center gap-2.5">
+            <LogoTalento className="size-9" />
             <span className="text-sm font-extrabold tracking-tight">
               Talento Deportivo <span className="text-primary">Salta</span>
             </span>
-          </div>
+          </Link>
           <nav className="flex items-center gap-2 md:gap-5">
             <a
               href="#como-funciona"
@@ -606,9 +604,7 @@ export default function Landing() {
       <footer className="border-t border-border">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-muted-foreground md:flex-row md:px-8">
           <div className="flex items-center gap-2.5">
-            <span className="flex size-7 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Volleyball className="size-3.5" aria-hidden />
-            </span>
+            <LogoTalento className="size-7" />
             <span className="font-bold text-foreground">
               Talento Deportivo Salta
             </span>

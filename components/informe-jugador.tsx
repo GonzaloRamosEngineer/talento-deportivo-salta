@@ -6,8 +6,8 @@ import {
   Loader2,
   Printer,
   ShieldCheck,
-  Volleyball,
 } from "lucide-react";
+import { LogoTalento } from "@/components/logo";
 import type { Deportista } from "@/lib/mock-data";
 import {
   CLUB,
@@ -131,9 +131,7 @@ export function InformeJugador({
         {/* Membrete */}
         <div className="flex items-center justify-between border-b border-border pb-4">
           <div className="flex items-center gap-3">
-            <span className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-              <Volleyball className="size-5" aria-hidden />
-            </span>
+            <LogoTalento className="size-10" />
             <span className="leading-tight">
               <span className="block text-sm font-extrabold">
                 Informe de evolución deportiva

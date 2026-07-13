@@ -13,11 +13,11 @@ import {
   Settings,
   LogIn,
   LogOut,
-  Volleyball,
   Check,
   ChevronDown,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { LogoTalento } from "@/components/logo";
 import { CLUB } from "@/lib/mock-data";
 import { crearClienteBrowser } from "@/lib/supabase/client";
 import { PERFILES, usePerfil, type Perfil } from "@/components/perfil-context";
@@ -205,10 +205,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     <div className="flex min-h-dvh w-full">
       {/* ---------- Sidebar (desktop) ---------- */}
       <aside className="fixed inset-y-0 left-0 z-40 hidden w-60 flex-col border-r border-sidebar-border bg-sidebar md:flex">
-        <div className="flex items-center gap-3 px-5 py-6">
-          <div className="flex size-10 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-            <Volleyball className="size-5" aria-hidden />
-          </div>
+        <Link
+          href="/panel"
+          className="flex items-center gap-3 px-5 py-6 transition-opacity hover:opacity-80"
+        >
+          <LogoTalento className="size-10" />
           <div className="leading-tight">
             <p className="text-sm font-extrabold tracking-tight">
               Talento Deportivo
@@ -217,7 +218,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               {perfil === "super_admin" ? "Provincia de Salta" : CLUB.nombre}
             </p>
           </div>
-        </div>
+        </Link>
         <nav className="flex flex-1 flex-col gap-1 px-3">
           {nav.map(({ href, label, icon: Icon }) => {
             const activa = esActiva(pathname, href);
@@ -252,10 +253,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col md:pl-60">
         {/* Header mobile */}
         <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/90 px-4 py-3 backdrop-blur md:hidden">
-          <div className="flex items-center gap-2.5">
-            <div className="flex size-8 items-center justify-center rounded-lg bg-primary text-primary-foreground">
-              <Volleyball className="size-4" aria-hidden />
-            </div>
+          <Link href="/panel" className="flex items-center gap-2.5">
+            <LogoTalento className="size-8" />
             <div className="leading-tight">
               <p className="text-sm font-extrabold tracking-tight">
                 Talento Deportivo
@@ -264,7 +263,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 {perfil === "super_admin" ? "Provincia de Salta" : CLUB.nombre}
               </p>
             </div>
-          </div>
+          </Link>
           <SelectorPerfil compacto />
         </header>
 

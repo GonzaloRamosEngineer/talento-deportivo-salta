@@ -17,10 +17,32 @@ const caveat = Caveat({
   weight: ["400", "700"],
 });
 
+// URL canónica para que og:image y demás metadata salgan absolutas
+// (WhatsApp y las redes lo exigen). Sobreescribible por entorno.
+const SITE_URL =
+  process.env.NEXT_PUBLIC_SITE_URL ?? "https://talentodeportivosalta.vercel.app";
+
 export const metadata: Metadata = {
-  title: "Talento Deportivo",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "Talento Deportivo Salta",
+    template: "%s · Talento Deportivo Salta",
+  },
   description:
-    "Seguimiento de la evolución de deportistas de clubes formadores",
+    "La evolución de cada deportista, medida en serio. Seguimiento longitudinal de deportistas de clubes formadores.",
+  applicationName: "Talento Deportivo Salta",
+  openGraph: {
+    type: "website",
+    url: "/",
+    siteName: "Talento Deportivo Salta",
+    title: "Talento Deportivo Salta",
+    description:
+      "La evolución de cada deportista, medida en serio. Seguimiento longitudinal de deportistas de clubes formadores.",
+    locale: "es_AR",
+  },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
 
 export const viewport: Viewport = {
