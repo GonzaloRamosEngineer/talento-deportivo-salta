@@ -434,7 +434,9 @@ export default function ClubesPlataforma() {
               <div className="flex items-start gap-3.5">
                 <EscudoClub url={c.escudoUrl} nombre={c.nombre} className="size-14" />
                 <div className="min-w-0 flex-1">
-                  <p className="truncate text-base font-extrabold">{c.nombre}</p>
+                  <p className="line-clamp-2 break-words text-base font-extrabold leading-snug">
+                    {c.nombre}
+                  </p>
                   <p className="text-xs text-muted-foreground">
                     {[c.localidad, c.departamento && `Dpto. ${c.departamento}`]
                       .filter(Boolean)

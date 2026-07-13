@@ -33,18 +33,27 @@ function MarcaClub({ perfil, className }: { perfil: Perfil; className: string })
   }
   const nombre = club.club?.nombre ?? CLUB.nombre;
   const escudo = club.club?.escudoUrl;
+  // Nombres largos: hasta 2 líneas prolijas (line-clamp), nunca
+  // desbordar el encuadre ni cortar con "…" en la primera palabra.
   return (
-    <p className={cn("flex items-center gap-1.5", className)}>
+    <p className={cn("flex min-w-0 items-center gap-1.5", className)}>
       {escudo && (
         <EscudoClub url={escudo} nombre={nombre} className="size-4 rounded-[5px] p-0" />
       )}
-      <span className="truncate">{nombre}</span>
+      <span className="line-clamp-2 min-w-0 break-words leading-snug">{nombre}</span>
     </p>
   );
 }
 
-/** Estado de sesión real: "Salir" si hay sesión, "Ingresar" si no. */
-function BotonSesion({ compacto = false }: { compacto?: boolean }) {
+/** Estado de sesión real: "Salir" si hay sesión, "Ingresar" si no.
+ *  `icono`: variante solo-ícono para el header mobile. */
+function BotonSesion({
+  compacto = false,
+  icono = false,
+}: {
+  compacto?: boolean;
+  icono?: boolean;
+}) {
   const router = useRouter();
   const [email, setEmail] = useState<string | null>(null);
   const [cargando, setCargando] = useState(true);
@@ -58,6 +67,33 @@ function BotonSesion({ compacto = false }: { compacto?: boolean }) {
   }, []);
 
   if (cargando) return null;
+
+  if (icono) {
+    if (!email) {
+      return (
+        <Link
+          href="/login"
+          aria-label="Ingresar"
+          className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+        >
+          <LogIn className="size-4" aria-hidden />
+        </Link>
+      );
+    }
+    return (
+      <button
+        onClick={async () => {
+          await crearClienteBrowser().auth.signOut();
+          router.push("/login");
+        }}
+        aria-label={`Salir (${email})`}
+        title={`Salir (${email})`}
+        className="flex size-9 shrink-0 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+      >
+        <LogOut className="size-4" aria-hidden />
+      </button>
+    );
+  }
 
   if (!email) {
     return (
@@ -232,7 +268,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           className="flex items-center gap-3 px-5 py-6 transition-opacity hover:opacity-80"
         >
           <LogoTalento className="size-10" />
-          <div className="leading-tight">
+          <div className="min-w-0 flex-1 leading-tight">
             <p className="text-sm font-extrabold tracking-tight">
               Talento Deportivo
             </p>
@@ -272,10 +308,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* ---------- Contenido ---------- */}
       <div className="flex min-w-0 flex-1 flex-col md:pl-60">
         {/* Header mobile */}
-        <header className="sticky top-0 z-30 flex items-center justify-between border-b border-border bg-background/90 px-4 py-3 backdrop-blur md:hidden">
-          <Link href="/panel" className="flex items-center gap-2.5">
-            <LogoTalento className="size-8" />
-            <div className="leading-tight">
+        <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-border bg-background/90 px-4 py-3 backdrop-blur md:hidden">
+          <Link href="/panel" className="flex min-w-0 flex-1 items-center gap-2.5">
+            <LogoTalento className="size-8 shrink-0" />
+            <div className="min-w-0 flex-1 leading-tight">
               <p className="text-sm font-extrabold tracking-tight">
                 Talento Deportivo
               </p>
@@ -285,7 +321,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               />
             </div>
           </Link>
-          <SelectorPerfil compacto />
+          <div className="flex shrink-0 items-center gap-1">
+            <SelectorPerfil compacto />
+            <BotonSesion icono />
+          </div>
         </header>
 
         <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-28 pt-5 md:px-8 md:pb-12 md:pt-8">
