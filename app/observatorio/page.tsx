@@ -115,20 +115,27 @@ export default function Observatorio() {
       <section className="flex flex-col gap-2">
         <h2 className="text-base font-extrabold">Clubes</h2>
         {clubes.map((c) => (
+          // En pantallas angostas las métricas bajan a su propia fila:
+          // el nombre del club (hasta 2 líneas) nunca queda aplastado.
           <div
             key={c.id}
-            className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4"
+            className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-2xl border border-border bg-card p-4"
           >
             <EscudoClub url={c.escudoUrl} nombre={c.nombre} className="size-11" />
             <span className="min-w-0 flex-1">
-              <span className="block truncate text-sm font-bold">{c.nombre}</span>
+              <span className="line-clamp-2 break-words text-sm font-bold leading-snug">
+                {c.nombre}
+              </span>
               <span className="block text-xs text-muted-foreground">
-                {c.localidad} · {c.categoriasActivas} categorías activas
+                {c.localidad} ·{" "}
+                {c.categoriasActivas === 1
+                  ? "1 categoría activa"
+                  : `${c.categoriasActivas} categorías activas`}
                 {ultimaMedicion.has(c.id) &&
                   ` · última jornada ${formatFecha(ultimaMedicion.get(c.id)!)}`}
               </span>
             </span>
-            <span className="grid shrink-0 grid-cols-3 gap-3 text-center">
+            <span className="grid w-full grid-cols-3 gap-3 border-t border-border pt-3 text-center sm:w-auto sm:border-t-0 sm:pt-0">
               <span>
                 <span className="block text-sm font-extrabold tabular-nums">
                   {c.deportistas}
