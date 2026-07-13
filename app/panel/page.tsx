@@ -12,9 +12,10 @@ import {
   ShieldAlert,
   UserRound,
 } from "lucide-react";
-import { CLUBES, ENTRENADORES, PROFE_DEMO } from "@/lib/mock-data";
+import { ENTRENADORES, PROFE_DEMO } from "@/lib/mock-data";
 import { useDatos } from "@/lib/use-datos";
 import { useAgenda } from "@/lib/use-agenda";
+import { useObservatorio } from "@/lib/use-observatorio";
 import { AlertasRegistro } from "@/components/alertas-registro";
 import { EventoCard } from "@/components/evento-card";
 import { EnElRadar, Proximamente } from "@/components/proximamente";
@@ -36,13 +37,23 @@ const DESTACADOS_DEMO: { deportistaId: string; atributoId: string }[] = [
 ];
 
 function InicioPlataforma() {
-  const totales = CLUBES.reduce(
+  const { cargando, clubes } = useObservatorio();
+  const totales = clubes.reduce(
     (acc, c) => ({
       deportistas: acc.deportistas + c.deportistas,
       mediciones: acc.mediciones + c.medicionesMes,
     }),
     { deportistas: 0, mediciones: 0 },
   );
+
+  if (cargando) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <div>
@@ -55,7 +66,7 @@ function InicioPlataforma() {
       </div>
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-2xl border border-border bg-card p-3.5">
-          <p className="text-2xl font-extrabold">{CLUBES.length}</p>
+          <p className="text-2xl font-extrabold">{clubes.length}</p>
           <p className="text-xs font-medium text-muted-foreground">clubes activos</p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-3.5">
@@ -67,7 +78,7 @@ function InicioPlataforma() {
         <div className="rounded-2xl border border-border bg-card p-3.5">
           <p className="text-2xl font-extrabold">{totales.mediciones}</p>
           <p className="text-xs font-medium text-muted-foreground">
-            mediciones este mes
+            mediciones · 30 días
           </p>
         </div>
       </div>

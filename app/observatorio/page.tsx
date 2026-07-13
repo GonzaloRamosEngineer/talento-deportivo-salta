@@ -1,13 +1,16 @@
 "use client";
 
-import { Landmark, ShieldCheck } from "lucide-react";
-import { ATRIBUTOS, CLUBES } from "@/lib/mock-data";
+import { Landmark, Loader2, ShieldCheck } from "lucide-react";
+import { ATRIBUTOS, formatFecha } from "@/lib/mock-data";
+import { useObservatorio } from "@/lib/use-observatorio";
 import { usePerfil, PERFILES } from "@/components/perfil-context";
+import { AvisoAcceso } from "@/components/aviso-acceso";
 import { MapaSalta } from "@/components/mapa-salta";
 import { EnElRadar, Proximamente } from "@/components/proximamente";
 
 export default function Observatorio() {
   const { perfil, setPerfil, sesionReal } = usePerfil();
+  const { cargando, real, error, clubes, ultimaMedicion } = useObservatorio();
 
   if (perfil !== "super_admin") {
     return (
@@ -31,7 +34,26 @@ export default function Observatorio() {
     );
   }
 
-  const totales = CLUBES.reduce(
+  if (cargando) {
+    return (
+      <div className="flex items-center justify-center gap-2 py-24 text-sm font-semibold text-muted-foreground">
+        <Loader2 className="size-4 animate-spin" aria-hidden />
+        Cargando el observatorio…
+      </div>
+    );
+  }
+  if (error) {
+    return (
+      <AvisoAcceso
+        titulo="No pudimos cargar el observatorio"
+        detalle={error}
+        accionHref="/observatorio"
+        accionLabel="Reintentar"
+      />
+    );
+  }
+
+  const totales = clubes.reduce(
     (acc, c) => ({
       deportistas: acc.deportistas + c.deportistas,
       mediciones: acc.mediciones + c.medicionesMes,
@@ -46,7 +68,11 @@ export default function Observatorio() {
           Observatorio provincial
         </h1>
         <p className="text-sm text-muted-foreground">
-          Deporte formativo de Salta · {CLUBES.length} clubes adheridos
+          Deporte formativo de Salta ·{" "}
+          {clubes.length === 1
+            ? "1 club adherido"
+            : `${clubes.length} clubes adheridos`}
+          {real && " · datos reales del piloto"}
         </p>
       </div>
 
@@ -61,18 +87,18 @@ export default function Observatorio() {
         <div className="rounded-2xl border border-border bg-card p-3.5">
           <p className="text-2xl font-extrabold">{totales.mediciones}</p>
           <p className="text-xs font-medium text-muted-foreground">
-            mediciones este mes
+            mediciones · últimos 30 días
           </p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-3.5">
-          <p className="text-2xl font-extrabold">{CLUBES.length}</p>
+          <p className="text-2xl font-extrabold">{clubes.length}</p>
           <p className="text-xs font-medium text-muted-foreground">
             clubes activos
           </p>
         </div>
       </div>
 
-      <MapaSalta />
+      <MapaSalta clubes={clubes} />
 
       {/* La regla de privacidad, visible en la propia UI */}
       <div className="flex items-start gap-2.5 rounded-xl bg-secondary p-3.5 text-sm text-secondary-foreground">
@@ -87,7 +113,7 @@ export default function Observatorio() {
 
       <section className="flex flex-col gap-2">
         <h2 className="text-base font-extrabold">Clubes</h2>
-        {CLUBES.map((c) => (
+        {clubes.map((c) => (
           <div
             key={c.id}
             className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4"
@@ -96,6 +122,8 @@ export default function Observatorio() {
               <span className="block truncate text-sm font-bold">{c.nombre}</span>
               <span className="block text-xs text-muted-foreground">
                 {c.localidad} · {c.categoriasActivas} categorías activas
+                {ultimaMedicion.has(c.id) &&
+                  ` · última jornada ${formatFecha(ultimaMedicion.get(c.id)!)}`}
               </span>
             </span>
             <span className="grid shrink-0 grid-cols-3 gap-3 text-center">
@@ -112,7 +140,7 @@ export default function Observatorio() {
                   {c.medicionesMes}
                 </span>
                 <span className="block text-[10px] text-muted-foreground">
-                  medic./mes
+                  medic. 30 días
                 </span>
               </span>
               <span>

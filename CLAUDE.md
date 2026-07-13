@@ -135,8 +135,22 @@ escuelitas). Pantallas: `/sesiones` (semana + cronograma),
 `/sesiones/[id]` (pasar lista), `/partidos/nuevo`, `/partidos/[id]`
 (resultado), `/club/agenda` (admin: lugares + cronograma). El panel
 (`/panel`) y la tab Sesiones de la ficha también consumen datos
-reales. Siguen en mock: tablero de entrenamiento (/entrenamiento,
-oculto en el panel con sesión real) y observatorio.
+reales. Sigue en mock: tablero de entrenamiento (/entrenamiento,
+oculto en el panel con sesión real).
+
+El observatorio también es real (2026-07-12, migración
+`20260712231049_observatorio_agregados.sql` APLICADA): la ÚNICA
+ventana de la plataforma a los datos es la RPC `observatorio_clubes()`
+— security definer con el gate `es_plataforma()` (app_metadata)
+ADENTRO, devuelve exclusivamente totales por club (deportistas
+activos, mediciones 30 días, % consentimiento, categorías activas,
+última jornada). El RLS de la plataforma (0 filas en todo) NO se tocó
+y no debe tocarse; cualquier métrica nueva del observatorio se agrega
+como columna agregada de esa RPC, jamás como policy. `club.departamento`
+ubica al club en el mapa IGN (lo carga la plataforma por service
+role). Frontend: `lib/use-observatorio.ts` (dual mock/real) alimenta
+/observatorio y el panel de plataforma; `MapaSalta` recibe los clubes
+por prop.
 `scripts/sembrar-demo-9na.mjs [--limpiar]` siembra 3 deportistas demo
 con historial; `scripts/limpiar-e2e-agenda.mjs [--verificar]` verifica
 y limpia el e2e de agenda.

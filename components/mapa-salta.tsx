@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { MapPin } from "lucide-react";
-import { CLUBES } from "@/lib/mock-data";
+import type { ClubResumen } from "@/lib/mock-data";
 import {
   SALTA_DEPARTAMENTOS,
   SALTA_VIEWBOX,
@@ -21,13 +21,14 @@ interface StatsDepto {
 
 const SIN_DATOS = "var(--muted)";
 
-export function MapaSalta() {
+export function MapaSalta({ clubes }: { clubes: ClubResumen[] }) {
   const [seleccionado, setSeleccionado] = useState<string>("Capital");
   const [hovered, setHovered] = useState<string | null>(null);
 
   const stats = useMemo(() => {
     const porDepto = new Map<string, StatsDepto>();
-    for (const c of CLUBES) {
+    for (const c of clubes) {
+      if (!c.departamento) continue; // sin ubicación cargada: no se mapea
       const s = porDepto.get(c.departamento) ?? {
         clubes: [],
         deportistas: 0,
@@ -39,9 +40,10 @@ export function MapaSalta() {
       porDepto.set(c.departamento, s);
     }
     return porDepto;
-  }, []);
+  }, [clubes]);
 
   const maxDeportistas = Math.max(
+    1,
     ...Array.from(stats.values()).map((s) => s.deportistas),
   );
 

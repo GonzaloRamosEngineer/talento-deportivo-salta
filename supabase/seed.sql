@@ -40,9 +40,13 @@ where d.nombre = 'Fútbol'
 on conflict (coalesce(disciplina_id, '00000000-0000-0000-0000-000000000000'::uuid), nombre) do nothing;
 
 -- ---------- Club piloto: Antoniana ----------
-insert into club (nombre, localidad)
-select 'Club Atlético Antoniana', 'Salta'
+insert into club (nombre, localidad, departamento)
+select 'Club Atlético Antoniana', 'Salta', 'Capital'
 where not exists (select 1 from club where nombre = 'Club Atlético Antoniana');
+
+-- Ubicación en el mapa para clubes sembrados antes de la columna
+update club set departamento = 'Capital'
+ where nombre = 'Club Atlético Antoniana' and departamento is null;
 
 -- ---------- Categorías reales del club (cohortes 2026) ----------
 insert into categoria (club_id, disciplina_id, nombre, tipo, anio_nacimiento)
