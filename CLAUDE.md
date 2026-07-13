@@ -117,10 +117,29 @@ el mock (la demo pública sigue viva) y con sesión real arma
 desde Supabase con UUIDs reales — RLS + categorías asignadas acotan
 el alcance, sin filtro cliente propio. Al escribir pantallas nuevas:
 consumir `useDatos()`, NUNCA importar `DEPORTISTAS`/`CATEGORIAS`
-directo (los ids del mock no son los de la base). Siguen en mock:
-home/panel, agenda (sesiones/partidos), tablero de entrenamiento y
-observatorio. `scripts/sembrar-demo-9na.mjs [--limpiar]` siembra 3
-deportistas demo con historial para mostrar la curva.
+directo (los ids del mock no son los de la base).
+
+La agenda también es real (2026-07-12): `lib/use-agenda.ts` es el
+segundo hook dual — recibe el `useDatos()` de la página (nunca lo
+duplica) y arma `Sesion`/`Partido`/`Horario`/`Lugar` con las mismas
+interfaces del mock. Tres decisiones de diseño a respetar:
+(1) **asistencia POR EXCEPCIÓN**: en `sesion_asistencia` solo se
+guardan las FALTAS (`presente=false`); el hook materializa la lista
+completa contra el plantel actual, y al guardar se borran y reinsertan
+solo las ausencias. (2) **sesiones virtuales**: la semana se genera
+del cronograma (`horario_entrenamiento`); una sesión sin registrar es
+virtual (id `v_<horarioId>_<fecha>`) y recién se inserta en
+`sesion_entrenamiento` al pasar lista o cancelarla. (3) los partidos
+guardan SOLO datos grupales (citación + marcador; sin marcador en
+escuelitas). Pantallas: `/sesiones` (semana + cronograma), 
+`/sesiones/[id]` (pasar lista), `/partidos/nuevo`, `/partidos/[id]`
+(resultado), `/club/agenda` (admin: lugares + cronograma). El panel
+(`/panel`) y la tab Sesiones de la ficha también consumen datos
+reales. Siguen en mock: tablero de entrenamiento (/entrenamiento,
+oculto en el panel con sesión real) y observatorio.
+`scripts/sembrar-demo-9na.mjs [--limpiar]` siembra 3 deportistas demo
+con historial; `scripts/limpiar-e2e-agenda.mjs [--verificar]` verifica
+y limpia el e2e de agenda.
 
 El 2026-07-12 se aplicó la migración inicial al proyecto Supabase real
 (v5 + v6 alcance por categoría + v7 agenda/partidos, con RLS completo)

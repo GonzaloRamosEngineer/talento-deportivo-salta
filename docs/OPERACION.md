@@ -83,7 +83,7 @@ esconde). Sin DNI real: `doc_interno`.
   select ni ofrece las otras; RLS lo garantiza igual), con sugerencia
   de categoría por cohorte al elegir la fecha de nacimiento. Queda
   listo para cargar al siguiente de la misma categoría. La lista de
-  /deportistas sigue siendo mock (fase wiring pendiente). Para la
+  /deportistas y la ficha ya son reales (wiring 2026-07-12). Para la
   carga masiva inicial de un club real: planilla → script con
   service role (como hicimos en DMGFit), no UI.
 - **Prueba e2e**: `scripts/limpiar-e2e.mjs` verifica y limpia los
@@ -94,11 +94,29 @@ esconde). Sin DNI real: `doc_interno`.
 
 Jornada de medición (atributo → categoría → carga de corrido),
 sesiones con estado, asistencia POR EXCEPCIÓN (todos presentes por
-defecto, se tocan solo las faltas — `presente default true` ya está
-en el esquema), partidos con citación.
+defecto, se tocan solo las faltas), partidos con citación y resultado.
 
-- **Hoy**: UI completa en mocks; esquema completo en la base.
-- **Falta (fase wiring)**: conectar las pantallas.
+- **Hoy (construido 2026-07-12)**: TODO real. La secuencia de agenda:
+  1. El **admin** carga lugares y el cronograma semanal fijo por
+     categoría en `/club/agenda` ("9ª: martes y jueves 18:00 en el
+     predio"). Se hace UNA vez por temporada.
+  2. La agenda (`/sesiones`) arma la semana sola: cada horario genera
+     una sesión **virtual** ("programada", id `v_…`) que NO existe en
+     la base todavía.
+  3. El **profe** abre la sesión del día y **pasa lista**: todos
+     arrancan presentes, toca solo a los que faltaron y guarda. Recién
+     ahí se escribe `sesion_entrenamiento` (estado `realizada`) y UNA
+     fila en `sesion_asistencia` POR CADA FALTA (`presente=false`) —
+     nunca se insertan los presentes. Si no se entrenó, "No se
+     entrena" la guarda como `cancelada` con motivo.
+  4. Los **partidos** se cargan a mano (`/partidos/nuevo`): rival,
+     cancha, citación (arranca todo el plantel tildado, se destilda
+     al que no va). El resultado se carga después, desde el detalle —
+     y en escuelitas no hay marcador, a propósito.
+- **Prueba e2e**: `scripts/limpiar-e2e-agenda.mjs [--verificar]`
+  verifica en la base el contrato por excepción (1 sola fila de
+  asistencia para una sesión con 1 falta) y limpia lo que crea el
+  recorrido.
 
 ## Los 4 accesos demo (login público)
 

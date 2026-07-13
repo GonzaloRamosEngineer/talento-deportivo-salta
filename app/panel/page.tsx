@@ -7,21 +7,14 @@ import {
   Dumbbell,
   Eye,
   Landmark,
+  Loader2,
+  Settings,
   ShieldAlert,
   UserRound,
 } from "lucide-react";
-import {
-  ATRIBUTOS,
-  CATEGORIAS,
-  CLUB,
-  CLUBES,
-  DEPORTISTAS,
-  ENTRENADORES,
-  HOY_DEMO,
-  PROFE_DEMO,
-  eventosDe,
-  getCategoria,
-} from "@/lib/mock-data";
+import { CLUBES, ENTRENADORES, PROFE_DEMO } from "@/lib/mock-data";
+import { useDatos } from "@/lib/use-datos";
+import { useAgenda } from "@/lib/use-agenda";
 import { EventoCard } from "@/components/evento-card";
 import { EnElRadar, Proximamente } from "@/components/proximamente";
 import { tendencia } from "@/lib/tendencia";
@@ -30,9 +23,10 @@ import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { Sparkline } from "@/components/sparkline";
 import { usePerfil } from "@/components/perfil-context";
 
-// Selección curada para la demo: cubre los tres estados y las
-// categorías de la profesora demo (se filtra por alcance del perfil).
-const DESTACADOS: { deportistaId: string; atributoId: string }[] = [
+// Selección curada para la demo mock: cubre los tres estados y las
+// categorías de la profesora demo. Con sesión real, los destacados se
+// calculan de las series reales (últimas evoluciones con historia).
+const DESTACADOS_DEMO: { deportistaId: string; atributoId: string }[] = [
   { deportistaId: "d01", atributoId: "velocidad30" },
   { deportistaId: "d05", atributoId: "salto" },
   { deportistaId: "d03", atributoId: "velocidad30" },
@@ -103,45 +97,97 @@ function InicioPlataforma() {
 
 export default function Inicio() {
   const { perfil, permisos } = usePerfil();
-  const hoy = new Date();
+  const datos = useDatos();
+  const agenda = useAgenda(datos);
 
   if (perfil === "super_admin") return <InicioPlataforma />;
 
-  // Alcance del perfil dentro del club
-  const enAlcance = (categoriaId: string) =>
-    !permisos.categorias || permisos.categorias.includes(categoriaId);
-  const deportistas = DEPORTISTAS.filter((d) => enAlcance(d.categoriaId));
+  if (agenda.cargando) {
+    return (
+      <div className="flex justify-center py-20">
+        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
+      </div>
+    );
+  }
+
+  const hoy = agenda.hoy;
+  const deportistas = datos.deportistas; // ya acotados al alcance
 
   // Próximos eventos de la agenda (entrenamientos y partidos mezclados)
-  const proximos = eventosDe(permisos.categorias)
-    .filter((e) => new Date(e.fecha) >= HOY_DEMO)
+  const proximos = [
+    ...agenda.sesiones.map((sesion) => ({
+      tipo: "sesion" as const,
+      fecha: sesion.fecha,
+      sesion,
+    })),
+    ...agenda.partidos.map((partido) => ({
+      tipo: "partido" as const,
+      fecha: partido.fecha,
+      partido,
+    })),
+  ]
+    .filter((e) => new Date(e.fecha) >= hoy)
+    .sort((a, b) => a.fecha.localeCompare(b.fecha))
     .slice(0, 2);
+
   const sinConsentimiento = deportistas.filter((d) => !d.consentimientoOk);
-  const medicionesJunio = deportistas.reduce(
+
+  // Mediciones del mes de referencia (el de HOY, demo o real)
+  const mesPrefix = datos.real
+    ? `${hoy.getFullYear()}-${String(hoy.getMonth() + 1).padStart(2, "0")}`
+    : "2026-06";
+  const mesNombre = datos.real
+    ? hoy.toLocaleDateString("es-AR", { month: "long" })
+    : "junio";
+  const medicionesMes = deportistas.reduce(
     (acc, d) =>
       acc +
       Object.values(d.mediciones)
         .flat()
-        .filter((m) => m.fecha.startsWith("2026-06")).length,
+        .filter((m) => m.fecha.startsWith(mesPrefix)).length,
     0,
   );
-  const destacados = DESTACADOS.filter((x) => {
-    const d = DEPORTISTAS.find((dd) => dd.id === x.deportistaId);
-    return d && enAlcance(d.categoriaId);
-  }).slice(0, 3);
 
+  // Evoluciones destacadas: en la demo, la selección curada; con datos
+  // reales, las series con más historia medidas más recientemente.
+  const destacados = datos.real
+    ? deportistas
+        .flatMap((d) =>
+          Object.entries(d.mediciones)
+            .filter(([, serie]) => serie.length >= 2)
+            .map(([atributoId, serie]) => ({
+              deportistaId: d.id,
+              atributoId,
+              ultima: serie[serie.length - 1].fecha,
+              puntos: serie.length,
+            })),
+        )
+        .sort(
+          (a, b) => b.ultima.localeCompare(a.ultima) || b.puntos - a.puntos,
+        )
+        .filter(
+          // un destacado por deportista, para variar
+          (x, i, arr) =>
+            arr.findIndex((y) => y.deportistaId === x.deportistaId) === i,
+        )
+        .slice(0, 3)
+    : DESTACADOS_DEMO.filter((x) =>
+        deportistas.some((d) => d.id === x.deportistaId),
+      ).slice(0, 3);
+
+  const nombrePila = datos.real
+    ? (datos.membresiaNombre?.split(" ")[0] ?? "")
+    : PROFE_DEMO.nombre.split(" ")[0];
   const titulo =
     perfil === "profesor"
-      ? `Hola, ${PROFE_DEMO.nombre.split(" ")[0]} 👋`
+      ? `Hola, ${nombrePila} 👋`
       : perfil === "admin_club"
         ? "Panel del club"
         : "Consulta del club";
   const subtitulo =
     perfil === "profesor"
-      ? CATEGORIAS.filter((c) => permisos.categorias!.includes(c.id))
-          .map((c) => c.nombre)
-          .join(" · ")
-      : `${CLUB.nombre} · ${(() => {
+      ? datos.categorias.map((c) => c.nombre).join(" · ")
+      : `${datos.clubNombre} · ${(() => {
           const f = hoy.toLocaleDateString("es-AR", {
             weekday: "long",
             day: "numeric",
@@ -184,24 +230,26 @@ export default function Inicio() {
             </span>
             <ChevronRight className="size-5 shrink-0 opacity-80" aria-hidden />
           </Link>
-          <Link
-            href="/entrenamiento"
-            className="-mt-2 flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 transition-colors hover:border-primary/40"
-          >
-            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
-              <Dumbbell className="size-4.5" aria-hidden />
-            </span>
-            <span className="flex-1 text-sm font-bold">
-              Tablero de entrenamiento
-              <span className="block text-xs font-medium text-muted-foreground">
-                Asigná áreas de trabajo a tu plantel
+          {!datos.real && (
+            <Link
+              href="/entrenamiento"
+              className="-mt-2 flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 transition-colors hover:border-primary/40"
+            >
+              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+                <Dumbbell className="size-4.5" aria-hidden />
               </span>
-            </span>
-            <ChevronRight
-              className="size-4 shrink-0 text-muted-foreground"
-              aria-hidden
-            />
-          </Link>
+              <span className="flex-1 text-sm font-bold">
+                Tablero de entrenamiento
+                <span className="block text-xs font-medium text-muted-foreground">
+                  Asigná áreas de trabajo a tu plantel
+                </span>
+              </span>
+              <ChevronRight
+                className="size-4 shrink-0 text-muted-foreground"
+                aria-hidden
+              />
+            </Link>
+          )}
         </>
       )}
 
@@ -214,9 +262,9 @@ export default function Inicio() {
           </p>
         </div>
         <div className="rounded-2xl border border-border bg-card p-3.5">
-          <p className="text-2xl font-extrabold">{medicionesJunio}</p>
+          <p className="text-2xl font-extrabold">{medicionesMes}</p>
           <p className="text-xs font-medium text-muted-foreground">
-            mediciones en junio
+            mediciones en {mesNombre}
           </p>
         </div>
         <Link
@@ -238,14 +286,21 @@ export default function Inicio() {
       {/* Gestión del club: SOLO admin */}
       {permisos.gestiona && (
         <section className="flex flex-col gap-2.5">
-          <h2 className="text-base font-extrabold">Gestión del club</h2>
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-base font-extrabold">Gestión del club</h2>
+            {datos.real && (
+              <Link href="/club" className="text-sm font-semibold text-primary">
+                Ir a gestión
+              </Link>
+            )}
+          </div>
           <div className="rounded-2xl border border-border bg-card">
             <div className="border-b border-border px-4 py-3">
               <p className="text-sm font-bold">
                 Consentimientos pendientes ({sinConsentimiento.length})
               </p>
               <ul className="mt-1.5 flex flex-col gap-1">
-                {sinConsentimiento.map((d) => (
+                {sinConsentimiento.slice(0, 6).map((d) => (
                   <li key={d.id}>
                     <Link
                       href={`/deportistas/${d.id}`}
@@ -254,7 +309,7 @@ export default function Inicio() {
                       <ShieldAlert className="size-3.5 text-warning" aria-hidden />
                       <span className="flex-1 truncate">
                         {d.apellido}, {d.nombre} ·{" "}
-                        {getCategoria(d.categoriaId)?.nombre}
+                        {datos.categorias.find((c) => c.id === d.categoriaId)?.nombre}
                       </span>
                       <ChevronRight className="size-3.5" aria-hidden />
                     </Link>
@@ -267,27 +322,43 @@ export default function Inicio() {
                 )}
               </ul>
             </div>
-            <div className="px-4 py-3">
-              <p className="text-sm font-bold">Cuerpo técnico</p>
-              <ul className="mt-1.5 flex flex-col gap-1">
-                {ENTRENADORES.map((e) => (
-                  <li
-                    key={e}
-                    className="flex items-center gap-2 text-sm text-muted-foreground"
-                  >
-                    <UserRound className="size-3.5" aria-hidden />
-                    <span className="flex-1">{e}</span>
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
-                      Profesor/a
-                    </span>
-                  </li>
-                ))}
-              </ul>
-              <p className="mt-2 text-[11px] text-muted-foreground">
-                Alta de staff y asignación de categorías: por administración de
-                la plataforma en esta etapa (demo).
-              </p>
-            </div>
+            {datos.real ? (
+              <Link
+                href="/club/agenda"
+                className="flex items-center gap-2.5 px-4 py-3 text-sm font-bold transition-colors hover:bg-muted/50"
+              >
+                <Settings className="size-4 text-muted-foreground" aria-hidden />
+                <span className="flex-1">
+                  Cronograma, lugares, categorías y staff
+                  <span className="block text-xs font-medium text-muted-foreground">
+                    Todo lo institucional vive en Club
+                  </span>
+                </span>
+                <ChevronRight className="size-4 text-muted-foreground" aria-hidden />
+              </Link>
+            ) : (
+              <div className="px-4 py-3">
+                <p className="text-sm font-bold">Cuerpo técnico</p>
+                <ul className="mt-1.5 flex flex-col gap-1">
+                  {ENTRENADORES.map((e) => (
+                    <li
+                      key={e}
+                      className="flex items-center gap-2 text-sm text-muted-foreground"
+                    >
+                      <UserRound className="size-3.5" aria-hidden />
+                      <span className="flex-1">{e}</span>
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide">
+                        Profesor/a
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-[11px] text-muted-foreground">
+                  Alta de staff y asignación de categorías: por administración de
+                  la plataforma en esta etapa (demo).
+                </p>
+              </div>
+            )}
           </div>
         </section>
       )}
@@ -306,6 +377,7 @@ export default function Inicio() {
               <EventoCard
                 key={e.tipo === "sesion" ? e.sesion.id : e.partido.id}
                 evento={e}
+                agenda={agenda}
                 conFecha
               />
             ))}
@@ -324,8 +396,9 @@ export default function Inicio() {
           </div>
           <div className="flex flex-col gap-2">
             {destacados.map(({ deportistaId, atributoId }) => {
-              const d = DEPORTISTAS.find((x) => x.id === deportistaId)!;
-              const a = ATRIBUTOS.find((x) => x.id === atributoId)!;
+              const d = deportistas.find((x) => x.id === deportistaId);
+              const a = datos.atributos.find((x) => x.id === atributoId);
+              if (!d || !a) return null;
               const serie = d.mediciones[atributoId] ?? [];
               const t = tendencia(serie, a);
               return (
@@ -340,7 +413,8 @@ export default function Inicio() {
                       {d.nombre} {d.apellido}
                     </span>
                     <span className="block text-xs text-muted-foreground">
-                      {a.nombre} · {getCategoria(d.categoriaId)?.nombre}
+                      {a.nombre} ·{" "}
+                      {datos.categorias.find((c) => c.id === d.categoriaId)?.nombre}
                     </span>
                   </span>
                   <Sparkline valores={serie.map((m) => m.valor)} />

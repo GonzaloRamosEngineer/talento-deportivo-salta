@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ChevronRight, Layers, Loader2, UserPlus, Users } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronRight,
+  Layers,
+  Loader2,
+  UserPlus,
+  Users,
+} from "lucide-react";
 import { crearClienteBrowser } from "@/lib/supabase/client";
 import { useClub } from "@/lib/use-club";
 import { AvisoAcceso } from "@/components/aviso-acceso";
@@ -17,6 +24,7 @@ export default function ClubPage() {
     staff: number;
     deportistas: number;
     pendientes: number;
+    horarios: number;
   } | null>(null);
 
   const clubId = sesion.membresia?.clubId ?? null;
@@ -29,7 +37,11 @@ export default function ClubPage() {
       supabase.from("membresia").select("id", { count: "exact", head: true }).eq("club_id", clubId),
       supabase.from("deportista").select("id", { count: "exact", head: true }).eq("club_id", clubId),
       supabase.from("deportista").select("id, consentimiento(id)").eq("club_id", clubId),
-    ]).then(([cats, staff, deps, cons]) => {
+      supabase
+        .from("horario_entrenamiento")
+        .select("id", { count: "exact", head: true })
+        .eq("club_id", clubId),
+    ]).then(([cats, staff, deps, cons, hors]) => {
       const sinConsentimiento = (cons.data ?? []).filter(
         (d) => !d.consentimiento || (Array.isArray(d.consentimiento) && d.consentimiento.length === 0),
       ).length;
@@ -38,6 +50,7 @@ export default function ClubPage() {
         staff: staff.count ?? 0,
         deportistas: deps.count ?? 0,
         pendientes: sinConsentimiento,
+        horarios: hors.count ?? 0,
       });
     });
   }, [clubId]);
@@ -75,6 +88,13 @@ export default function ClubPage() {
       titulo: "Staff",
       detalle: "Invitá profes por link, asignales sus categorías, sumá comisión directiva",
       dato: conteos ? `${conteos.staff} personas` : "…",
+    },
+    {
+      href: "/club/agenda",
+      icon: CalendarDays,
+      titulo: "Agenda y lugares",
+      detalle: "Horarios fijos por categoría y canchas — la agenda semanal se arma sola",
+      dato: conteos ? `${conteos.horarios} horarios fijos` : "…",
     },
     {
       href: "/deportistas/nuevo",

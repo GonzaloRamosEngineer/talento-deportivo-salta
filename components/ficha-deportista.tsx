@@ -24,6 +24,7 @@ import {
   sesionesDe,
 } from "@/lib/mock-data";
 import { useDatos, type Datos } from "@/lib/use-datos";
+import { useAgenda } from "@/lib/use-agenda";
 import { crearClienteBrowser } from "@/lib/supabase/client";
 import { tendencia, type Estado } from "@/lib/tendencia";
 import { EstadoBadge } from "@/components/estado-badge";
@@ -133,9 +134,18 @@ export function FichaDeportista({
   const serie = atributo ? (deportista.mediciones[atributo.id] ?? []) : [];
   const t = atributo ? tendencia(serie, atributo) : null;
   const categoria = datos.categorias.find((c) => c.id === deportista.categoriaId);
-  // La agenda todavía no está wireada a la base: con sesión real la
-  // ficha muestra el vacío honesto, no las sesiones del mock.
-  const sesiones = datos.real ? [] : sesionesDe(deportista.id);
+  // Sesiones en las que aparece: reales (asistencia por excepción ya
+  // materializada por useAgenda) o las del mock para la demo.
+  const agenda = useAgenda(datos);
+  const sesiones = datos.real
+    ? agenda.sesiones
+        .filter(
+          (s) =>
+            s.estado === "realizada" &&
+            s.asistencia.some((a) => a.deportistaId === deportista.id),
+        )
+        .sort((a, b) => b.fecha.localeCompare(a.fecha))
+    : sesionesDe(deportista.id);
 
   const fisicas = medidos.filter((a) => a.ambito === "fisico");
   const tecnicas = medidos.filter((a) => a.ambito === "tecnico");

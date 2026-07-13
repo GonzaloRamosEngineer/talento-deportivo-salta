@@ -65,6 +65,8 @@ export interface Lugar {
 // La rutina fija de la semana por categoría (estable por temporada).
 // La agenda se arma desde acá; la sesión es la instancia de un día.
 export interface Horario {
+  /** solo en datos reales (uuid de horario_entrenamiento) */
+  id?: string;
   categoriaId: string;
   diaSemana: number; // 1 = lunes … 7 = domingo
   hora: string; // "18:00"

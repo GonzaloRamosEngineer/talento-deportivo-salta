@@ -9,7 +9,7 @@ export interface SesionClub {
   /** null = sin sesión real */
   usuario: { id: string; email: string | null } | null;
   /** null = sin membresía (visitante o perfil plataforma) */
-  membresia: { id: string; rol: RolMembresia; clubId: string } | null;
+  membresia: { id: string; rol: RolMembresia; clubId: string; nombre: string } | null;
   club: { id: string; nombre: string } | null;
   /** ids REALES de las categorías asignadas; null = alcance de todo el club */
   categoriasAsignadas: string[] | null;
@@ -47,7 +47,7 @@ export function useClub(): SesionClub {
 
       const { data: m } = await supabase
         .from("membresia")
-        .select("id, rol, club_id")
+        .select("id, rol, club_id, nombre")
         .eq("auth_user_id", user.id)
         .maybeSingle();
       if (cancelado) return;
@@ -75,7 +75,7 @@ export function useClub(): SesionClub {
       setEstado({
         cargando: false,
         usuario: { id: user.id, email: user.email ?? null },
-        membresia: { id: m.id, rol: m.rol, clubId: m.club_id },
+        membresia: { id: m.id, rol: m.rol, clubId: m.club_id, nombre: m.nombre },
         club: club ?? null,
         categoriasAsignadas: categorias,
       });

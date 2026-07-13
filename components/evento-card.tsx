@@ -1,13 +1,7 @@
 import Link from "next/link";
 import { ChevronRight, Dumbbell, MapPin, Trophy } from "lucide-react";
-import {
-  HOY_DEMO,
-  getAtributo,
-  getCategoria,
-  getLugar,
-  lugarDePartido,
-  type Evento,
-} from "@/lib/mock-data";
+import type { Evento, Partido } from "@/lib/mock-data";
+import type { Agenda } from "@/lib/use-agenda";
 import { cn } from "@/lib/utils";
 
 function hora(fecha: string) {
@@ -30,24 +24,40 @@ function BloqueFecha({ fecha }: { fecha: string }) {
   );
 }
 
+export function lugarDePartido(p: Partido, agenda: Agenda): string {
+  return p.condicion === "local"
+    ? (agenda.lugares.find((l) => l.id === p.lugarId)?.nombre ?? "Sede")
+    : (p.lugarTexto ?? "Cancha del rival");
+}
+
 // Card compartida de agenda: entrenamiento o partido. El partido se
 // distingue (icono Trophy en primario); en escuelitas no hay marcador.
+// Los nombres (categoría, lugar, foco) se resuelven contra `agenda`,
+// que puede venir del mock o de la base — misma card para ambos.
 export function EventoCard({
   evento,
+  agenda,
   conFecha = false,
 }: {
   evento: Evento;
+  agenda: Agenda;
   conFecha?: boolean;
 }) {
-  const categoria = getCategoria(
-    evento.tipo === "sesion"
-      ? evento.sesion.categoriaId
-      : evento.partido.categoriaId,
+  const categoria = agenda.datos.categorias.find(
+    (c) =>
+      c.id ===
+      (evento.tipo === "sesion"
+        ? evento.sesion.categoriaId
+        : evento.partido.categoriaId),
   );
 
   if (evento.tipo === "sesion") {
     const s = evento.sesion;
     const presentes = s.asistencia.filter((a) => a.presente).length;
+    const foco = s.atributoFocoId
+      ? agenda.datos.atributos.find((a) => a.id === s.atributoFocoId)
+      : null;
+    const lugar = agenda.lugares.find((l) => l.id === s.lugarId);
     return (
       <Link
         href={`/sesiones/${s.id}`}
@@ -66,12 +76,11 @@ export function EventoCard({
         <span className="min-w-0 flex-1">
           <span className="block truncate text-sm font-bold">
             {categoria?.nombre} · {hora(s.fecha)} h
-            {s.atributoFocoId &&
-              ` · ${getAtributo(s.atributoFocoId)?.nombre}`}
+            {foco && ` · ${foco.nombre}`}
           </span>
           <span className="mt-0.5 flex items-center gap-1 truncate text-xs text-muted-foreground">
             <MapPin className="size-3 shrink-0" aria-hidden />
-            {getLugar(s.lugarId)?.nombre} · {s.entrenador}
+            {lugar?.nombre ?? "Lugar a definir"} · {s.entrenador}
           </span>
         </span>
         {s.estado === "cancelada" && (
@@ -90,7 +99,7 @@ export function EventoCard({
   }
 
   const p = evento.partido;
-  const jugado = new Date(p.fecha) < HOY_DEMO;
+  const jugado = new Date(p.fecha) < agenda.hoy;
   const esEscuelita = categoria?.tipo === "escuelita";
   return (
     <Link
