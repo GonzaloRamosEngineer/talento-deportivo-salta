@@ -13,6 +13,7 @@ import {
 import { crearClienteBrowser } from "@/lib/supabase/client";
 import { useClub } from "@/lib/use-club";
 import { AvisoAcceso } from "@/components/aviso-acceso";
+import { EscudoClub } from "@/components/escudo-club";
 
 // Hub de gestión del club (admin): la cadena de alta de
 // docs/OPERACION.md hecha pantalla — categorías → staff → deportistas.
@@ -109,13 +110,20 @@ export default function ClubPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight">
-          {sesion.club?.nombre ?? "Tu club"}
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Gestión del club — datos reales, guardados en la base
-        </p>
+      <div className="flex items-center gap-3.5">
+        <EscudoClub
+          url={sesion.club?.escudoUrl}
+          nombre={sesion.club?.nombre ?? "Tu club"}
+          className="size-14"
+        />
+        <div className="min-w-0">
+          <h1 className="truncate text-2xl font-extrabold tracking-tight">
+            {sesion.club?.nombre ?? "Tu club"}
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Gestión del club — datos reales, guardados en la base
+          </p>
+        </div>
       </div>
 
       <div className="grid gap-3">

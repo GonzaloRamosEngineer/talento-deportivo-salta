@@ -107,6 +107,8 @@ export interface ClubResumen {
   nombre: string;
   localidad: string;
   departamento: string; // nombre IGN del departamento (para el mapa)
+  /** escudo (solo datos reales; el mock usa el placeholder) */
+  escudoUrl?: string | null;
   esEsteClub: boolean;
   // métricas AGREGADAS: lo único que sale del club hacia el observatorio
   deportistas: number;

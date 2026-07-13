@@ -28,6 +28,7 @@ interface FilaObservatorio {
   nombre: string;
   localidad: string | null;
   departamento: string | null;
+  escudo_url: string | null;
   deportistas: number;
   mediciones_30d: number;
   consentimiento_pct: number;
@@ -81,6 +82,7 @@ export function useObservatorio(): Observatorio {
         nombre: c.nombre,
         localidad: c.localidad ?? "",
         departamento: c.departamento ?? "",
+        escudoUrl: c.escudo_url,
         esEsteClub: false,
         deportistas: c.deportistas,
         medicionesMes: c.mediciones_30d,

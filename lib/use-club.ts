@@ -10,7 +10,7 @@ export interface SesionClub {
   usuario: { id: string; email: string | null } | null;
   /** null = sin membresía (visitante o perfil plataforma) */
   membresia: { id: string; rol: RolMembresia; clubId: string; nombre: string } | null;
-  club: { id: string; nombre: string } | null;
+  club: { id: string; nombre: string; escudoUrl: string | null } | null;
   /** ids REALES de las categorías asignadas; null = alcance de todo el club */
   categoriasAsignadas: string[] | null;
 }
@@ -61,7 +61,11 @@ export function useClub(): SesionClub {
       }
 
       const [{ data: club }, categorias] = await Promise.all([
-        supabase.from("club").select("id, nombre").eq("id", m.club_id).maybeSingle(),
+        supabase
+          .from("club")
+          .select("id, nombre, escudo_url")
+          .eq("id", m.club_id)
+          .maybeSingle(),
         m.rol === "entrenador"
           ? supabase
               .from("membresia_categoria")
@@ -76,7 +80,9 @@ export function useClub(): SesionClub {
         cargando: false,
         usuario: { id: user.id, email: user.email ?? null },
         membresia: { id: m.id, rol: m.rol, clubId: m.club_id, nombre: m.nombre },
-        club: club ?? null,
+        club: club
+          ? { id: club.id, nombre: club.nombre, escudoUrl: club.escudo_url ?? null }
+          : null,
         categoriasAsignadas: categorias,
       });
     }

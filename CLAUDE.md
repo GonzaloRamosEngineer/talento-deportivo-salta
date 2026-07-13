@@ -91,9 +91,9 @@ Construir SOLO:
   (talla, peso) se registra sin juzgar mejora/retroceso.
 
 NO construir todavía: finanzas, valorización, gamificación/logros,
-tácticas, alta/onboarding de nuevos clubes (se siembra un solo club
-—Antoniana— a mano), multi-disciplina por deportista, historial de
-cambio de categoría, offline-sync real.
+tácticas, multi-disciplina por deportista, historial de cambio de
+categoría, offline-sync real. (El alta de clubes ya salió de esta
+lista: es la pantalla de plataforma `/plataforma/clubes`, Ola 1.5.)
 
 ## Etapa actual: backend real creado, UI en transición mock→real
 El circuito de gestión del admin YA es real (2026-07-12): `/club`
@@ -154,6 +154,22 @@ por prop.
 `scripts/sembrar-demo-9na.mjs [--limpiar]` siembra 3 deportistas demo
 con historial; `scripts/limpiar-e2e-agenda.mjs [--verificar]` verifica
 y limpia el e2e de agenda.
+
+El alta de clubes es por pantalla (Ola 1.5, 2026-07-13, migración
+`20260713064245_club_escudo.sql`): `/plataforma/clubes` (solo perfil
+plataforma con sesión real) crea el club + el link de acceso de su
+primer admin_club, edita datos y gestiona el ESCUDO del club
+(`club.escudo_url`, bucket público `escudos` — lectura pública,
+escritura SOLO service role, sin policies de INSERT). Las server
+actions (`app/plataforma/actions.ts`) gatean por
+`app_metadata.plataforma` y usan el cliente admin: el RLS de
+`club`/`membresia` sigue sin INSERT para nadie — mantenerlo así.
+El escudo se muestra vía `components/escudo-club.tsx` (fallback de
+ícono si no hay imagen): shell, hub /club, panel, observatorio
+(columna `escudo_url` de la RPC) e informe imprimible. Gotcha:
+`/auth/confirmar` arma el origin del redirect desde el header
+Host/x-forwarded-host (con `dev -H 0.0.0.0`, request.url trae la
+dirección de bind y el redirect perdería las cookies).
 
 Ciclo de vida del deportista completo (2026-07-12):
 `/deportistas/[id]/editar` (lápiz en la ficha, solo sesión real +

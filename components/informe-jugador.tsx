@@ -8,6 +8,7 @@ import {
   ShieldCheck,
 } from "lucide-react";
 import { LogoTalento } from "@/components/logo";
+import { EscudoClub } from "@/components/escudo-club";
 import type { Deportista } from "@/lib/mock-data";
 import {
   CLUB,
@@ -142,14 +143,23 @@ export function InformeJugador({
               </span>
             </span>
           </div>
-          <span className="text-right text-xs text-muted-foreground">
-            Generado el{" "}
-            {new Date().toLocaleDateString("es-AR", {
-              day: "numeric",
-              month: "long",
-              year: "numeric",
-            })}
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="text-right text-xs text-muted-foreground">
+              Generado el{" "}
+              {new Date().toLocaleDateString("es-AR", {
+                day: "numeric",
+                month: "long",
+                year: "numeric",
+              })}
+            </span>
+            {datos.clubEscudoUrl && (
+              <EscudoClub
+                url={datos.clubEscudoUrl}
+                nombre={datos.clubNombre}
+                className="size-10"
+              />
+            )}
+          </div>
         </div>
 
         {/* Datos del jugador */}

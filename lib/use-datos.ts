@@ -33,6 +33,8 @@ export interface Datos {
   categorias: Categoria[];
   deportistas: Deportista[];
   clubNombre: string;
+  /** escudo del club (null en la demo mock o si no se cargó) */
+  clubEscudoUrl: string | null;
   /** para `medicion.registrado_por` al guardar una jornada */
   membresiaId: string | null;
   /** nombre real del staff logueado (null en la demo mock) */
@@ -266,6 +268,7 @@ export function useDatos(): Datos {
         categorias: mock.categorias,
         deportistas: mock.deportistas,
         clubNombre: CLUB.nombre,
+        clubEscudoUrl: null,
         membresiaId: null,
         membresiaNombre: null,
         clubId: null,
@@ -284,6 +287,7 @@ export function useDatos(): Datos {
       ),
       deportistas: listo?.deportistas ?? [],
       clubNombre: club.club?.nombre ?? CLUB.nombre,
+      clubEscudoUrl: club.club?.escudoUrl ?? null,
       membresiaId,
       membresiaNombre: club.membresia?.nombre ?? null,
       clubId: club.membresia?.clubId ?? null,

@@ -1,6 +1,7 @@
 "use client";
 
 import { Landmark, Loader2, ShieldCheck } from "lucide-react";
+import { EscudoClub } from "@/components/escudo-club";
 import { ATRIBUTOS, formatFecha } from "@/lib/mock-data";
 import { useObservatorio } from "@/lib/use-observatorio";
 import { usePerfil, PERFILES } from "@/components/perfil-context";
@@ -118,6 +119,7 @@ export default function Observatorio() {
             key={c.id}
             className="flex items-center gap-4 rounded-2xl border border-border bg-card p-4"
           >
+            <EscudoClub url={c.escudoUrl} nombre={c.nombre} className="size-11" />
             <span className="min-w-0 flex-1">
               <span className="block truncate text-sm font-bold">{c.nombre}</span>
               <span className="block text-xs text-muted-foreground">

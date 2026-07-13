@@ -11,6 +11,7 @@ import {
   Dumbbell,
   Landmark,
   Settings,
+  Shield,
   LogIn,
   LogOut,
   Check,
@@ -18,9 +19,29 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LogoTalento } from "@/components/logo";
+import { EscudoClub } from "@/components/escudo-club";
 import { CLUB } from "@/lib/mock-data";
 import { crearClienteBrowser } from "@/lib/supabase/client";
+import { useClub } from "@/lib/use-club";
 import { PERFILES, usePerfil, type Perfil } from "@/components/perfil-context";
+
+/** Subtítulo de la marca: club real (con escudo si tiene) o el mock. */
+function MarcaClub({ perfil, className }: { perfil: Perfil; className: string }) {
+  const club = useClub();
+  if (perfil === "super_admin") {
+    return <p className={className}>Provincia de Salta</p>;
+  }
+  const nombre = club.club?.nombre ?? CLUB.nombre;
+  const escudo = club.club?.escudoUrl;
+  return (
+    <p className={cn("flex items-center gap-1.5", className)}>
+      {escudo && (
+        <EscudoClub url={escudo} nombre={nombre} className="size-4 rounded-[5px] p-0" />
+      )}
+      <span className="truncate">{nombre}</span>
+    </p>
+  );
+}
 
 /** Estado de sesión real: "Salir" si hay sesión, "Ingresar" si no. */
 function BotonSesion({ compacto = false }: { compacto?: boolean }) {
@@ -87,11 +108,12 @@ function navPara(perfil: Perfil): NavItem[] {
     ];
   }
   if (perfil === "super_admin") {
-    // La plataforma NO navega datos individuales de ningún club:
-    // su mundo es el observatorio (solo agregados).
+    // La plataforma NO navega datos individuales de ningún club: su
+    // mundo es el observatorio (agregados) y el alta institucional.
     return [
       { href: "/panel", label: "Inicio", icon: Home },
       { href: "/observatorio", label: "Observatorio", icon: Landmark, destacado: true },
+      { href: "/plataforma/clubes", label: "Clubes", icon: Shield },
     ];
   }
   const base: NavItem[] = [
@@ -214,9 +236,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             <p className="text-sm font-extrabold tracking-tight">
               Talento Deportivo
             </p>
-            <p className="text-xs text-muted-foreground">
-              {perfil === "super_admin" ? "Provincia de Salta" : CLUB.nombre}
-            </p>
+            <MarcaClub perfil={perfil} className="text-xs text-muted-foreground" />
           </div>
         </Link>
         <nav className="flex flex-1 flex-col gap-1 px-3">
@@ -259,9 +279,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <p className="text-sm font-extrabold tracking-tight">
                 Talento Deportivo
               </p>
-              <p className="text-[11px] text-muted-foreground">
-                {perfil === "super_admin" ? "Provincia de Salta" : CLUB.nombre}
-              </p>
+              <MarcaClub
+                perfil={perfil}
+                className="text-[11px] text-muted-foreground"
+              />
             </div>
           </Link>
           <SelectorPerfil compacto />

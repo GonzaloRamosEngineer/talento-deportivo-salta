@@ -13,7 +13,15 @@ import { NextResponse, type NextRequest } from "next/server";
  * server component no llegaban al browser en este Next.
  */
 export async function GET(request: NextRequest) {
-  const { searchParams, origin } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
+  // Origen desde el header Host (o x-forwarded-host detrás de proxy):
+  // request.url puede traer la dirección de BIND del server (ej.
+  // 0.0.0.0 con `dev -H 0.0.0.0`) y un redirect a otro host pierde
+  // las cookies de sesión que este handler acaba de setear.
+  const host =
+    request.headers.get("x-forwarded-host") ?? request.headers.get("host");
+  const proto = request.headers.get("x-forwarded-proto") ?? "http";
+  const origin = host ? `${proto}://${host}` : new URL(request.url).origin;
   const tokenHash = searchParams.get("token_hash");
   const tipo = searchParams.get("type");
 

@@ -26,12 +26,25 @@ club). Razones: control de calidad del piloto, y las tablas `club` y
 `membresia` inicial solo se escriben por service role (RLS no da
 INSERT de club a nadie).
 
-- **Hoy**: `supabase/seed.sql` (club Antoniana) +
-  `scripts/crear-usuarios-demo.mjs` (usuarios y membresías demo).
-  Para un club nuevo: duplicar ese patrón de script — 10 minutos.
-- **Futuro (Ola 1.5)**: pantalla interna de la plataforma
-  ("crear club + invitar admin por email"). No es prioridad: damos
-  de alta un club por mes, no cien por día.
+- **Hoy (Ola 1.5, construido 2026-07-13): por PANTALLA** —
+  `/plataforma/clubes` (nav "Clubes" del perfil plataforma). El alta
+  crea el club (nombre, localidad, departamento para el mapa) y
+  genera el link de acceso del referente admin (mismo patrón por
+  LINK que el staff: se comparte por WhatsApp, el referente entra,
+  crea su clave y queda en su panel). Desde la misma pantalla:
+  editar datos del club, subir/cambiar/quitar el **escudo** (bucket
+  público `escudos`, ≤2 MB, PNG/JPG/WEBP/SVG), regenerar el acceso
+  del admin y eliminar clubes SIN deportistas. Las server actions
+  (`app/plataforma/actions.ts`) verifican `app_metadata.plataforma`
+  en el server y operan con service role — el RLS de `club` y
+  `membresia` no cambió: sigue sin haber INSERT para nadie.
+- El escudo aparece en: el shell (junto al nombre del club), el hub
+  `/club`, el panel del admin/comisión, el listado del observatorio
+  (vía la RPC) y el membrete del informe imprimible.
+- `supabase/seed.sql` y `scripts/crear-usuarios-demo.mjs` quedan solo
+  para la demo; un club real ya NO requiere scripts.
+- **Prueba e2e**: `scripts/limpiar-e2e-clubes.mjs` limpia lo que crea
+  el recorrido (club de prueba, escudo, usuario Auth del admin).
 
 ### 3 · Categorías del club — LAS CREA EL ADMIN
 

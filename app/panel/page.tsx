@@ -17,6 +17,7 @@ import { useDatos } from "@/lib/use-datos";
 import { useAgenda } from "@/lib/use-agenda";
 import { useObservatorio } from "@/lib/use-observatorio";
 import { AlertasRegistro } from "@/components/alertas-registro";
+import { EscudoClub } from "@/components/escudo-club";
 import { EventoCard } from "@/components/evento-card";
 import { EnElRadar, Proximamente } from "@/components/proximamente";
 import { tendencia } from "@/lib/tendencia";
@@ -210,9 +211,20 @@ export default function Inicio() {
 
   return (
     <div className="flex flex-col gap-5">
-      <div>
-        <h1 className="text-2xl font-extrabold tracking-tight">{titulo}</h1>
-        <p className="text-sm text-muted-foreground">{subtitulo}</p>
+      <div className="flex items-center gap-3">
+        {perfil !== "profesor" && datos.clubEscudoUrl && (
+          <EscudoClub
+            url={datos.clubEscudoUrl}
+            nombre={datos.clubNombre}
+            className="size-12"
+          />
+        )}
+        <div className="min-w-0">
+          <h1 className="truncate text-2xl font-extrabold tracking-tight">
+            {titulo}
+          </h1>
+          <p className="text-sm text-muted-foreground">{subtitulo}</p>
+        </div>
       </div>
 
       {perfil === "comision" && (
