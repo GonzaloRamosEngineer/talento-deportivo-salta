@@ -171,6 +171,20 @@ El escudo se muestra vía `components/escudo-club.tsx` (fallback de
 Host/x-forwarded-host (con `dev -H 0.0.0.0`, request.url trae la
 dirección de bind y el redirect perdería las cookies).
 
+Onboarding minimalista (2026-07-14) — convenciones a mantener en toda
+pantalla nueva: (1) estado vacío con `components/estado-vacio.tsx`
+(qué va acá + CTA que respeta permisos; si el rol no puede resolverlo,
+`nota` diciendo quién sí), nunca una tabla/lista en blanco ni un select
+vacío sin salida — si falta la dependencia (ej. categorías), derivar a
+crearla; (2) ayuda contextual con `components/ayuda.tsx` (desplegable
+cerrado, MÁXIMO 3 bullets) solo en pantallas densas; (3) la card
+"Primeros pasos" del panel (`components/primeros-pasos.tsx`) se calcula
+del estado real vía useDatos/useAgenda/useObservatorio, se tilda sola y
+desaparece al completarse — pasos nuevos = agregar ahí, jamás tours ni
+overlays. `useAgenda` expone `staff` (membresías visibles). Los fetch
+manuales de las pantallas de gestión chequean `.error` del resultado
+(supabase-js no lanza) para no dejar spinners infinitos.
+
 Ciclo de vida del deportista completo (2026-07-12):
 `/deportistas/[id]/editar` (lápiz en la ficha, solo sesión real +
 perfil que opera) corrige datos, mueve de categoría (el select ya
