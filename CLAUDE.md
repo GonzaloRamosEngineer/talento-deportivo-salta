@@ -155,6 +155,33 @@ asignaciones por reemplazo (descanso = sin fila). `useAgenda` trae
 `Sesion.asignaciones`. Ya no queda ningún mock de producto salvo el
 observatorio en su rama pública.
 
+Endurecimiento pre-piloto y vitrina (2026-07-14) — decisiones que
+PISAN el plan de `negocio/10` donde difieran:
+- **Backups pilot-grade** (sin costo): `pg_dump` en Docker →
+  Google Drive de la Fundación (`scripts/backup.mjs`, `docs/BACKUPS.md`).
+  `.env.local` tiene `SUPABASE_DB_URL` (session pooler) y `TDS_BACKUP_DIR`.
+- **Capa legal**: `/privacidad` (política pública Ley 25.326, fuera del
+  shell) y **consentimiento imprimible** por deportista
+  (`/deportistas/[id]/consentimiento`). La **foto del papel firmado a un
+  bucket privado quedó DESCARTADA** (decisión del usuario: bajo valor);
+  la **firma electrónica online** queda en ROADMAP para cuando escale.
+- **`membresia.funcion`** (text, descriptivo, NO toca RLS — el acceso lo
+  sigue gobernando `rol`): función profesional del staff (DT, PF,
+  nutricionista, psicólogo/a, asistente social…). Se muestra y setea en
+  `/club/staff`. Narrativa de "formación integral"; **NO** se guardan
+  datos sensibles (evaluaciones psicológicas/cognitivas) de menores.
+- **Revisión v6 RESUELTA**: modelo de acceso por categoría confirmado;
+  "deportista sin categoría" lo ven solo admin + comisión (se dejó así).
+- **El club "Fundación Evolución Antoniana" es la VITRINA con datos
+  FICTICIOS** (no menores reales): 302 jugadores, ~16.600 mediciones con
+  historia, agenda/tablero/partidos llenos. Reseed con
+  `scripts/sembrar-showcase.mjs` + `scripts/sembrar-showcase-agenda.mjs`
+  (idempotentes, service role, tag `SHW-` / `@staff.demo.local`). Los
+  clubes reales del piloto entran limpios por `/plataforma/clubes`.
+- Pendientes vivos: Módulo B (¿cómo medir? + ideas de trabajo, necesita
+  contenido del PF) y Módulo D (el estirón). Cuentas demo y rotación de
+  clave de DB: diferidos por decisión (la vitrina es ficticia).
+
 El observatorio también es real (2026-07-12, migración
 `20260712231049_observatorio_agregados.sql` APLICADA): la ÚNICA
 ventana de la plataforma a los datos es la RPC `observatorio_clubes()`

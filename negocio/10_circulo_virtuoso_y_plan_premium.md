@@ -25,6 +25,42 @@ nuestros datos (requiere talla sentado, que no medimos), y pide
 "recomendaciones de carga" que son territorio médico. Hay versión
 honesta y valiosa de D; no es la del plan.
 
+## Estado de ejecución (actualizado 2026-07-14)
+
+**Este bloque PISA el plan de abajo donde difiera** — es lo realmente
+hecho y decidido al ejecutar. El resto del documento queda como diseño.
+
+- **Módulo A — Tablero real: HECHO.** `sesion_asignacion` +
+  `/entrenamiento` persiste de verdad. Era el último mock de producto.
+- **Backups: HECHOS** (pilot-grade, sin costo): `pg_dump` en Docker →
+  Google Drive de la Fundación (`scripts/backup.mjs`, `docs/BACKUPS.md`).
+  Supabase Pro + PITR queda para cuando haya volumen real.
+- **Módulo C — REENCUADRADO por decisión del usuario:**
+  - `/privacidad` (política pública, Ley 25.326) y **consentimiento
+    imprimible** por deportista: HECHOS.
+  - **La foto del papel firmado a un bucket privado quedó DESCARTADA.**
+    El usuario la evaluó "mala onda" (papel → firma → foto) y de bajo
+    valor. NO se construye.
+  - En su lugar, **firma electrónica online** (link al tutor, firma en
+    pantalla + huella de auditoría) queda en **ROADMAP para cuando
+    ESCALE** (varios clubes), no para el piloto inicial.
+- **Revisión v6: RESUELTA** (caminada con el usuario). Modelo de acceso
+  confirmado; el caso "deportista sin categoría" se dejó como está (lo
+  ven solo admin + comisión). Ya no es un pendiente.
+- **Higiene pre-piloto:** el usuario decidió **NO rotar/borrar las
+  cuentas demo** por ahora y **rotar la clave de DB después** — sin
+  urgencia porque el club "Fundación Evolución Antoniana" pasó a tener
+  **datos FICTICIOS** (vitrina), no menores reales. Los clubes reales
+  del piloto entran limpios por `/plataforma/clubes`.
+- **Extra no previsto: el club Fundación es la VITRINA rica** — 302
+  jugadores ficticios, ~16.600 mediciones con historia, agenda/tablero/
+  partidos llenos, cuerpo técnico multi-rol (`membresia.funcion`).
+  Reseed: `scripts/sembrar-showcase.mjs` + `sembrar-showcase-agenda.mjs`.
+
+**Pendientes reales que siguen:** Módulo B (¿cómo medir? + ideas de
+trabajo — cuello de botella: contenido del PF de la Fundación) y
+Módulo D (el estirón).
+
 ## 1 · El círculo virtuoso — adoptado, con una corrección
 
 ```
@@ -191,6 +227,11 @@ es correcto: ninguna planilla lo hace, y en élite cuesta fortunas) —
 sin convertirnos en dispositivo médico trucho.
 
 ## Orden de implementación y por qué
+
+> ⚠️ Tabla del plan ORIGINAL. Ver "Estado de ejecución (2026-07-14)"
+> arriba: la sesión 1 está hecha; la 2 se reencuadró (consentimiento
+> imprimible hecho, foto descartada, firma digital al roadmap; backups
+> y v6 cerrados). Siguen vivas la 3 (Módulo B) y la 4 (Módulo D).
 
 | # | Sesión | Contenido | Por qué en este orden |
 |---|---|---|---|
