@@ -6,6 +6,7 @@ import {
   CalendarDays,
   ChevronRight,
   ClipboardPlus,
+  FileSignature,
   Info,
   Loader2,
   Pencil,
@@ -242,6 +243,14 @@ export function FichaDeportista({
           </Link>
         )}
         <Link
+          href={`/deportistas/${deportista.id}/consentimiento`}
+          aria-label="Consentimiento imprimible"
+          title="Consentimiento imprimible"
+          className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+        >
+          <FileSignature className="size-4.5" aria-hidden />
+        </Link>
+        <Link
           href={`/deportistas/${deportista.id}/informe`}
           aria-label="Informe imprimible"
           title="Informe imprimible"
@@ -262,14 +271,23 @@ export function FichaDeportista({
             </span>
           </p>
           {permisos.opera && (
-            <button
-              onClick={() => void registrarFirma()}
-              disabled={firmando}
-              className="flex h-9 shrink-0 items-center gap-1.5 rounded-lg bg-warning px-3 text-xs font-bold text-white disabled:opacity-60"
-            >
-              {firmando && <Loader2 className="size-3.5 animate-spin" aria-hidden />}
-              {datos.real ? "Registrar firma" : "Registrar firma (demo)"}
-            </button>
+            <div className="flex shrink-0 items-center gap-2">
+              <Link
+                href={`/deportistas/${deportista.id}/consentimiento`}
+                className="flex h-9 items-center gap-1.5 rounded-lg border border-warning/40 px-3 text-xs font-bold text-warning transition-colors hover:bg-warning/10"
+              >
+                <FileSignature className="size-3.5" aria-hidden />
+                Imprimir formulario
+              </Link>
+              <button
+                onClick={() => void registrarFirma()}
+                disabled={firmando}
+                className="flex h-9 items-center gap-1.5 rounded-lg bg-warning px-3 text-xs font-bold text-white disabled:opacity-60"
+              >
+                {firmando && <Loader2 className="size-3.5 animate-spin" aria-hidden />}
+                {datos.real ? "Registrar firma" : "Registrar firma (demo)"}
+              </button>
+            </div>
           )}
         </div>
       )}

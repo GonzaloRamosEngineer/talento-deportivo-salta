@@ -255,8 +255,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const { perfil } = usePerfil();
   const nav = navPara(perfil);
 
-  // La landing pública (/) y el login viven fuera del shell de la app.
-  if (pathname === "/" || pathname === "/login") {
+  // La landing pública (/), el login y la página de privacidad viven
+  // fuera del shell de la app.
+  if (pathname === "/" || pathname === "/login" || pathname === "/privacidad") {
     return <>{children}</>;
   }
 

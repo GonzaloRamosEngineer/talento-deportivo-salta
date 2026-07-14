@@ -613,7 +613,16 @@ export default function Landing() {
             Una iniciativa de <strong>Fundación Evolución Antoniana</strong>{" "}
             · desarrollo <strong>Digital Match Global</strong>
           </p>
-          <p>Hecho en Salta · {new Date().getFullYear()}</p>
+          <p className="flex items-center gap-2">
+            <Link
+              href="/privacidad"
+              className="font-semibold underline underline-offset-2 hover:text-foreground"
+            >
+              Privacidad
+            </Link>
+            <span aria-hidden>·</span>
+            Hecho en Salta · {new Date().getFullYear()}
+          </p>
         </div>
       </footer>
     </div>
