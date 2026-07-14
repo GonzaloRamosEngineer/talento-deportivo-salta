@@ -61,9 +61,8 @@ const IDX_TECNICO = [1, 2, 4, 5, 6, 7]; // 6 apreciaciones técnicas
 const FECHAS_HIST = ["2024-03-10", "2024-08-18", "2025-01-25", ...FECHAS];
 
 // ---------- generación de valores por atributo (según edad y talento) ----------
-function valores(nombreAtr, sentido, edad, talento, fechas) {
-  const n = fechas.length;
-  const ruido = (i) => Math.sin(i * 2.1 + talento * 6) ; // -1..1 reproducible
+function valores(nombreAtr, edad, talento, fechas) {
+  const ruido = (i) => Math.sin(i * 2.1 + talento * 6); // -1..1 reproducible
   let base, slope, dec, min, max;
   switch (nombreAtr) {
     case "Talla":
@@ -231,7 +230,11 @@ async function main() {
     // insertar deportistas y recuperar ids (en orden)
     const insertados = [];
     for (const c of chunk(nuevos, 100)) {
-      const payload = c.map(({ _esArquero, ...d }) => d);
+      const payload = c.map((d) => {
+        const fila = { ...d };
+        delete fila._esArquero;
+        return fila;
+      });
       const { data, error } = await a.from("deportista").insert(payload).select("id, categoria_id");
       if (error) throw new Error(`deportista (${cat.nombre}): ${error.message}`);
       insertados.push(...data);
@@ -267,7 +270,7 @@ async function main() {
 
       const conHistLarga = histRestantes > 0 && (cat.tipo === "primera" || cat.tipo === "reserva") && rnd() < 0.4;
       if (conHistLarga) histRestantes--;
-      const fechasFisico = (conHistLarga ? FECHAS_HIST : FECHAS).filter((_, idx, arr) =>
+      const fechasFisico = (conHistLarga ? FECHAS_HIST : FECHAS).filter((_, idx) =>
         conHistLarga ? true : IDX_FISICO.includes(idx),
       );
       const fechasTecnico = (conHistLarga ? FECHAS_HIST : FECHAS).filter((_, idx) =>
@@ -278,14 +281,14 @@ async function main() {
       for (const nombreAtr of fisico) {
         const at = atrPorNombre.get(nombreAtr);
         if (!at) continue;
-        for (const p of valores(nombreAtr, at.sentido, edad, talento, fechasFisico)) {
+        for (const p of valores(nombreAtr, edad, talento, fechasFisico)) {
           totalMediciones.push({ deportista_id: dep.id, atributo_id: at.id, valor: p.valor, fecha: p.fecha, registrado_por: registrador() });
         }
       }
       for (const nombreAtr of tecnico) {
         const at = atrPorNombre.get(nombreAtr);
         if (!at) continue;
-        for (const p of valores(nombreAtr, at.sentido, edad, talento, fechasTecnico)) {
+        for (const p of valores(nombreAtr, edad, talento, fechasTecnico)) {
           totalMediciones.push({ deportista_id: dep.id, atributo_id: at.id, valor: p.valor, fecha: p.fecha, registrado_por: registrador() });
         }
       }

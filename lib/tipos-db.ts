@@ -20,6 +20,8 @@ export interface MembresiaDB {
   nombre: string;
   email: string | null;
   rol: RolMembresia;
+  /** función/rol profesional, descriptivo (no afecta el acceso) */
+  funcion: string | null;
 }
 
 export const ROL_LABEL: Record<RolMembresia, string> = {
@@ -27,3 +29,20 @@ export const ROL_LABEL: Record<RolMembresia, string> = {
   entrenador: "Profe",
   comision_directiva: "Comisión directiva",
 };
+
+// Funciones profesionales sugeridas (el campo es libre: la formación
+// es integral, no solo física). `rol` gobierna el acceso; `funcion`
+// solo describe qué profesional es la persona.
+export const FUNCIONES_SUGERIDAS = [
+  "Director técnico",
+  "Ayudante de campo",
+  "Preparador físico",
+  "Entrenador de arqueros",
+  "Coordinador",
+  "Profe de escuelita",
+  "Nutricionista",
+  "Médico",
+  "Kinesiólogo",
+  "Psicólogo/a deportivo/a",
+  "Asistente social",
+];

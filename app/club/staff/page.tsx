@@ -19,6 +19,7 @@ import { AvisoAcceso } from "@/components/aviso-acceso";
 import { Ayuda } from "@/components/ayuda";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import {
+  FUNCIONES_SUGERIDAS,
   ROL_LABEL,
   type CategoriaDB,
   type MembresiaDB,
@@ -41,6 +42,7 @@ interface FormInvitacion {
   nombre: string;
   email: string;
   rol: RolMembresia;
+  funcion: string;
   categoriaIds: string[];
 }
 
@@ -48,6 +50,7 @@ const FORM_VACIO: FormInvitacion = {
   nombre: "",
   email: "",
   rol: "entrenador",
+  funcion: "",
   categoriaIds: [],
 };
 
@@ -197,7 +200,7 @@ export default function StaffPage() {
       const [rMembs, rCats, rMc] = await Promise.all([
         supabase
           .from("membresia")
-          .select("id, auth_user_id, nombre, email, rol")
+          .select("id, auth_user_id, nombre, email, rol, funcion")
           .eq("club_id", clubId!),
         supabase
           .from("categoria")
@@ -455,6 +458,32 @@ export default function StaffPage() {
             </p>
           </div>
 
+          <div className="mt-3">
+            <label
+              htmlFor="inv-funcion"
+              className="mb-1.5 block text-xs font-bold text-muted-foreground"
+            >
+              Función <span className="font-normal">(opcional)</span>
+            </label>
+            <input
+              id="inv-funcion"
+              list="funciones-sugeridas"
+              value={form.funcion}
+              onChange={(e) => setForm({ ...form, funcion: e.target.value })}
+              placeholder="Ej. Preparador físico, DT, Nutricionista…"
+              className="h-11 w-full rounded-xl border border-input bg-background px-3.5 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+            />
+            <datalist id="funciones-sugeridas">
+              {FUNCIONES_SUGERIDAS.map((f) => (
+                <option key={f} value={f} />
+              ))}
+            </datalist>
+            <p className="mt-1.5 text-[11px] text-muted-foreground">
+              Qué profesional es dentro del cuerpo técnico. No cambia qué puede ver
+              o hacer — eso lo define el rol.
+            </p>
+          </div>
+
           {form.rol === "entrenador" && (
             <div className="mt-3">
               <p className="mb-1.5 text-xs font-bold text-muted-foreground">Sus categorías</p>
@@ -517,6 +546,11 @@ export default function StaffPage() {
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-2 text-sm font-extrabold">
                       <span className="truncate">{m.nombre}</span>
+                      {m.funcion && (
+                        <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-bold text-secondary-foreground">
+                          {m.funcion}
+                        </span>
+                      )}
                       {soyYo && (
                         <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold text-muted-foreground">
                           vos

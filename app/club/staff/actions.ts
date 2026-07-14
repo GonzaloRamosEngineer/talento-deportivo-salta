@@ -58,6 +58,8 @@ export async function invitarMiembro(input: {
   email: string;
   rol: RolMembresia;
   categoriaIds: string[];
+  /** función profesional (descriptiva, opcional) */
+  funcion?: string;
   /** location.origin del admin — solo se usa para armar el link que se le devuelve */
   origen: string;
 }): Promise<Resultado<{ link: string }>> {
@@ -115,6 +117,7 @@ export async function invitarMiembro(input: {
       nombre,
       email,
       rol: input.rol,
+      funcion: input.funcion?.trim() || null,
     })
     .select("id")
     .single();
