@@ -23,6 +23,7 @@ import {
   type Agenda,
 } from "@/lib/use-agenda";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
+import { ComoMedir } from "@/components/como-medir";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { Proximamente } from "@/components/proximamente";
 import { usePerfil } from "@/components/perfil-context";
@@ -433,6 +434,13 @@ function VistaTablero({
           {asignados}/{plantel.length} asignados
         </span>
       </div>
+
+      {/* Ideas de trabajo del área activa (mismo drawer del Módulo B) */}
+      {areaActiva !== DESCANSO && getAtributo(areaActiva) && (
+        <div>
+          <ComoMedir atributo={getAtributo(areaActiva)!} variante="ideas" />
+        </div>
+      )}
 
       <div className="md:grid md:grid-cols-[1fr_260px] md:items-start md:gap-4">
         {/* ---------- Áreas ---------- */}

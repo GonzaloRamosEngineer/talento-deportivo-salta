@@ -178,9 +178,21 @@ PISAN el plan de `negocio/10` donde difieran:
   `scripts/sembrar-showcase.mjs` + `scripts/sembrar-showcase-agenda.mjs`
   (idempotentes, service role, tag `SHW-` / `@staff.demo.local`). Los
   clubes reales del piloto entran limpios por `/plataforma/clubes`.
-- Pendientes vivos: Módulo B (¿cómo medir? + ideas de trabajo, necesita
-  contenido del PF) y Módulo D (el estirón). Cuentas demo y rotación de
-  clave de DB: diferidos por decisión (la vitrina es ficticia).
+- **Módulo B hecho (2026-07-14)**: drawer "¿Cómo medir?" —
+  `lib/como-medir.ts` (guías por NOMBRE de atributo: protocolo paso a
+  paso + materiales + diagrama SVG para objetivas; "cómo puntuar" +
+  "en qué fijarse" para subjetivas; ideas de trabajo con rótulo "no es
+  una prescripción"; talla/peso sin ideas, con nota "se registra, no
+  se juzga") + `components/como-medir.tsx` (trigger + drawer portal;
+  `variante="ideas"` para el tablero). Enganchado en `/medicion`
+  (paso 1) y `/entrenamiento` (área activa). TODO el contenido es
+  base y está marcado "pendiente de revisión del PF de la Fundación"
+  (`GUIA_PENDIENTE_REVISION`): al recibir la versión del PF, se
+  reemplaza el texto ahí y se apaga el flag. Atributos nuevos del
+  catálogo: agregar su guía en `GUIAS_MEDICION` (clave = nombre).
+- Pendientes vivos: Módulo D (el estirón) y la revisión del PF sobre
+  el contenido del Módulo B. Cuentas demo y rotación de clave de DB:
+  diferidos por decisión (la vitrina es ficticia).
 
 El observatorio también es real (2026-07-12, migración
 `20260712231049_observatorio_agregados.sql` APLICADA): la ÚNICA

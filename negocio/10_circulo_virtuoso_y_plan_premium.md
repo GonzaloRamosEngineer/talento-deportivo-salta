@@ -57,9 +57,20 @@ hecho y decidido al ejecutar. El resto del documento queda como diseño.
   partidos llenos, cuerpo técnico multi-rol (`membresia.funcion`).
   Reseed: `scripts/sembrar-showcase.mjs` + `sembrar-showcase-agenda.mjs`.
 
-**Pendientes reales que siguen:** Módulo B (¿cómo medir? + ideas de
-trabajo — cuello de botella: contenido del PF de la Fundación) y
-Módulo D (el estirón).
+- **Módulo B (2026-07-14): CONSTRUIDO con contenido base.** Drawer
+  "¿Cómo medir?" (`components/como-medir.tsx` + `lib/como-medir.ts`)
+  en la jornada de medición (y como "Ideas de trabajo" en el tablero):
+  diagramas SVG estilo Cancha clara para las 5 objetivas, paso a paso,
+  materiales, guía de puntuación 1-10 para las subjetivas ("cómo
+  puntuar" + "en qué fijarse") e ideas de trabajo con el rótulo "para
+  conversar con el cuerpo técnico — no es una prescripción". Todo el
+  texto lleva el aviso **"pendiente de revisión del PF de la
+  Fundación"** (`GUIA_PENDIENTE_REVISION`): cuando el PF entregue su
+  versión, se reemplaza el contenido en `lib/como-medir.ts` y se apaga
+  el flag. El pedido al PF sigue vivo — dejó de ser bloqueante.
+
+**Pendiente real que sigue:** Módulo D (el estirón). Del B queda solo
+la revisión del PF sobre el contenido base ya publicado.
 
 ## 1 · El círculo virtuoso — adoptado, con una corrección
 

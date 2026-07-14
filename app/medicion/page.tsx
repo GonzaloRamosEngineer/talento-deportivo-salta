@@ -18,6 +18,7 @@ import { crearClienteBrowser } from "@/lib/supabase/client";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { AvisoAcceso } from "@/components/aviso-acceso";
 import { Ayuda } from "@/components/ayuda";
+import { ComoMedir } from "@/components/como-medir";
 import { usePerfil } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
@@ -362,6 +363,11 @@ function JornadaDeMedicion() {
             </button>
           ))}
         </div>
+        {atributo && (
+          <div className="mt-2.5">
+            <ComoMedir atributo={atributo} />
+          </div>
+        )}
       </section>
 
       {/* Paso 2: categoría */}
