@@ -84,6 +84,8 @@ export interface Sesion {
   estado: "programada" | "realizada" | "cancelada";
   descripcion: string;
   asistencia: { deportistaId: string; presente: boolean }[];
+  /** tablero: a qué estación/atributo se asignó cada jugador (real; el mock no la usa) */
+  asignaciones?: { deportistaId: string; atributoId: string }[];
 }
 
 // Partido: SOLO datos grupales (decisión 2026-07-09) — resultado del

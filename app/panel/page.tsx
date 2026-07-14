@@ -268,26 +268,24 @@ export default function Inicio() {
             </span>
             <ChevronRight className="size-5 shrink-0 opacity-80" aria-hidden />
           </Link>
-          {!datos.real && (
-            <Link
-              href="/entrenamiento"
-              className="-mt-2 flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 transition-colors hover:border-primary/40"
-            >
-              <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
-                <Dumbbell className="size-4.5" aria-hidden />
+          <Link
+            href="/entrenamiento"
+            className="-mt-2 flex items-center gap-3 rounded-2xl border border-border bg-card p-3.5 transition-colors hover:border-primary/40"
+          >
+            <span className="flex size-9 shrink-0 items-center justify-center rounded-lg bg-secondary text-secondary-foreground">
+              <Dumbbell className="size-4.5" aria-hidden />
+            </span>
+            <span className="flex-1 text-sm font-bold">
+              Tablero de entrenamiento
+              <span className="block text-xs font-medium text-muted-foreground">
+                Asigná áreas de trabajo a tu plantel
               </span>
-              <span className="flex-1 text-sm font-bold">
-                Tablero de entrenamiento
-                <span className="block text-xs font-medium text-muted-foreground">
-                  Asigná áreas de trabajo a tu plantel
-                </span>
-              </span>
-              <ChevronRight
-                className="size-4 shrink-0 text-muted-foreground"
-                aria-hidden
-              />
-            </Link>
-          )}
+            </span>
+            <ChevronRight
+              className="size-4 shrink-0 text-muted-foreground"
+              aria-hidden
+            />
+          </Link>
         </>
       )}
 

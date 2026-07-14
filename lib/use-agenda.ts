@@ -80,6 +80,7 @@ interface FilaSesion {
   estado: "programada" | "realizada" | "cancelada";
   descripcion: string | null;
   sesion_asistencia: { deportista_id: string; presente: boolean }[];
+  sesion_asignacion: { deportista_id: string; atributo_id: string }[];
 }
 
 interface FilaPartido {
@@ -133,7 +134,7 @@ export function useAgenda(datos: Datos): Agenda {
           supabase
             .from("sesion_entrenamiento")
             .select(
-              "id, categoria_id, responsable_id, atributo_foco, fecha, lugar_id, estado, descripcion, sesion_asistencia(deportista_id, presente)",
+              "id, categoria_id, responsable_id, atributo_foco, fecha, lugar_id, estado, descripcion, sesion_asistencia(deportista_id, presente), sesion_asignacion(deportista_id, atributo_id)",
             )
             .order("fecha", { ascending: false })
             .limit(500),
@@ -290,6 +291,10 @@ export function useAgenda(datos: Datos): Agenda {
                 presente: overrides.get(deportistaId) ?? true,
               }))
             : [],
+        asignaciones: s.sesion_asignacion.map((a) => ({
+          deportistaId: a.deportista_id,
+          atributoId: a.atributo_id,
+        })),
       };
     });
 
@@ -316,6 +321,7 @@ export function useAgenda(datos: Datos): Agenda {
         estado: "programada",
         descripcion: "",
         asistencia: [],
+        asignaciones: [],
       });
     }
 

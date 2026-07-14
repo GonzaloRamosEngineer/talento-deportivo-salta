@@ -260,7 +260,7 @@ function VistaSesion({ sesion, agenda }: { sesion: Sesion; agenda: Agenda }) {
         </p>
       )}
 
-      {esProgramada && permisos.opera && !agenda.real && (
+      {esProgramada && permisos.opera && (
         <Link
           href={`/entrenamiento?categoria=${sesion.categoriaId}`}
           className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground transition-transform active:scale-[0.99]"

@@ -135,8 +135,25 @@ escuelitas). Pantallas: `/sesiones` (semana + cronograma),
 `/sesiones/[id]` (pasar lista), `/partidos/nuevo`, `/partidos/[id]`
 (resultado), `/club/agenda` (admin: lugares + cronograma). El panel
 (`/panel`) y la tab Sesiones de la ficha también consumen datos
-reales. Sigue en mock: tablero de entrenamiento (/entrenamiento,
-oculto en el panel con sesión real).
+reales.
+
+El tablero de entrenamiento también es real (2026-07-14, Módulo A de
+`negocio/10`, migración `20260714160059_sesion_asignacion.sql`
+APLICADA): la planificación por jugador (a qué estación/área va cada
+uno) CUELGA de la sesión del día, no crea un mundo aparte con fecha
+propia. `sesion_asignacion(sesion_id, deportista_id, atributo_id)` con
+PK `(sesion_id, deportista_id)` (un jugador, una sola estación),
+`club_id` denormalizado por trigger (regla 6, como `medicion`) y RLS
+lectura=`alcanza_categoria`/escritura=`opera_categoria` resuelta contra
+la sesión padre (mismo patrón que `sesion_asistencia`). `/entrenamiento`
+consume `useDatos`+`useAgenda`, se posa sobre la sesión de HOY —o la
+próxima de esta semana— de la categoría (selector si hay varias),
+precarga lo ya guardado y guarda por lote: materializa la sesión
+virtual como al pasar lista (queda `programada`) y reconcilia las
+asignaciones por reemplazo (descanso = sin fila). `useAgenda` trae
+`sesion_asignacion` en el select de sesiones y lo materializa en
+`Sesion.asignaciones`. Ya no queda ningún mock de producto salvo el
+observatorio en su rama pública.
 
 El observatorio también es real (2026-07-12, migración
 `20260712231049_observatorio_agregados.sql` APLICADA): la ÚNICA
