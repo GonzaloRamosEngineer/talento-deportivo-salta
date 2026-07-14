@@ -185,6 +185,29 @@ overlays. `useAgenda` expone `staff` (membresías visibles). Los fetch
 manuales de las pantallas de gestión chequean `.error` del resultado
 (supabase-js no lanza) para no dejar spinners infinitos.
 
+Paquete "día 1 en el club" (2026-07-14): (1) `/deportistas/importar`
+— el plantel entra pegando las celdas desde Excel/Sheets (el
+portapapeles es TSV) o subiendo un CSV (UTF-8 con fallback
+windows-1252); todo se parsea en el navegador, con mapeo de columnas
+autodetectado por encabezados y corregible, categoría resuelta por
+nombre o por cohorte de nacimiento, duplicados contra el plantel
+existente excluidos por defecto y preview antes de confirmar. El
+consentimiento NUNCA se importa de una planilla: todos quedan
+pendientes. Inserta por lotes de 50 vía RLS (deportista + tutor).
+(2) `/medicion` guarda un BORRADOR local (`tds-borrador-medicion` en
+localStorage, solo válido el mismo día) a cada tecla: el predio sin
+señal no pierde la jornada; se restaura al volver (aviso con
+Descartar), se limpia al guardar en la base, y hay banner de
+sin-conexión (eventos online/offline). La restauración corre en un
+microtask post-mount (la hidratación no puede depender de
+localStorage). (3) `components/compartir-informe.tsx`: el informe
+resumido como TEXTO de WhatsApp (wa.me) desde la ficha y el informe —
+si el tutor tiene teléfono va directo a su chat (heurística AR:
+549 + dígitos), mantiene el framing honesto y el aviso de datos de
+menor; el link a la app no se comparte porque el tutor no tiene login
+por diseño. E2E de las tres piezas: `scripts/e2e-dia1.mjs`
+(auto-limpia sus datos de prueba).
+
 Ciclo de vida del deportista completo (2026-07-12):
 `/deportistas/[id]/editar` (lápiz en la ficha, solo sesión real +
 perfil que opera) corrige datos, mueve de categoría (el select ya

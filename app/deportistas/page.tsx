@@ -8,6 +8,7 @@ import {
   ChevronsUpDown,
   ArrowUp,
   ArrowDown,
+  FileSpreadsheet,
   List,
   Loader2,
   Plus,
@@ -165,12 +166,25 @@ function Deportistas() {
           </p>
         </div>
         {permisos.opera && (
-          <Link
-            href="/deportistas/nuevo"
-            className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-sm font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
-          >
-            <Plus className="size-4" aria-hidden /> Nuevo
-          </Link>
+          <>
+            {datos.real && (
+              <Link
+                href="/deportistas/importar"
+                aria-label="Importar plantel desde una planilla"
+                title="Importar plantel desde una planilla"
+                className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+              >
+                <FileSpreadsheet className="size-4" aria-hidden />
+                <span className="hidden sm:inline">Importar</span>
+              </Link>
+            )}
+            <Link
+              href="/deportistas/nuevo"
+              className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-sm font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
+            >
+              <Plus className="size-4" aria-hidden /> Nuevo
+            </Link>
+          </>
         )}
         <div
           className="flex shrink-0 rounded-lg border border-border bg-card p-0.5"

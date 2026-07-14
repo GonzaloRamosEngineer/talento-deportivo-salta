@@ -35,6 +35,7 @@ import { NivelBar } from "@/components/nivel-bar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePerfil } from "@/components/perfil-context";
 import { AvisoAcceso } from "@/components/aviso-acceso";
+import { CompartirInforme } from "@/components/compartir-informe";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { cn } from "@/lib/utils";
 
@@ -248,6 +249,7 @@ export function FichaDeportista({
         >
           <Printer className="size-4.5" aria-hidden />
         </Link>
+        <CompartirInforme deportista={deportista} datos={datos} variante="icono" />
       </div>
 
       {!consentimientoOk && (

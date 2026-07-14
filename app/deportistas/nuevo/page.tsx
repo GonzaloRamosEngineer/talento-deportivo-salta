@@ -272,6 +272,13 @@ export default function NuevoDeportistaPage() {
           Lo mínimo para arrancar: nombre, categoría y el consentimiento del tutor en el
           mismo paso
         </p>
+        <p className="mt-1 text-sm text-muted-foreground">
+          ¿El plantel ya está en una planilla?{" "}
+          <Link href="/deportistas/importar" className="font-bold text-primary">
+            Importalo de una vez
+          </Link>
+          .
+        </p>
       </div>
 
       {cargados.length > 0 && (

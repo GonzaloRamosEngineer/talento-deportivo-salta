@@ -23,6 +23,7 @@ import { EstadoBadge } from "@/components/estado-badge";
 import { EvolutionChart } from "@/components/evolution-chart";
 import { NivelBar } from "@/components/nivel-bar";
 import { AvisoAcceso } from "@/components/aviso-acceso";
+import { CompartirInforme } from "@/components/compartir-informe";
 import { usePerfil } from "@/components/perfil-context";
 
 // Igual que FichaCliente: resuelve la fuente (mock demo o Supabase).
@@ -118,13 +119,16 @@ export function InformeJugador({
           <ArrowLeft className="size-4" aria-hidden />
           Volver a la ficha
         </Link>
-        <button
-          onClick={() => window.print()}
-          className="flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-extrabold text-primary-foreground"
-        >
-          <Printer className="size-4" aria-hidden />
-          Imprimir
-        </button>
+        <div className="flex items-center gap-2">
+          <CompartirInforme deportista={deportista} datos={datos} />
+          <button
+            onClick={() => window.print()}
+            className="flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-sm font-extrabold text-primary-foreground"
+          >
+            <Printer className="size-4" aria-hidden />
+            Imprimir
+          </button>
+        </div>
       </div>
 
       {/* ---------- La hoja ---------- */}

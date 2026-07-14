@@ -1,9 +1,17 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
-import { AlertTriangle, Check, CheckCircle2, Info, Loader2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  CheckCircle2,
+  Info,
+  Loader2,
+  Smartphone,
+  WifiOff,
+} from "lucide-react";
 import { formatFecha } from "@/lib/mock-data";
 import { hoyLocalISO, useDatos } from "@/lib/use-datos";
 import { crearClienteBrowser } from "@/lib/supabase/client";
@@ -21,6 +29,36 @@ function parseValor(texto: string): number | null {
   return Number.isFinite(v) && Math.abs(v) < 10000 ? v : null;
 }
 
+// Borrador de la jornada en ESTE teléfono: el predio sin señal no
+// puede perder los valores ya cargados. Se guarda en localStorage a
+// cada tecla y se descarta al guardar en la base o al cambiar el día.
+const CLAVE_BORRADOR = "tds-borrador-medicion";
+
+interface Borrador {
+  fecha: string;
+  atributoId: string | null;
+  categoriaId: string | null;
+  valores: Record<string, string>;
+  hora: string;
+}
+
+function leerBorrador(): Borrador | null {
+  try {
+    const crudo = window.localStorage.getItem(CLAVE_BORRADOR);
+    if (!crudo) return null;
+    const b = JSON.parse(crudo) as Borrador;
+    if (b.fecha !== hoyLocalISO() || typeof b.valores !== "object" || !b.valores) {
+      // Un borrador de otro día ya no vale: esa jornada quedó atrás
+      window.localStorage.removeItem(CLAVE_BORRADOR);
+      return null;
+    }
+    const cargados = Object.values(b.valores).filter((v) => v?.trim()).length;
+    return cargados > 0 ? b : null;
+  } catch {
+    return null;
+  }
+}
+
 function JornadaDeMedicion() {
   const sp = useSearchParams();
   const { permisos } = usePerfil();
@@ -33,8 +71,61 @@ function JornadaDeMedicion() {
   const [guardada, setGuardada] = useState(false);
   const [guardando, setGuardando] = useState(false);
   const [errorGuardar, setErrorGuardar] = useState<string | null>(null);
+  const [borradorRecuperado, setBorradorRecuperado] = useState<Borrador | null>(null);
+  const [sinConexion, setSinConexion] = useState(false);
 
   const hoy = hoyLocalISO();
+
+  // Restaurar el borrador del día una sola vez, después de montar (en
+  // microtask: la hidratación no puede depender de localStorage). Los
+  // params de la URL tienen prioridad sobre lo recordado.
+  useEffect(() => {
+    let cancelado = false;
+    void Promise.resolve().then(() => {
+      if (cancelado) return;
+      const b = leerBorrador();
+      if (!b) return;
+      setValores((v) => (Object.values(v).some((x) => x?.trim()) ? v : b.valores));
+      setAtributoId((a) => a ?? b.atributoId);
+      setCategoriaId((c) => c ?? b.categoriaId);
+      setBorradorRecuperado(b);
+    });
+    return () => {
+      cancelado = true;
+    };
+  }, []);
+
+  // Persistir a cada tecla; al guardar en la base se limpia (ver guardar())
+  useEffect(() => {
+    if (guardada) return;
+    const cargados = Object.values(valores).filter((v) => v?.trim()).length;
+    if (cargados === 0) return;
+    window.localStorage.setItem(
+      CLAVE_BORRADOR,
+      JSON.stringify({
+        fecha: hoyLocalISO(),
+        atributoId,
+        categoriaId,
+        valores,
+        hora: new Date().toLocaleTimeString("es-AR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+      } satisfies Borrador),
+    );
+  }, [valores, atributoId, categoriaId, guardada]);
+
+  // Aviso de "predio sin señal": los eventos online/offline del browser
+  useEffect(() => {
+    const actualizar = () => setSinConexion(!window.navigator.onLine);
+    window.addEventListener("online", actualizar);
+    window.addEventListener("offline", actualizar);
+    void Promise.resolve().then(actualizar);
+    return () => {
+      window.removeEventListener("online", actualizar);
+      window.removeEventListener("offline", actualizar);
+    };
+  }, []);
   const atributo = datos.atributos.find((a) => a.id === atributoId) ?? null;
   const categoria = datos.categorias.find((c) => c.id === categoriaId) ?? null;
   const plantel = useMemo(
@@ -61,6 +152,7 @@ function JornadaDeMedicion() {
     if (!listo) return;
     if (!datos.real) {
       // Demo pública sin sesión: no se persiste nada
+      window.localStorage.removeItem(CLAVE_BORRADOR);
       setGuardada(true);
       return;
     }
@@ -85,10 +177,12 @@ function JornadaDeMedicion() {
     setGuardando(false);
     if (error) {
       setErrorGuardar(
-        `No se pudo guardar la jornada (${error.message}). Los valores siguen acá: probá de nuevo.`,
+        `No se pudo guardar la jornada (${error.message}). Los valores quedaron como borrador en este teléfono: aunque cierres la app no se pierden. Probá de nuevo cuando haya señal.`,
       );
       return;
     }
+    window.localStorage.removeItem(CLAVE_BORRADOR);
+    setBorradorRecuperado(null);
     datos.recargar();
     setGuardada(true);
   }
@@ -186,6 +280,42 @@ function JornadaDeMedicion() {
           "Cada valor suma un punto a la curva de evolución del deportista; se puede dejar a alguien sin cargar sin problema.",
         ]}
       />
+
+      {sinConexion && (
+        <div className="flex items-start gap-2.5 rounded-xl bg-warning-soft p-3.5 text-sm text-warning">
+          <WifiOff className="mt-0.5 size-4 shrink-0" aria-hidden />
+          <p className="min-w-0 flex-1 font-semibold">
+            Sin señal.{" "}
+            <span className="font-normal">
+              Seguí cargando tranquilo: cada valor queda como borrador en este
+              teléfono. Cuando vuelva la conexión, tocá Guardar.
+            </span>
+          </p>
+        </div>
+      )}
+
+      {borradorRecuperado && !guardada && (
+        <div className="flex flex-wrap items-start gap-2.5 rounded-xl border border-primary/25 bg-secondary/50 p-3.5 text-sm">
+          <Smartphone className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
+          <p className="min-w-0 flex-1 font-semibold">
+            Recuperamos la jornada que quedó a medias
+            {borradorRecuperado.hora && ` (${borradorRecuperado.hora})`}.{" "}
+            <span className="font-normal text-muted-foreground">
+              Estaba guardada como borrador en este teléfono: revisá y guardá.
+            </span>
+          </p>
+          <button
+            onClick={() => {
+              window.localStorage.removeItem(CLAVE_BORRADOR);
+              setValores({});
+              setBorradorRecuperado(null);
+            }}
+            className="h-9 shrink-0 rounded-lg border border-border bg-card px-3 text-xs font-bold text-muted-foreground"
+          >
+            Descartar
+          </button>
+        </div>
+      )}
 
       {sinDeportistas && (
         <div className="flex flex-wrap items-center gap-2.5 rounded-xl bg-warning-soft p-3.5 text-sm text-warning">
