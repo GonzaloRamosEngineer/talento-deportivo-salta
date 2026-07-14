@@ -5,6 +5,7 @@ import { crearClienteBrowser } from "@/lib/supabase/client";
 import { usePerfil } from "@/components/perfil-context";
 import {
   CRONOGRAMA,
+  ENTRENADORES,
   HOY_DEMO,
   LUGARES,
   PARTIDOS,
@@ -43,6 +44,8 @@ export interface Agenda {
   /** reales + virtuales de la semana, con asistencia materializada */
   sesiones: Sesion[];
   partidos: Partido[];
+  /** miembros del club visibles (incluye al propio usuario) */
+  staff: number;
   recargar: () => void;
   /** el useDatos que alimentó este hook (categorías, deportistas…) */
   datos: Datos;
@@ -221,6 +224,7 @@ export function useAgenda(datos: Datos): Agenda {
         horarios: CRONOGRAMA.filter((h) => enAlcance(h.categoriaId)),
         sesiones: SESIONES.filter((s) => enAlcance(s.categoriaId)),
         partidos: PARTIDOS.filter((p) => enAlcance(p.categoriaId)),
+        staff: ENTRENADORES.length + 1,
         recargar,
         datos,
       };
@@ -240,6 +244,7 @@ export function useAgenda(datos: Datos): Agenda {
         horarios: [],
         sesiones: [],
         partidos: [],
+        staff: 0,
         recargar,
         datos,
       };
@@ -339,6 +344,7 @@ export function useAgenda(datos: Datos): Agenda {
       horarios,
       sesiones,
       partidos,
+      staff: listo.nombres.size,
       recargar,
       datos,
     };

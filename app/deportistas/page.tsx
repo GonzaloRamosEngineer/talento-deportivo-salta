@@ -14,6 +14,7 @@ import {
   Search,
   ShieldAlert,
   Table2,
+  UsersRound,
 } from "lucide-react";
 import { edad, edadLabel, nivelActual, type Deportista } from "@/lib/mock-data";
 import { useDatos } from "@/lib/use-datos";
@@ -21,6 +22,7 @@ import { tendenciaGeneral } from "@/lib/tendencia";
 import { EstadoBadge } from "@/components/estado-badge";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { AvisoAcceso } from "@/components/aviso-acceso";
+import { EstadoVacio } from "@/components/estado-vacio";
 import { usePerfil } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
@@ -101,6 +103,26 @@ function Deportistas() {
         : { col, dir: col === "nombre" ? 1 : -1 },
     );
 
+  // Estado vacío compartido por las dos vistas: enseña qué va acá y,
+  // si el rol puede operar, ofrece el alta directamente.
+  const plantelVacio = (
+    <EstadoVacio
+      icono={UsersRound}
+      titulo="Todavía no hay deportistas cargados"
+      detalle="Acá va a vivir el plantel: cada deportista con su ficha, su consentimiento y su curva de evolución medición a medición."
+      accion={
+        permisos.opera
+          ? { href: "/deportistas/nuevo", label: "Dar de alta el primero" }
+          : undefined
+      }
+      nota={
+        permisos.opera
+          ? undefined
+          : "El alta la hace el admin del club o un profe desde su cuenta."
+      }
+    />
+  );
+
   if (!permisos.veClub) {
     return (
       <AvisoAcceso
@@ -138,10 +160,8 @@ function Deportistas() {
           <h1 className="text-2xl font-extrabold tracking-tight">Deportistas</h1>
           <p className="text-sm text-muted-foreground">
             {visibles.length}{" "}
-            {permisos.categorias
-              ? "en tus categorías asignadas"
-              : "en total"}{" "}
-            · tocá para ver la ficha y su evolución
+            {permisos.categorias ? "en tus categorías asignadas" : "en total"}
+            {visibles.length > 0 && " · tocá para ver la ficha y su evolución"}
           </p>
         </div>
         {permisos.opera && (
@@ -265,17 +285,13 @@ function Deportistas() {
             );
           })}
           {lista.length === 0 && (
-            <li className="flex flex-col items-center gap-3 rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
-              {visibles.length === 0
-                ? "Todavía no hay deportistas cargados."
-                : "No hay deportistas para este filtro."}
-              {visibles.length === 0 && permisos.opera && (
-                <Link
-                  href="/deportistas/nuevo"
-                  className="flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
-                >
-                  <Plus className="size-4" aria-hidden /> Dar de alta el primero
-                </Link>
+            <li>
+              {visibles.length === 0 ? (
+                plantelVacio
+              ) : (
+                <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+                  No hay deportistas para este filtro.
+                </p>
               )}
             </li>
           )}
@@ -283,7 +299,13 @@ function Deportistas() {
       )}
 
       {/* ================= VISTA TABLA ================= */}
-      {vista === "tabla" && (
+      {vista === "tabla" && visibles.length === 0 && plantelVacio}
+      {vista === "tabla" && lista.length === 0 && visibles.length > 0 && (
+        <p className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">
+          No hay deportistas para este filtro.
+        </p>
+      )}
+      {vista === "tabla" && lista.length > 0 && (
         <div className="rounded-2xl border border-border bg-card">
           <div className="overflow-x-auto">
             <table className="w-full min-w-max border-collapse text-sm">

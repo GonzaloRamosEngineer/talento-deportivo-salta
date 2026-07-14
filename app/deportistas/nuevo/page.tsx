@@ -6,6 +6,7 @@ import {
   AlertCircle,
   ArrowLeft,
   Check,
+  Layers,
   Loader2,
   ShieldAlert,
   ShieldCheck,
@@ -14,6 +15,7 @@ import {
 import { crearClienteBrowser } from "@/lib/supabase/client";
 import { useClub } from "@/lib/use-club";
 import { AvisoAcceso } from "@/components/aviso-acceso";
+import { EstadoVacio } from "@/components/estado-vacio";
 import type { CategoriaDB } from "@/lib/tipos-db";
 import { cn } from "@/lib/utils";
 
@@ -60,7 +62,8 @@ const inputClase =
 
 export default function NuevoDeportistaPage() {
   const sesion = useClub();
-  const [categorias, setCategorias] = useState<CategoriaDB[]>([]);
+  // null = todavía cargando (distinto de "el club no tiene categorías")
+  const [categorias, setCategorias] = useState<CategoriaDB[] | null>(null);
   const [form, setForm] = useState<FormAlta>({ ...FORM_VACIO });
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
@@ -84,8 +87,8 @@ export default function NuevoDeportistaPage() {
   // El profe solo puede dar de alta en sus categorías asignadas
   const opciones = useMemo(() => {
     const visibles = sesion.categoriasAsignadas
-      ? categorias.filter((c) => sesion.categoriasAsignadas!.includes(c.id))
-      : categorias;
+      ? (categorias ?? []).filter((c) => sesion.categoriasAsignadas!.includes(c.id))
+      : (categorias ?? []);
     return [...visibles].sort((a, b) => a.nombre.localeCompare(b.nombre, "es"));
   }, [categorias, sesion.categoriasAsignadas]);
 
@@ -101,7 +104,7 @@ export default function NuevoDeportistaPage() {
     });
   };
 
-  if (sesion.cargando) {
+  if (sesion.cargando || (puedeOperar && categorias === null)) {
     return (
       <div className="flex justify-center py-20">
         <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
@@ -120,6 +123,42 @@ export default function NuevoDeportistaPage() {
     );
   }
 
+  // Sin categorías el alta no tiene dónde caer: en vez de un select
+  // vacío, explicar el paso previo según quién pueda resolverlo.
+  if (opciones.length === 0) {
+    const esAdmin = sesion.membresia?.rol === "admin_club";
+    return (
+      <div className="space-y-6">
+        <div>
+          <Link
+            href="/deportistas"
+            className="inline-flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-muted-foreground transition-colors hover:text-foreground"
+          >
+            <ArrowLeft className="size-3" aria-hidden /> Deportistas
+          </Link>
+          <h1 className="mt-2 text-2xl font-extrabold tracking-tight">
+            Nuevo deportista
+          </h1>
+        </div>
+        {esAdmin ? (
+          <EstadoVacio
+            icono={Layers}
+            titulo="Primero armá las categorías del club"
+            detalle="Cada deportista se carga dentro de una categoría (su cohorte de nacimiento). Hay una estructura estándar lista para generar en un toque."
+            accion={{ href: "/club/categorias", label: "Crear categorías" }}
+          />
+        ) : (
+          <EstadoVacio
+            icono={Layers}
+            titulo="Todavía no tenés categorías asignadas"
+            detalle="El admin del club te asigna tus categorías desde la pantalla de Staff. Cuando lo haga, desde acá vas a dar de alta a tu plantel."
+            nota="Si ya debería estar, avisale al admin del club."
+          />
+        )}
+      </div>
+    );
+  }
+
   const guardar = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!clubId) return;
@@ -135,6 +174,24 @@ export default function NuevoDeportistaPage() {
     setGuardando(true);
     setError("");
     const supabase = crearClienteBrowser();
+
+    // El deportista ya quedó en la base: sumarlo a "Cargados recién" y
+    // limpiar el form aunque falle un paso posterior, para que un
+    // reintento no lo duplique.
+    const registrarCargado = (consentimientoOk: boolean) => {
+      const categoria =
+        (categorias ?? []).find((c) => c.id === form.categoriaId)?.nombre ?? "";
+      setCargados((prev) => [
+        {
+          nombre: `${nombre} ${form.apellido.trim()}`.trim(),
+          categoria,
+          consentimiento: consentimientoOk,
+        },
+        ...prev,
+      ]);
+      // Queda lista para cargar al siguiente de la misma categoría
+      setForm({ ...FORM_VACIO, categoriaId: form.categoriaId });
+    };
 
     const { data: dep, error: eDep } = await supabase
       .from("deportista")
@@ -172,8 +229,9 @@ export default function NuevoDeportistaPage() {
       if (eTut) {
         setGuardando(false);
         setError(
-          `El deportista se guardó, pero falló el tutor: ${eTut.message}. Cargalo de nuevo desde su ficha.`,
+          `El deportista quedó guardado, pero falló el tutor: ${eTut.message}. Cargá el tutor desde su ficha (no vuelvas a dar el alta).`,
         );
+        registrarCargado(false);
         return;
       }
       tutorId = tut?.id ?? null;
@@ -189,19 +247,14 @@ export default function NuevoDeportistaPage() {
       if (eCons) {
         setGuardando(false);
         setError(
-          `El deportista se guardó, pero falló el consentimiento: ${eCons.message}.`,
+          `El deportista quedó guardado, pero falló el consentimiento: ${eCons.message}. Registralo desde su ficha (no vuelvas a dar el alta).`,
         );
+        registrarCargado(false);
         return;
       }
     }
 
-    const categoria = categorias.find((c) => c.id === form.categoriaId)?.nombre ?? "";
-    setCargados((prev) => [
-      { nombre: `${nombre} ${form.apellido.trim()}`.trim(), categoria, consentimiento: form.consentimiento },
-      ...prev,
-    ]);
-    // Queda lista para cargar al siguiente de la misma categoría
-    setForm({ ...FORM_VACIO, categoriaId: form.categoriaId });
+    registrarCargado(form.consentimiento);
     setGuardando(false);
   };
 

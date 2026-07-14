@@ -16,6 +16,7 @@ import {
 import { crearClienteBrowser } from "@/lib/supabase/client";
 import { useClub } from "@/lib/use-club";
 import { AvisoAcceso } from "@/components/aviso-acceso";
+import { Ayuda } from "@/components/ayuda";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import {
   ROL_LABEL,
@@ -193,7 +194,7 @@ export default function StaffPage() {
     let cancelado = false;
     async function cargar() {
       const supabase = crearClienteBrowser();
-      const [{ data: membs }, { data: cats }, { data: mc }] = await Promise.all([
+      const [rMembs, rCats, rMc] = await Promise.all([
         supabase
           .from("membresia")
           .select("id, auth_user_id, nombre, email, rol")
@@ -205,6 +206,16 @@ export default function StaffPage() {
         supabase.from("membresia_categoria").select("membresia_id, categoria_id"),
       ]);
       if (cancelado) return;
+      // sin esto, un error dejaba el spinner girando para siempre
+      const errorCarga = rMembs.error ?? rCats.error ?? rMc.error;
+      if (errorCarga) {
+        setError(`No se pudo cargar el staff: ${errorCarga.message}`);
+        setCargandoDatos(false);
+        return;
+      }
+      const { data: membs } = rMembs;
+      const { data: cats } = rCats;
+      const { data: mc } = rMc;
       const porMembresia: Record<string, string[]> = {};
       for (const fila of mc ?? []) {
         (porMembresia[fila.membresia_id] ??= []).push(fila.categoria_id);
@@ -358,6 +369,14 @@ export default function StaffPage() {
           </button>
         </div>
       </div>
+
+      <Ayuda
+        bullets={[
+          "No hay mails automáticos: al invitar se genera un LINK de acceso que le compartís por WhatsApp; con ese link la persona crea su clave y entra.",
+          "El profe solo ve y carga sus categorías asignadas; la comisión directiva ve todo pero no edita.",
+          "Si alguien pierde el acceso, generale un link nuevo desde su fila (el anterior deja de servir).",
+        ]}
+      />
 
       {error && (
         <div className="flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-3">

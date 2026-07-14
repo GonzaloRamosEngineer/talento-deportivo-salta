@@ -29,6 +29,7 @@ export default function ClubPage() {
   } | null>(null);
 
   const clubId = sesion.membresia?.clubId ?? null;
+  const [errorConteos, setErrorConteos] = useState(false);
 
   useEffect(() => {
     if (!clubId) return;
@@ -43,6 +44,11 @@ export default function ClubPage() {
         .select("id", { count: "exact", head: true })
         .eq("club_id", clubId),
     ]).then(([cats, staff, deps, cons, hors]) => {
+      // supabase-js no lanza: los errores vienen en el resultado
+      if (cats.error ?? staff.error ?? deps.error ?? cons.error ?? hors.error) {
+        setErrorConteos(true);
+        return;
+      }
       const sinConsentimiento = (cons.data ?? []).filter(
         (d) => !d.consentimiento || (Array.isArray(d.consentimiento) && d.consentimiento.length === 0),
       ).length;
@@ -53,7 +59,7 @@ export default function ClubPage() {
         pendientes: sinConsentimiento,
         horarios: hors.count ?? 0,
       });
-    });
+    }).catch(() => setErrorConteos(true)); // sin catch, los "…" quedaban para siempre
   }, [clubId]);
 
   if (sesion.cargando) {
@@ -88,7 +94,9 @@ export default function ClubPage() {
       icon: Users,
       titulo: "Staff",
       detalle: "Invitá profes por link, asignales sus categorías, sumá comisión directiva",
-      dato: conteos ? `${conteos.staff} personas` : "…",
+      dato: conteos
+        ? `${conteos.staff} ${conteos.staff === 1 ? "persona" : "personas"}`
+        : "…",
     },
     {
       href: "/club/agenda",
@@ -126,6 +134,13 @@ export default function ClubPage() {
         </div>
       </div>
 
+      {errorConteos && (
+        <p className="rounded-xl border border-destructive/20 bg-destructive/5 p-3 text-sm font-semibold text-destructive">
+          No se pudieron cargar los conteos del club. Revisá la conexión y
+          recargá la página.
+        </p>
+      )}
+
       <div className="grid gap-3">
         {tarjetas.map(({ href, icon: Icon, titulo, detalle, dato }) => (
           <Link
@@ -137,7 +152,16 @@ export default function ClubPage() {
               <Icon className="size-6" aria-hidden />
             </span>
             <span className="min-w-0 flex-1">
-              <span className="block text-base font-extrabold">{titulo}</span>
+              <span className="flex items-center gap-2 text-base font-extrabold">
+                {titulo}
+                {href === "/club/categorias" &&
+                  conteos !== null &&
+                  conteos.categorias === 0 && (
+                    <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-primary">
+                      Empezá acá
+                    </span>
+                  )}
+              </span>
               <span className="block text-xs leading-relaxed text-muted-foreground">
                 {detalle}
               </span>

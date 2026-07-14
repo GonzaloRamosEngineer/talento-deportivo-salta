@@ -17,6 +17,10 @@ import { useDatos } from "@/lib/use-datos";
 import { useAgenda } from "@/lib/use-agenda";
 import { useObservatorio } from "@/lib/use-observatorio";
 import { AlertasRegistro } from "@/components/alertas-registro";
+import {
+  PrimerosPasos,
+  PrimerosPasosPlataforma,
+} from "@/components/primeros-pasos";
 import { EscudoClub } from "@/components/escudo-club";
 import { EventoCard } from "@/components/evento-card";
 import { EnElRadar, Proximamente } from "@/components/proximamente";
@@ -38,7 +42,7 @@ const DESTACADOS_DEMO: { deportistaId: string; atributoId: string }[] = [
 ];
 
 function InicioPlataforma() {
-  const { cargando, clubes } = useObservatorio();
+  const { cargando, clubes, real } = useObservatorio();
   const totales = clubes.reduce(
     (acc, c) => ({
       deportistas: acc.deportistas + c.deportistas,
@@ -65,6 +69,7 @@ function InicioPlataforma() {
           Vista de operador: solo datos agregados, sin acceso a fichas
         </p>
       </div>
+      <PrimerosPasosPlataforma clubes={clubes} real={real} />
       <div className="grid grid-cols-3 gap-3">
         <div className="rounded-2xl border border-border bg-card p-3.5">
           <p className="text-2xl font-extrabold">{clubes.length}</p>
@@ -233,6 +238,15 @@ export default function Inicio() {
           Modo consulta: ves todo el club, sin cargar ni editar.
         </div>
       )}
+
+      {/* Onboarding: pasos por rol calculados del estado real; se
+          tildan solos y la card desaparece al completarse */}
+      <PrimerosPasos
+        datos={datos}
+        agenda={agenda}
+        gestiona={permisos.gestiona}
+        opera={permisos.opera}
+      />
 
       {/* CTAs de operación: solo perfiles que cargan */}
       {permisos.opera && (

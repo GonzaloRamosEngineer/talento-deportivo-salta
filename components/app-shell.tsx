@@ -188,7 +188,8 @@ function SelectorPerfil({ compacto = false }: { compacto?: boolean }) {
         )}
         title="Rol de tu sesión — no se puede cambiar desde acá"
       >
-        {actual.label}
+        {/* sin el "(Marcela)" del personaje demo: acá el rol es real */}
+        {actual.label.replace(/\s*\(.+\)$/, "")}
       </span>
     );
   }

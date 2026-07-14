@@ -12,12 +12,14 @@ import {
   Loader2,
   Pencil,
   Plus,
+  Shield,
   Trash2,
   Users,
   X,
 } from "lucide-react";
 import { AvisoAcceso } from "@/components/aviso-acceso";
 import { EscudoClub } from "@/components/escudo-club";
+import { EstadoVacio } from "@/components/estado-vacio";
 import { usePerfil } from "@/components/perfil-context";
 import { SALTA_DEPARTAMENTOS } from "@/lib/salta-departamentos";
 import {
@@ -424,9 +426,12 @@ export default function ClubesPlataforma() {
           <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden />
         </div>
       ) : clubes.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-border px-4 py-10 text-center text-sm text-muted-foreground">
-          Todavía no hay clubes: creá el primero.
-        </p>
+        <EstadoVacio
+          icono={Shield}
+          titulo="Todavía no hay clubes"
+          detalle="Acá se da de alta cada club de la red: se crea con su referente y un link de acceso para que arme categorías, staff y deportistas por su cuenta."
+          nota="Se crea con el botón Nuevo club, acá arriba."
+        />
       ) : (
         <div className="flex flex-col gap-3">
           {clubes.map((c) => (

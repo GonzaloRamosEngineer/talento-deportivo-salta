@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, Loader2, MapPin, Plus, Settings } from "lucide-react";
+import { CalendarDays, Loader2, MapPin, Plus } from "lucide-react";
 import { DIAS } from "@/lib/mock-data";
 import { useDatos } from "@/lib/use-datos";
 import { useAgenda, lunesDe } from "@/lib/use-agenda";
 import { EventoCard } from "@/components/evento-card";
 import { AvisoAcceso } from "@/components/aviso-acceso";
+import { Ayuda } from "@/components/ayuda";
+import { EstadoVacio } from "@/components/estado-vacio";
 import { usePerfil } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
@@ -101,28 +103,36 @@ export default function Agenda() {
         </p>
       )}
 
+      <Ayuda
+        bullets={[
+          "La semana se arma sola con el cronograma fijo de cada categoría: cada horario aparece como sesión programada.",
+          "Al pasar lista la sesión queda registrada como realizada; solo se anotan las ausencias, el resto cuenta presente.",
+          "Los partidos se cargan aparte, con su citación; el resultado se completa después, desde el detalle del partido.",
+        ]}
+      />
+
       {/* Sin cronograma todavía: guía al que puede resolverlo */}
       {agenda.real && agenda.horarios.length === 0 && (
-        <div className="rounded-2xl border border-dashed border-border p-6 text-center">
-          <CalendarDays className="mx-auto size-8 text-muted-foreground" aria-hidden />
-          <p className="mt-2 text-sm font-bold">Todavía no hay cronograma semanal</p>
-          <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">
-            {esAdmin
+        <EstadoVacio
+          icono={CalendarDays}
+          titulo="Todavía no hay cronograma semanal"
+          detalle={
+            esAdmin
               ? "Cargá los días y horarios fijos de cada categoría y la agenda se arma sola, semana a semana."
-              : "Cuando la administración del club cargue los horarios fijos de tus categorías, acá vas a ver la semana armada."}
-          </p>
-          {esAdmin && (
-            <Link
-              href="/club/agenda"
-              className="mt-3 inline-flex h-10 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-bold text-primary-foreground"
-            >
-              <Settings className="size-4" aria-hidden /> Armar cronograma
-            </Link>
-          )}
-        </div>
+              : "Cuando la administración del club cargue los horarios fijos de tus categorías, acá vas a ver la semana armada."
+          }
+          accion={
+            esAdmin
+              ? { href: "/club/agenda", label: "Armar cronograma" }
+              : undefined
+          }
+        />
       )}
 
       {/* ---------- Esta semana ---------- */}
+      {/* Sin cronograma ni eventos, los 7 días en "Sin actividad" no
+          suman nada: el estado vacío de arriba ya explica todo. */}
+      {(agenda.horarios.length > 0 || eventos.length > 0) && (
       <section className="flex flex-col gap-3">
         <h2 className="text-base font-extrabold">
           Esta semana{" "}
@@ -171,6 +181,7 @@ export default function Agenda() {
           );
         })}
       </section>
+      )}
 
       {/* ---------- Resultados recientes ---------- */}
       {resultados.length > 0 && (

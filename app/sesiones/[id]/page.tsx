@@ -416,7 +416,15 @@ function VistaSesion({ sesion, agenda }: { sesion: Sesion; agenda: Agenda }) {
             })}
             {lista.length === 0 && (
               <li className="px-4 py-6 text-center text-sm text-muted-foreground">
-                No hay deportistas cargados en esta categoría todavía.
+                No hay deportistas cargados en esta categoría todavía.{" "}
+                {editable && (
+                  <Link
+                    href="/deportistas/nuevo"
+                    className="font-semibold text-primary"
+                  >
+                    Dar de alta
+                  </Link>
+                )}
               </li>
             )}
           </ul>
@@ -428,7 +436,11 @@ function VistaSesion({ sesion, agenda }: { sesion: Sesion; agenda: Agenda }) {
         <div className="flex flex-col gap-2">
           <button
             onClick={() => void guardar("realizada")}
-            disabled={guardando || lista.length === 0}
+            disabled={
+              guardando ||
+              lista.length === 0 ||
+              (sesion.estado === "realizada" && !tocado)
+            }
             className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground transition-transform active:scale-[0.99] disabled:opacity-60"
           >
             {guardando ? (
@@ -439,7 +451,7 @@ function VistaSesion({ sesion, agenda }: { sesion: Sesion; agenda: Agenda }) {
             {sesion.estado === "realizada"
               ? tocado
                 ? "Guardar cambios"
-                : "Asistencia guardada"
+                : "Asistencia guardada — tocá un nombre para corregir"
               : `Guardar asistencia (${presentes} presentes)`}
           </button>
 

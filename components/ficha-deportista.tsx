@@ -35,6 +35,7 @@ import { NivelBar } from "@/components/nivel-bar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { usePerfil } from "@/components/perfil-context";
 import { AvisoAcceso } from "@/components/aviso-acceso";
+import { EstadoVacio } from "@/components/estado-vacio";
 import { cn } from "@/lib/utils";
 
 // Flecha chica de tendencia para las filas de habilidades
@@ -305,6 +306,21 @@ export function FichaDeportista({
 
         {/* ---------- HABILIDADES (mapa del jugador) ---------- */}
         <TabsContent value="habilidades" className="mt-3 flex flex-col gap-3">
+          {medidos.length === 0 && (
+            <EstadoVacio
+              icono={ClipboardPlus}
+              titulo="Todavía sin mediciones"
+              detalle={`Acá va a estar el mapa de habilidades de ${deportista.nombre}: cada atributo medido con su último valor y su tendencia. Arranca con la primera jornada de medición.`}
+              accion={
+                permisos.opera
+                  ? {
+                      href: `/medicion?categoria=${deportista.categoriaId}`,
+                      label: "Registrar la primera medición",
+                    }
+                  : undefined
+              }
+            />
+          )}
           {fisicas.length > 0 && (
             <section className="rounded-2xl border border-border bg-card">
               <h2 className="border-b border-border px-4 py-3 text-sm font-extrabold">
@@ -416,14 +432,31 @@ export function FichaDeportista({
             </section>
           )}
 
-          <p className="px-1 text-[11px] leading-snug text-muted-foreground">
-            Tocá una habilidad para ver su evolución en el tiempo. Las demás
-            habilidades del catálogo aparecen acá cuando se cargan mediciones.
-          </p>
+          {medidos.length > 0 && (
+            <p className="px-1 text-[11px] leading-snug text-muted-foreground">
+              Tocá una habilidad para ver su evolución en el tiempo. Las demás
+              habilidades del catálogo aparecen acá cuando se cargan mediciones.
+            </p>
+          )}
         </TabsContent>
 
         {/* ---------- EVOLUCIÓN (la estrella) ---------- */}
         <TabsContent value="evolucion" className="mt-3 flex flex-col gap-3">
+          {medidos.length === 0 && (
+            <EstadoVacio
+              icono={ClipboardPlus}
+              titulo="La curva arranca con la primera medición"
+              detalle="Acá se dibuja la evolución de cada atributo en el tiempo, con su tendencia calculada de las últimas 3 mediciones."
+              accion={
+                permisos.opera
+                  ? {
+                      href: `/medicion?categoria=${deportista.categoriaId}`,
+                      label: "Registrar la primera medición",
+                    }
+                  : undefined
+              }
+            />
+          )}
           <div
             className="flex gap-2 overflow-x-auto pb-1"
             role="tablist"
@@ -520,7 +553,7 @@ export function FichaDeportista({
             </section>
           )}
 
-          {permisos.opera && (
+          {permisos.opera && medidos.length > 0 && (
             <Link
               href={`/medicion?atributo=${atributoId}&categoria=${deportista.categoriaId}`}
               className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground transition-transform active:scale-[0.99]"

@@ -7,6 +7,7 @@ import {
   AlertCircle,
   ArrowLeft,
   Check,
+  Layers,
   Loader2,
   Trophy,
 } from "lucide-react";
@@ -14,6 +15,7 @@ import { crearClienteBrowser } from "@/lib/supabase/client";
 import { useDatos, hoyLocalISO } from "@/lib/use-datos";
 import { useAgenda } from "@/lib/use-agenda";
 import { AvisoAcceso } from "@/components/aviso-acceso";
+import { EstadoVacio } from "@/components/estado-vacio";
 import { usePerfil } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
@@ -62,6 +64,37 @@ function FormPartido() {
         accionHref={agenda.real ? "/sesiones" : "/login"}
         accionLabel={agenda.real ? "Ver la agenda" : "Ingresar"}
       />
+    );
+  }
+
+  // Sin categorías no hay a quién citar: explicar el paso previo en
+  // vez de mostrar un select vacío.
+  if (datos.categorias.length === 0) {
+    return (
+      <div className="flex flex-col gap-4">
+        <Link
+          href="/sesiones"
+          className="flex w-fit items-center gap-1.5 text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+        >
+          <ArrowLeft className="size-4" aria-hidden />
+          Agenda
+        </Link>
+        {permisos.gestiona ? (
+          <EstadoVacio
+            icono={Layers}
+            titulo="Primero armá las categorías del club"
+            detalle="Un partido pertenece a una categoría y cita a su plantel. Generá la estructura estándar o creá la primera categoría."
+            accion={{ href: "/club/categorias", label: "Crear categorías" }}
+          />
+        ) : (
+          <EstadoVacio
+            icono={Layers}
+            titulo="Todavía no tenés categorías asignadas"
+            detalle="Cuando el admin del club te asigne tus categorías, desde acá vas a cargar los partidos con su citación."
+            nota="Si ya debería estar, avisale al admin del club."
+          />
+        )}
+      </div>
     );
   }
 
@@ -335,7 +368,13 @@ function FormPartido() {
             })}
             {plantel.length === 0 && (
               <li className="px-4 py-6 text-center text-sm text-muted-foreground">
-                No hay deportistas cargados en esta categoría.
+                No hay deportistas cargados en esta categoría.{" "}
+                <Link
+                  href="/deportistas/nuevo"
+                  className="font-semibold text-primary"
+                >
+                  Dar de alta
+                </Link>
               </li>
             )}
           </ul>
@@ -344,7 +383,7 @@ function FormPartido() {
 
       <button
         onClick={() => void guardar()}
-        disabled={guardando}
+        disabled={guardando || !categoriaId || !rival.trim()}
         className="flex h-12 items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground transition-transform active:scale-[0.99] disabled:opacity-60"
       >
         {guardando ? (
@@ -354,6 +393,15 @@ function FormPartido() {
         )}
         Guardar partido
       </button>
+      {(!categoriaId || !rival.trim()) && (
+        <p className="-mt-2 text-center text-[11px] text-muted-foreground">
+          Para guardar falta{" "}
+          {[!categoriaId && "la categoría", !rival.trim() && "el rival"]
+            .filter(Boolean)
+            .join(" y ")}
+          .
+        </p>
+      )}
     </div>
   );
 }

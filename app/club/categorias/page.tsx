@@ -6,6 +6,7 @@ import {
   AlertCircle,
   ArrowLeft,
   Check,
+  Layers,
   Loader2,
   Pencil,
   Plus,
@@ -16,6 +17,7 @@ import {
 import { crearClienteBrowser } from "@/lib/supabase/client";
 import { useClub } from "@/lib/use-club";
 import { AvisoAcceso } from "@/components/aviso-acceso";
+import { EstadoVacio } from "@/components/estado-vacio";
 import type { CategoriaDB, TipoCategoria } from "@/lib/tipos-db";
 import { cn } from "@/lib/utils";
 
@@ -99,7 +101,7 @@ export default function CategoriasPage() {
     let cancelado = false;
     async function cargar() {
       const supabase = crearClienteBrowser();
-      const [{ data: cats }, { data: deps }, { data: disc }] = await Promise.all([
+      const [rCats, rDeps, rDisc] = await Promise.all([
         supabase
           .from("categoria")
           .select("id, nombre, tipo, anio_nacimiento, disciplina_id")
@@ -108,6 +110,16 @@ export default function CategoriasPage() {
         supabase.from("disciplina").select("id").eq("nombre", "Fútbol").maybeSingle(),
       ]);
       if (cancelado) return;
+      // sin esto, un error dejaba el spinner girando para siempre
+      const errorCarga = rCats.error ?? rDeps.error ?? rDisc.error;
+      if (errorCarga) {
+        setError(`No se pudieron cargar las categorías: ${errorCarga.message}`);
+        setCargandoDatos(false);
+        return;
+      }
+      const { data: cats } = rCats;
+      const { data: deps } = rDeps;
+      const { data: disc } = rDisc;
       const porCategoria: Record<string, number> = {};
       for (const d of deps ?? []) {
         if (d.categoria_id) {
@@ -411,9 +423,12 @@ export default function CategoriasPage() {
           <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden />
         </div>
       ) : ordenadas.length === 0 ? (
-        <p className="py-8 text-center text-sm text-muted-foreground">
-          Todavía no hay categorías: generá la estructura estándar o creá la primera a mano.
-        </p>
+        <EstadoVacio
+          icono={Layers}
+          titulo="Todavía no hay categorías"
+          detalle="Las categorías ordenan todo lo demás: deportistas, mediciones y agenda viven adentro de una. Generá la estructura estándar de arriba o creá la primera a mano."
+          nota="Después se pueden renombrar, sumar o borrar (mientras estén vacías)."
+        />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
           {ordenadas.map((c, i) => {

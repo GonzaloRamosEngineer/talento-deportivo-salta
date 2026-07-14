@@ -16,6 +16,8 @@ import {
 import { crearClienteBrowser } from "@/lib/supabase/client";
 import { useClub } from "@/lib/use-club";
 import { AvisoAcceso } from "@/components/aviso-acceso";
+import { Ayuda } from "@/components/ayuda";
+import { EstadoVacio } from "@/components/estado-vacio";
 import { DIAS } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
@@ -79,7 +81,7 @@ export default function AgendaClubPage() {
     let cancelado = false;
     async function cargar() {
       const supabase = crearClienteBrowser();
-      const [{ data: cats }, { data: lugs }, { data: hors }] = await Promise.all([
+      const [rCats, rLugs, rHors] = await Promise.all([
         supabase
           .from("categoria")
           .select("id, nombre, tipo, anio_nacimiento")
@@ -97,9 +99,16 @@ export default function AgendaClubPage() {
           .order("hora"),
       ]);
       if (cancelado) return;
-      setCategorias((cats as Cat[]) ?? []);
-      setLugares((lugs as LugarFila[]) ?? []);
-      setHorarios((hors as HorarioFila[]) ?? []);
+      // sin esto, un error dejaba el spinner girando para siempre
+      const errorCarga = rCats.error ?? rLugs.error ?? rHors.error;
+      if (errorCarga) {
+        setError(`No se pudo cargar la agenda del club: ${errorCarga.message}`);
+        setCargandoDatos(false);
+        return;
+      }
+      setCategorias((rCats.data as Cat[]) ?? []);
+      setLugares((rLugs.data as LugarFila[]) ?? []);
+      setHorarios((rHors.data as HorarioFila[]) ?? []);
       setCargandoDatos(false);
     }
     void cargar();
@@ -246,6 +255,14 @@ export default function AgendaClubPage() {
         </div>
       </div>
 
+      <Ayuda
+        bullets={[
+          "Los lugares son las canchas y predios del club; cada horario y cada partido de local se asigna a uno.",
+          "El cronograma es la rutina fija (ej. 9ª División: martes y jueves 18:00): de acá se generan solas las sesiones de cada semana y el profe solo pasa lista.",
+          "Cargar la rutina de una categoría son 2 o 3 altas seguidas; el formulario queda abierto a propósito para eso.",
+        ]}
+      />
+
       {aviso && (
         <div className="flex items-start gap-2 rounded-xl border border-primary/25 bg-secondary/60 p-3">
           <Check className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden />
@@ -337,9 +354,12 @@ export default function AgendaClubPage() {
             <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden />
           </div>
         ) : lugares.length === 0 ? (
-          <p className="rounded-2xl border border-dashed border-border px-4 py-6 text-center text-sm text-muted-foreground">
-            Sin lugares todavía. Cargá la sede y los predios donde se entrena.
-          </p>
+          <EstadoVacio
+            icono={MapPin}
+            titulo="Sin lugares todavía"
+            detalle="Cargá la sede y los predios donde entrena el club. Cada horario del cronograma y cada partido de local se asignan a un lugar."
+            nota="Se agregan con el botón Lugar, acá arriba."
+          />
         ) : (
           <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
             {lugares.map((l, i) => (
@@ -391,20 +411,32 @@ export default function AgendaClubPage() {
       <section className="space-y-3">
         <div className="flex items-center justify-between">
           <h2 className="text-base font-extrabold">Cronograma semanal</h2>
-          <button
-            onClick={() =>
-              setFormHorario({
-                categoriaId: catsOrdenadas[0]?.id ?? "",
-                dia: "1",
-                hora: "",
-                lugarId: lugares[0]?.id ?? "",
-              })
-            }
-            className="flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3.5 text-xs font-bold text-primary-foreground transition-all hover:opacity-90"
-          >
-            <Plus className="size-3.5" aria-hidden /> Horario
-          </button>
+          {catsOrdenadas.length > 0 && (
+            <button
+              onClick={() =>
+                setFormHorario({
+                  categoriaId: catsOrdenadas[0]?.id ?? "",
+                  dia: "1",
+                  hora: "",
+                  lugarId: lugares[0]?.id ?? "",
+                })
+              }
+              className="flex h-9 items-center gap-1.5 rounded-lg bg-primary px-3.5 text-xs font-bold text-primary-foreground transition-all hover:opacity-90"
+            >
+              <Plus className="size-3.5" aria-hidden /> Horario
+            </button>
+          )}
         </div>
+
+        {/* Sin categorías no hay a qué ponerle horario: primero eso */}
+        {!cargandoDatos && catsOrdenadas.length === 0 && (
+          <EstadoVacio
+            icono={CalendarDays}
+            titulo="Primero armá las categorías del club"
+            detalle="Cada horario fijo pertenece a una categoría. Cuando las tengas creadas, acá cargás su rutina semanal."
+            accion={{ href: "/club/categorias", label: "Crear categorías" }}
+          />
+        )}
 
         {formHorario && (
           <div className="rounded-2xl border border-border bg-card p-4 shadow-sm">
@@ -496,7 +528,7 @@ export default function AgendaClubPage() {
                 }}
                 className="h-10 rounded-xl px-4 text-sm font-bold text-muted-foreground"
               >
-                Listo
+                Cerrar
               </button>
             </div>
           </div>
@@ -507,15 +539,14 @@ export default function AgendaClubPage() {
             <Loader2 className="size-5 animate-spin text-muted-foreground" aria-hidden />
           </div>
         ) : conRutina.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-border p-6 text-center">
-            <CalendarDays className="mx-auto size-8 text-muted-foreground" aria-hidden />
-            <p className="mt-2 text-sm font-bold">El cronograma está vacío</p>
-            <p className="mx-auto mt-1 max-w-sm text-xs leading-relaxed text-muted-foreground">
-              Agregá los días y horarios fijos de cada categoría (ej. 9ª División:
-              martes y jueves 18:00). La agenda de cada semana se genera sola a
-              partir de acá.
-            </p>
-          </div>
+          catsOrdenadas.length > 0 && (
+            <EstadoVacio
+              icono={CalendarDays}
+              titulo="El cronograma está vacío"
+              detalle="Agregá los días y horarios fijos de cada categoría (ej. 9ª División: martes y jueves 18:00). La agenda de cada semana se genera sola a partir de acá."
+              nota="Se agregan con el botón Horario, acá arriba."
+            />
+          )
         ) : (
           <div className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
             {conRutina.map((c, i) => (

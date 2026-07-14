@@ -9,6 +9,7 @@ import { hoyLocalISO, useDatos } from "@/lib/use-datos";
 import { crearClienteBrowser } from "@/lib/supabase/client";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { AvisoAcceso } from "@/components/aviso-acceso";
+import { Ayuda } from "@/components/ayuda";
 import { usePerfil } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
@@ -177,6 +178,14 @@ function JornadaDeMedicion() {
           Elegí qué medir y cargá a toda la categoría de corrido
         </p>
       </div>
+
+      <Ayuda
+        bullets={[
+          "Se carga UN atributo para toda la categoría, de corrido: ideal para la jornada en la cancha con el celular.",
+          "Si el mismo día se vuelve a cargar un valor para un deportista, se corrige (no se duplica): una medición por día.",
+          "Cada valor suma un punto a la curva de evolución del deportista; se puede dejar a alguien sin cargar sin problema.",
+        ]}
+      />
 
       {sinDeportistas && (
         <div className="flex flex-wrap items-center gap-2.5 rounded-xl bg-warning-soft p-3.5 text-sm text-warning">
