@@ -78,8 +78,21 @@ hecho y decidido al ejecutar. El resto del documento queda como diseño.
   profesional. Sin cambio de esquema, sin Mirwald, sin talla adulta.
   **Moore et al. NO se construyó**: sigue esperando el aval del PF.
 
+- **Sesión A del estirón (2026-07-17): parámetros configurables +
+  Moore et al. CONSTRUIDOS** (decisión del usuario: no esperar al PF,
+  publicar bajo flag pendiente-de-revisión). Umbrales de aceleración
+  POR SEXO + separación de tramos en tabla global
+  `parametro_crecimiento`, editables en `/plataforma/parametros` (con
+  advertencia de impacto global y auditoría). Estimación de madurez
+  Moore et al. 2015 en la card El estirón: por sexo, margen ± 7 meses
+  SIEMPRE visible, explicación llana, link al paper (DOI
+  10.1249/MSS.0000000000000588), solo con sexo M/F + nacimiento + ≥2
+  tallas + edad en rango de calibración. Mirwald/Khamis-Roche/talla
+  adulta siguen prohibidos.
+
 **Pendiente real que sigue:** la revisión del PF — contenido base del
-Módulo B, umbral/nota del Módulo D y aval (o no) de Moore et al.
+Módulo B, umbrales/nota del Módulo D y presentación de Moore et al.
+(el flag `MOORE_PENDIENTE_AVAL` se apaga con su visto bueno).
 
 ## 1 · El círculo virtuoso — adoptado, con una corrección
 

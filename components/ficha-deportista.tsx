@@ -29,7 +29,8 @@ import { useDatos, type Datos } from "@/lib/use-datos";
 import { useAgenda } from "@/lib/use-agenda";
 import { crearClienteBrowser } from "@/lib/supabase/client";
 import { tendencia, type Estado } from "@/lib/tendencia";
-import { crecimiento, zonasAceleracion } from "@/lib/crecimiento";
+import { crecimiento, umbralPara, zonasAceleracion } from "@/lib/crecimiento";
+import { useParametrosCrecimiento } from "@/lib/use-parametros";
 import { Estiron } from "@/components/estiron";
 import { EstadoBadge } from "@/components/estado-badge";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
@@ -140,13 +141,18 @@ export function FichaDeportista({
   const serie = atributo ? (deportista.mediciones[atributo.id] ?? []) : [];
   const t = atributo ? tendencia(serie, atributo) : null;
   // Módulo D: en la talla se marca la zona de crecimiento acelerado
-  // sobre la curva y se muestra la card "El estirón".
+  // sobre la curva y se muestra la card "El estirón". El umbral y la
+  // separación de tramos salen de los parámetros globales de la
+  // plataforma (con fallback a los defaults del código).
+  const parametros = useParametrosCrecimiento();
   const esTalla = atributo?.nombre === "Talla";
   const zonasEstiron = esTalla
-    ? zonasAceleracion(crecimiento(serie).tramos).map((z) => ({
-        ...z,
-        etiqueta: "Crecimiento acelerado (registro)",
-      }))
+    ? zonasAceleracion(
+        crecimiento(serie, {
+          umbral: umbralPara(deportista.sexo, parametros),
+          minDias: parametros.minDiasTramo,
+        }).tramos,
+      ).map((z) => ({ ...z, etiqueta: "Crecimiento acelerado (registro)" }))
     : undefined;
   const categoria = datos.categorias.find((c) => c.id === deportista.categoriaId);
   // Sesiones en las que aparece: reales (asistencia por excepción ya
@@ -555,7 +561,9 @@ export function FichaDeportista({
             </section>
           )}
 
-          {esTalla && serie.length > 0 && <Estiron serie={serie} />}
+          {esTalla && serie.length > 0 && (
+            <Estiron deportista={deportista} serie={serie} parametros={parametros} />
+          )}
 
           {/* Historial: la vista tabla del gráfico */}
           {serie.length > 0 && atributo && (

@@ -210,10 +210,32 @@ PISAN el plan de `negocio/10` donde difieran:
   como las guías del Módulo B. Lenguaje SIEMPRE de registro observado:
   nada de madurez, PHV como diagnóstico ni proyección de talla adulta.
   La estimación Moore et al. sigue EXCLUIDA hasta el aval del PF.
+- **Sesión A del estirón hecha (2026-07-17)**: (1) tabla GLOBAL
+  `parametro_crecimiento` (migración `20260717090000`, APLICADA) —
+  singleton (PK boolean con check), umbral de aceleración POR SEXO
+  (M 7 / F 6,5 cm/año) + `min_dias_tramo` (90), RLS lectura
+  `authenticated`, escritura NADIE por RLS (solo la server action de
+  plataforma con service role, gate `app_metadata.plataforma`, con
+  auditoría `actualizado_en/por`). Pantalla `/plataforma/parametros`
+  (nav "Parámetros" del perfil plataforma) con advertencia de impacto
+  global. `lib/use-parametros.ts` (dual: anónimo/error → defaults de
+  `PARAMETROS_CRECIMIENTO_DEFAULT`). `crecimiento()` acepta
+  `{umbral, minDias}` y `umbralPara(sexo, params)` resuelve el umbral
+  (F → femenino; M/X/null → masculino). (2) **Moore et al. 2015** en
+  la card El estirón: `estimacionMadurez()` (edad×talla por sexo,
+  ecuaciones del paper, DOI 10.1249/MSS.0000000000000588) devuelve
+  offset/edad de pico SOLO si sexo M/F + fecha de nacimiento + ≥2
+  tallas + edad en rango de calibración (M 8-18, F 8-16); la UI lo
+  muestra SIEMPRE con "± 7 meses", explicación llana, link al paper y
+  flag `MOORE_PENDIENTE_AVAL` (se apaga cuando el PF revise, como
+  GUIA_PENDIENTE_REVISION). PROHIBIDO seguir: Mirwald, Khamis-Roche,
+  proyección de talla adulta. Gotcha JSX de este Next: `{expr} texto`
+  puede COMERSE el espacio previo al texto — usar template literals
+  (`{`al menos ${meses} meses`}`) en copys con interpolación.
 - Pendientes vivos: revisión del PF sobre el contenido del Módulo B y
-  sobre el umbral/nota del Módulo D (+ decidir si avala Moore et al.).
-  Cuentas demo y rotación de clave de DB: diferidos por decisión (la
-  vitrina es ficticia).
+  sobre umbrales/nota/presentación Moore del Módulo D. Cuentas demo y
+  rotación de clave de DB: diferidos por decisión (la vitrina es
+  ficticia).
 
 El observatorio también es real (2026-07-12, migración
 `20260712231049_observatorio_agregados.sql` APLICADA): la ÚNICA

@@ -12,6 +12,7 @@ import {
   Landmark,
   Settings,
   Shield,
+  Sprout,
   LogIn,
   LogOut,
   Check,
@@ -150,6 +151,7 @@ function navPara(perfil: Perfil): NavItem[] {
       { href: "/panel", label: "Inicio", icon: Home },
       { href: "/observatorio", label: "Observatorio", icon: Landmark, destacado: true },
       { href: "/plataforma/clubes", label: "Clubes", icon: Shield },
+      { href: "/plataforma/parametros", label: "Parámetros", icon: Sprout },
     ];
   }
   const base: NavItem[] = [

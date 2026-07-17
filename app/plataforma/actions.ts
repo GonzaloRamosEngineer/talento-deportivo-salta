@@ -330,3 +330,73 @@ export async function borrarClub(clubId: string): Promise<Resultado<null>> {
   if (error) return { ok: false, error: error.message };
   return { ok: true, data: null };
 }
+
+// ---------- Parámetros globales del Módulo D (el estirón) ----------
+
+export interface ParametrosPlataforma {
+  umbralM: number;
+  umbralF: number;
+  minDias: number;
+  actualizadoEn: string | null;
+  actualizadoPor: string | null;
+}
+
+/** Fila singleton de `parametro_crecimiento`, con su metadata de auditoría. */
+export async function leerParametros(): Promise<Resultado<ParametrosPlataforma>> {
+  if (!(await esPlataforma())) return { ok: false, error: "Solo para la plataforma." };
+  const admin = crearClienteAdmin();
+  const { data, error } = await admin
+    .from("parametro_crecimiento")
+    .select("umbral_aceleracion_m, umbral_aceleracion_f, min_dias_tramo, actualizado_en, actualizado_por")
+    .limit(1)
+    .maybeSingle();
+  if (error || !data) return { ok: false, error: error?.message ?? "Sin fila de parámetros." };
+  return {
+    ok: true,
+    data: {
+      umbralM: Number(data.umbral_aceleracion_m),
+      umbralF: Number(data.umbral_aceleracion_f),
+      minDias: data.min_dias_tramo,
+      actualizadoEn: data.actualizado_en,
+      actualizadoPor: data.actualizado_por,
+    },
+  };
+}
+
+/**
+ * Actualiza los parámetros GLOBALES del módulo de crecimiento. Impacta
+ * a todos los clubes de la plataforma: cambia qué deportistas aparecen
+ * marcados "en crecimiento acelerado". La tabla no tiene políticas de
+ * escritura (nadie escribe por RLS): solo esta action con service role.
+ */
+export async function guardarParametros(input: {
+  umbralM: number;
+  umbralF: number;
+  minDias: number;
+}): Promise<Resultado<null>> {
+  if (!(await esPlataforma())) return { ok: false, error: "Solo para la plataforma." };
+  // espejo de los checks de la tabla, con mensajes en criollo
+  if (!(input.umbralM >= 3 && input.umbralM <= 15) || !(input.umbralF >= 3 && input.umbralF <= 15)) {
+    return { ok: false, error: "Los umbrales tienen que estar entre 3 y 15 cm/año." };
+  }
+  if (!Number.isInteger(input.minDias) || input.minDias < 30 || input.minDias > 365) {
+    return { ok: false, error: "La separación mínima tiene que ser un entero entre 30 y 365 días." };
+  }
+  const supabase = await crearClienteServer();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const admin = crearClienteAdmin();
+  const { error } = await admin
+    .from("parametro_crecimiento")
+    .update({
+      umbral_aceleracion_m: input.umbralM,
+      umbral_aceleracion_f: input.umbralF,
+      min_dias_tramo: input.minDias,
+      actualizado_en: new Date().toISOString(),
+      actualizado_por: user?.email ?? null,
+    })
+    .eq("id", true);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true, data: null };
+}
