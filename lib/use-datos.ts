@@ -12,8 +12,10 @@ import {
   type Atributo,
   type Categoria,
   type Deportista,
+  type HitoTrayectoria,
   type Medicion,
 } from "@/lib/mock-data";
+import { historialDe } from "@/lib/trayectoria";
 
 // Fuente de datos de las pantallas de deportistas/medición/evolución.
 // - Visitante anónimo (demo pública): devuelve el mock de siempre,
@@ -137,7 +139,7 @@ export function useDatos(): Datos {
           supabase
             .from("deportista")
             .select(
-              "id, nombre, apellido, categoria_id, fecha_nacimiento, sexo, lateralidad, doc_interno, consentimiento(otorgado, revocado_en)",
+              "id, nombre, apellido, categoria_id, fecha_nacimiento, sexo, lateralidad, doc_interno, consentimiento(otorgado, revocado_en), deportista_hito(id, tipo, fecha, categoria_origen_nombre, categoria_destino_nombre, club_destino_nombre, detalle)",
             )
             .eq("activo", true)
             .order("apellido")
@@ -200,21 +202,46 @@ export function useDatos(): Datos {
               a.nombre.localeCompare(b.nombre),
           );
 
-        const deportistas: Deportista[] = (rDep.data ?? []).map((d) => ({
-          id: d.id as string,
-          nombre: d.nombre as string,
-          apellido: (d.apellido as string | null) ?? "",
-          categoriaId: (d.categoria_id as string | null) ?? "",
-          fechaNacimiento: (d.fecha_nacimiento as string | null) ?? "",
-          sexo: d.sexo as Deportista["sexo"],
-          lateralidad: d.lateralidad as Deportista["lateralidad"],
-          docInterno: d.doc_interno as string | null,
-          consentimientoOk: (d.consentimiento ?? []).some(
-            (c: { otorgado: boolean; revocado_en: string | null }) =>
-              c.otorgado && !c.revocado_en,
-          ),
-          mediciones: series.get(d.id as string) ?? {},
-        }));
+        const deportistas: Deportista[] = (rDep.data ?? []).map((d) => {
+          const hitos: HitoTrayectoria[] = (
+            (d.deportista_hito ?? []) as {
+              id: string;
+              tipo: HitoTrayectoria["tipo"];
+              fecha: string;
+              categoria_origen_nombre: string | null;
+              categoria_destino_nombre: string | null;
+              club_destino_nombre: string | null;
+              detalle: string | null;
+            }[]
+          )
+            .map((h) => ({
+              id: h.id,
+              tipo: h.tipo,
+              fecha: h.fecha,
+              categoriaOrigenNombre: h.categoria_origen_nombre,
+              categoriaDestinoNombre: h.categoria_destino_nombre,
+              clubDestinoNombre: h.club_destino_nombre,
+              detalle: h.detalle,
+            }))
+            .sort((a, b) => a.fecha.localeCompare(b.fecha));
+          return {
+            id: d.id as string,
+            nombre: d.nombre as string,
+            apellido: (d.apellido as string | null) ?? "",
+            categoriaId: (d.categoria_id as string | null) ?? "",
+            fechaNacimiento: (d.fecha_nacimiento as string | null) ?? "",
+            sexo: d.sexo as Deportista["sexo"],
+            lateralidad: d.lateralidad as Deportista["lateralidad"],
+            docInterno: d.doc_interno as string | null,
+            consentimientoOk: (d.consentimiento ?? []).some(
+              (c: { otorgado: boolean; revocado_en: string | null }) =>
+                c.otorgado && !c.revocado_en,
+            ),
+            mediciones: series.get(d.id as string) ?? {},
+            hitos,
+            historial: historialDe(hitos),
+          };
+        });
 
         if (cancelado) return;
         setCargado({

@@ -114,6 +114,59 @@ function valores(nombreAtr, edad, talento, fechas) {
   });
 }
 
+// ---------- trayectoria institucional (deportista_hito) ----------
+// La escalera de categorías por edad en un año calendario: escuelita
+// hasta los 11, 9ª..3ª de 12 a 18, Reserva 19-20, Primera 21+.
+function nombreEscalon(edad, anioNac) {
+  if (edad <= 11) return `Escuelita ${anioNac}`;
+  if (edad <= 18) return `${21 - edad}ª División`;
+  if (edad <= 20) return "Reserva (La Local)";
+  return "Primera";
+}
+
+/**
+ * Genera los hitos de un jugador HACIA ATRÁS desde su categoría
+ * actual: ingreso (a los 5-8 si es de escuelita; 1-6 años atrás si
+ * no), promociones cada febrero cuando cambia el escalón (snapshots
+ * de texto — las categorías históricas no existen y no hace falta),
+ * y el escalón final forzado al nombre real de la categoría actual.
+ */
+function hitosDe(cat, anioNac, catPorNombre, historiaCompleta) {
+  const edadActual = 2026 - anioNac;
+  const edadIngreso = historiaCompleta
+    ? enteroEntre(6, 8)
+    : cat.tipo === "escuelita"
+      ? enteroEntre(5, Math.max(5, Math.min(8, edadActual)))
+      : Math.max(5, edadActual - enteroEntre(1, 6));
+  const anioIngreso = anioNac + edadIngreso;
+  const mesIngreso = anioIngreso === 2026 ? enteroEntre(2, 5) : enteroEntre(2, 8);
+  const hitos = [
+    {
+      tipo: "ingreso",
+      fecha: `${anioIngreso}-${String(mesIngreso).padStart(2, "0")}-${String(enteroEntre(1, 28)).padStart(2, "0")}`,
+    },
+  ];
+  let previo = nombreEscalon(anioIngreso - anioNac, anioNac);
+  for (let anio = anioIngreso + 1; anio <= 2026; anio++) {
+    let escalon = nombreEscalon(anio - anioNac, anioNac);
+    // el último escalón aterriza en el nombre REAL de la categoría
+    if (anio === 2026) escalon = cat.nombre;
+    if (escalon === previo) continue;
+    hitos.push({
+      tipo: "promocion",
+      fecha: `${anio}-02-${String(enteroEntre(1, 15)).padStart(2, "0")}`,
+      categoria_origen_nombre: previo,
+      categoria_destino_nombre: escalon,
+      // FK solo para el escalón vigente: las promociones históricas
+      // apuntan a categorías que ya no existen (snapshot alcanza)
+      categoria_destino_id:
+        anio === 2026 ? (catPorNombre.get(escalon)?.id ?? null) : null,
+    });
+    previo = escalon;
+  }
+  return hitos;
+}
+
 // qué atributos mide cada tipo de categoría
 function atributosDe(tipo, esArquero) {
   const fisico = tipo === "escuelita"
@@ -233,6 +286,8 @@ async function main() {
   const totalTutores = [];
   const totalConsent = [];
   const totalMediciones = [];
+  const totalHitos = [];
+  const candidatosPase = []; // ids de inferiores: 3 se van por pase
   let totalDep = 0;
 
   for (const cat of catsSembrar) {
@@ -298,6 +353,24 @@ async function main() {
 
       const conHistLarga = histRestantes > 0 && (cat.tipo === "primera" || cat.tipo === "reserva") && rnd() < 0.4;
       if (conHistLarga) histRestantes--;
+
+      // Trayectoria: ingreso + promociones para todos; los de historia
+      // larga arrancan en escuelita y tienen su debut en Primera (la
+      // métrica "de escuelita a Primera" de la presentación).
+      const anioNac = Number(meta.fecha_nacimiento.slice(0, 4));
+      for (const h of hitosDe(cat, anioNac, catPorNombre, conHistLarga)) {
+        totalHitos.push({ ...h, deportista_id: dep.id, registrado_por: registrador() });
+      }
+      if (conHistLarga) {
+        totalHitos.push({
+          deportista_id: dep.id,
+          tipo: "debut_primera",
+          fecha: `${enteroEntre(2024, 2025)}-0${enteroEntre(3, 9)}-${String(enteroEntre(1, 28)).padStart(2, "0")}`,
+          detalle: elegir(["Torneo Regional", "Liga Salteña", "Copa Salta"]),
+          registrado_por: registrador(),
+        });
+      }
+      if (cat.tipo === "inferior") candidatosPase.push(dep.id);
       const fechasFisico = (conHistLarga ? FECHAS_HIST : FECHAS).filter((_, idx) =>
         conHistLarga ? true : IDX_FISICO.includes(idx),
       );
@@ -341,6 +414,34 @@ async function main() {
     process.stdout.write(`\r  mediciones: ${medOk}/${totalMediciones.length}`);
   }
   console.log("");
+
+  // ---------- pases de salida: 3 inferiores se van a otros clubes ----------
+  // (antes de insertar los hitos, así el pase entra en el mismo lote)
+  const DESTINOS = ["Atlético Los Cardones", "Deportivo La Merced", "Juventud de Cerrillos"];
+  const quePasan = [];
+  for (let k = 0; k < Math.min(3, candidatosPase.length); k++) {
+    const idx = Math.floor(rnd() * candidatosPase.length);
+    const [depId] = candidatosPase.splice(idx, 1);
+    quePasan.push(depId);
+    const mes = enteroEntre(1, 6); // dentro de los últimos 12 meses
+    totalHitos.push({
+      deportista_id: depId,
+      tipo: "pase_salida",
+      fecha: `2026-0${mes}-${String(enteroEntre(1, 28)).padStart(2, "0")}`,
+      club_destino_nombre: DESTINOS[k],
+      registrado_por: null,
+    });
+  }
+
+  for (const c of chunk(totalHitos, 500)) {
+    const { error } = await a.from("deportista_hito").insert(c);
+    if (error) throw new Error(`deportista_hito: ${error.message}`);
+  }
+  if (quePasan.length) {
+    const { error } = await a.from("deportista").update({ activo: false }).in("id", quePasan);
+    if (error) throw new Error(`baja por pase: ${error.message}`);
+  }
+  ok(true, `hitos de trayectoria: ${totalHitos.length} (con ${quePasan.length} pases de salida)`);
 
   ok(true, `deportistas: ${totalDep}`);
   ok(true, `tutores: ${totalTutores.length} · consentimientos: ${totalConsent.length}`);

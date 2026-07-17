@@ -33,6 +33,7 @@ interface FormAlta {
   lateralidad: "" | "diestro" | "zurdo" | "ambidiestro";
   docInterno: string;
   categoriaId: string;
+  fechaIngreso: string;
   tutorNombre: string;
   tutorRelacion: string;
   tutorTelefono: string;
@@ -49,6 +50,7 @@ const FORM_VACIO: FormAlta = {
   lateralidad: "",
   docInterno: "",
   categoriaId: "",
+  fechaIngreso: new Date().toLocaleDateString("en-CA"),
   tutorNombre: "",
   tutorRelacion: "",
   tutorTelefono: "",
@@ -190,7 +192,11 @@ export default function NuevoDeportistaPage() {
         ...prev,
       ]);
       // Queda lista para cargar al siguiente de la misma categoría
-      setForm({ ...FORM_VACIO, categoriaId: form.categoriaId });
+      setForm({
+        ...FORM_VACIO,
+        categoriaId: form.categoriaId,
+        fechaIngreso: form.fechaIngreso,
+      });
     };
 
     const { data: dep, error: eDep } = await supabase
@@ -211,6 +217,22 @@ export default function NuevoDeportistaPage() {
       setGuardando(false);
       setError(`No se pudo guardar el deportista: ${eDep?.message ?? "error desconocido"}`);
       return;
+    }
+
+    // Trayectoria: el ingreso al club (fecha editable — puede venir de
+    // antes). Si falla, el alta ya está: se avisa sin frenar.
+    if (form.fechaIngreso) {
+      const { error: eIng } = await supabase.from("deportista_hito").insert({
+        deportista_id: dep.id,
+        tipo: "ingreso",
+        fecha: form.fechaIngreso,
+        registrado_por: sesion.membresia?.id ?? null,
+      });
+      if (eIng) {
+        setError(
+          `El deportista quedó guardado, pero el hito de ingreso no: ${eIng.message}. Cargalo desde su ficha.`,
+        );
+      }
     }
 
     let tutorId: string | null = null;
@@ -369,6 +391,23 @@ export default function NuevoDeportistaPage() {
                   Solo tus categorías asignadas.
                 </p>
               )}
+            </div>
+            <div>
+              <label htmlFor="dep-ingreso" className="mb-1.5 block text-xs font-bold text-muted-foreground">
+                Ingresó al club
+              </label>
+              <input
+                id="dep-ingreso"
+                type="date"
+                value={form.fechaIngreso}
+                max={new Date().toLocaleDateString("en-CA")}
+                onChange={(e) => setForm({ ...form, fechaIngreso: e.target.value })}
+                className={inputClase}
+              />
+              <p className="mt-1 text-[11px] text-muted-foreground">
+                Arranca su trayectoria. Si ya estaba en el club, poné la fecha
+                real (aproximada sirve).
+              </p>
             </div>
             <div>
               <label htmlFor="dep-doc" className="mb-1.5 block text-xs font-bold text-muted-foreground">

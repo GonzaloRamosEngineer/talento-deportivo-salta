@@ -19,6 +19,11 @@ import {
 } from "@/lib/mock-data";
 import { useDatos, type Datos } from "@/lib/use-datos";
 import { tendencia } from "@/lib/tendencia";
+import {
+  escuelitaAPrimera,
+  formatearDuracion,
+  tiempoEnElClub,
+} from "@/lib/trayectoria";
 import { EstadoBadge } from "@/components/estado-badge";
 import { EvolutionChart } from "@/components/evolution-chart";
 import { NivelBar } from "@/components/nivel-bar";
@@ -285,7 +290,7 @@ export function InformeJugador({
             <h2 className="mb-1 text-sm font-extrabold">Trayectoria en el club</h2>
             <ul className="text-sm text-muted-foreground">
               {deportista.historial.map((h) => (
-                <li key={h.fecha}>
+                <li key={`${h.fecha}-${h.evento}`}>
                   {new Date(h.fecha + "T12:00:00").toLocaleDateString("es-AR", {
                     month: "long",
                     year: "numeric",
@@ -294,6 +299,24 @@ export function InformeJugador({
                 </li>
               ))}
             </ul>
+            {(() => {
+              const enClub = tiempoEnElClub(
+                deportista.hitos,
+                new Date().toLocaleDateString("en-CA"),
+              );
+              const aPrimera = escuelitaAPrimera(deportista.hitos);
+              if (!enClub && aPrimera === null) return null;
+              return (
+                <p className="mt-1 text-xs font-semibold">
+                  {enClub &&
+                    (enClub.cerrado
+                      ? `Estuvo ${formatearDuracion(enClub.meses)} en el club.`
+                      : `En el club hace ${formatearDuracion(enClub.meses)}.`)}
+                  {aPrimera !== null &&
+                    ` De escuelita a Primera: ${formatearDuracion(aPrimera)}.`}
+                </p>
+              );
+            })()}
           </section>
         )}
 

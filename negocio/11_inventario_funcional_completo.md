@@ -40,7 +40,7 @@ en `negocio/10`):
 | Consentimiento estructural | Todo deportista tiene registro de consentimiento (pendiente visible si falta); imprimible pre-completado |
 | Catálogo global curado centralmente | Disciplinas/atributos/guías: un solo estándar provincial → comparabilidad real; los clubes proponen, la plataforma cura |
 | La plataforma nunca ve datos individuales | RLS de 0 filas para el perfil provincial; su única ventana es una RPC de agregados |
-| Seguridad desde el primer commit | RLS en la misma migración que crea cada tabla; 19 tablas, 42 políticas |
+| Seguridad desde el primer commit | RLS en la misma migración que crea cada tabla; 20 tablas, 44 políticas |
 
 ---
 
@@ -69,7 +69,7 @@ pantallas leen Supabase vía RLS. Una sola UI, dos fuentes.
 | Funcionalidad | Ruta | Detalle |
 |---|---|---|
 | Alta y gestión de clubes | `/plataforma/clubes` | Crear club + acceso del primer admin por link (WhatsApp), editar datos, escudo institucional, eliminar clubes vacíos |
-| Observatorio provincial | `/observatorio` | SOLO agregados por club (deportistas activos, mediciones 30 días, % consentimiento, categorías, última jornada) sobre mapa real de Salta (23 departamentos IGN interactivos). La plataforma jamás ve un nombre |
+| Observatorio provincial | `/observatorio` | SOLO agregados por club (deportistas activos, mediciones 30 días, % consentimiento, categorías, última jornada, **pases de salida 12 meses**) sobre mapa real de Salta (23 departamentos IGN interactivos). La plataforma jamás ve un nombre |
 | Parámetros de crecimiento | `/plataforma/parametros` | Umbral de "crecimiento acelerado" POR SEXO + separación mínima de tramos, editables por pantalla con advertencia de impacto global y auditoría de quién/cuándo. Sin tocar código |
 | Bandeja de sugerencias | `/plataforma/sugerencias` | Propuestas del staff de los clubes sobre las guías del catálogo: aceptar / no incorporar, con respuesta al autor. La plataforma cura; el estándar sigue siendo único |
 
@@ -90,7 +90,9 @@ pantallas leen Supabase vía RLS. Una sola UI, dos fuentes.
 | Importación masiva | `/deportistas/importar` | Pegar celdas desde Excel/Sheets o subir CSV; mapeo de columnas autodetectado y corregible, categoría por nombre o cohorte, duplicados excluidos, preview antes de confirmar. El consentimiento NUNCA se importa: queda pendiente y visible |
 | Lista / tabla | `/deportistas` | Búsqueda, filtro por categoría, vista lista o tabla ordenable por cualquier atributo (mejor del grupo en negrita) |
 | Filtros de seguimiento | `/deportistas?filtro=` | 4 chips combinables con contador: **En estirón** · **Mejorando en 3+ habilidades** (contra sí mismo) · **Sin medir 3+ semanas** · **Consentimiento pendiente**. Deep-linkeables |
-| Ciclo de vida | `/deportistas/[id]/editar` | Corregir datos, mover de categoría, desactivar (conserva historial) o borrado definitivo con cascada (solo admin), ambos con doble confirmación |
+| Ciclo de vida | `/deportistas/[id]/editar` | Corregir datos, mover de categoría (queda como hito de promoción), desactivar (conserva historial) o borrado definitivo con cascada (solo admin), con doble confirmación |
+| **Trayectoria institucional** | ficha → tab Ficha | Timeline de hitos: ingreso al club (en alta e import), promociones automáticas al mover de categoría, debut en Primera, hitos manuales. Métricas: "En el club: X años" y **"De escuelita a Primera: X años"** — el dato que nadie tiene a nivel formativo. Los hitos también se dibujan sobre la curva de evolución y en el informe |
+| **Baja por pase a otro club** | `/deportistas/[id]/editar` | Registra la salida (club destino en texto) y desactiva. **Los datos del menor NO viajan al otro club** — queda en su trayectoria; la plataforma solo ve el total agregado |
 
 ### 3.4 Medición y evolución (el corazón)
 
@@ -215,8 +217,6 @@ radar" están marcadas (★).
 - **Recordatorios de jornada** (notificación/WhatsApp al profe cuando
   su categoría cumple X semanas sin medir — las alertas ya existen en
   el panel; esto es empujarlas).
-- **Historial de cambios de categoría** como entidad propia (hoy son
-  hitos en la curva).
 - **Multi-disciplina por deportista** (el pibe que juega fútbol y
   básquet) — el modelo lo permite; la UI no lo expone aún.
 
@@ -232,6 +232,11 @@ radar" están marcadas (★).
   automática por status está en el anti-roadmap.
 
 **De la plataforma**
+- **Transferencia completa entre clubes de la plataforma**: hoy el
+  pase es registro sin datos (v1 honesta); la mudanza del legajo con
+  consentimiento del tutor y aceptación de ambos clubes queda para la
+  fase de firma electrónica. La matriz de flujos origen→destino para
+  la Liga llega cuando los destinos estén normalizados.
 - **Roles nuevos** (p. ej. kinesiólogo con vista específica): la
   matriz de perfiles lo soporta; requiere decidir QUÉ ve (cuidado:
   datos de salud de menores = dato sensible, hoy prohibido).
@@ -262,10 +267,11 @@ venta institucional: este producto se puede auditar.
 
 - **Código**: ~0 mocks de producto (la demo anónima es intencional);
   build y lint limpios; e2e por browser de los circuitos críticos.
-- **Base**: 19 tablas, 42 políticas RLS, 3 funciones de acceso
-  security definer, 7 migraciones versionadas.
-- **Vitrina en prod**: 1 club demo · 307 deportistas · 16.069
-  mediciones · 45 sesiones · 17 partidos · 13 staff multi-rol.
+- **Base**: 20 tablas, 44 políticas RLS, funciones de acceso
+  security definer, 8 migraciones versionadas.
+- **Vitrina en prod**: 1 club demo · ~305 deportistas · ~17.000
+  mediciones · 614 hitos de trayectoria (3 debuts en Primera, 3 pases)
+  · 45 sesiones · 18 partidos · 13 staff multi-rol.
 - **Legal**: política de privacidad pública, consentimiento
   imprimible, minimización aplicada, backups offsite activos.
 - **Pendiente humano** (no técnico): revisión del PF + primer club

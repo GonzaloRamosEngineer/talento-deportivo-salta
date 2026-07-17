@@ -32,6 +32,7 @@ import { tendencia, type Estado } from "@/lib/tendencia";
 import { crecimiento, umbralPara, zonasAceleracion } from "@/lib/crecimiento";
 import { useParametrosCrecimiento } from "@/lib/use-parametros";
 import { Estiron } from "@/components/estiron";
+import { TrayectoriaClub } from "@/components/trayectoria-club";
 import { EstadoBadge } from "@/components/estado-badge";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { EvolutionChart } from "@/components/evolution-chart";
@@ -660,6 +661,7 @@ export function FichaDeportista({
               )}
             </div>
           </section>
+          <TrayectoriaClub deportista={deportista} datos={datos} />
           <p className="mt-3 px-1 text-[11px] leading-snug text-muted-foreground">
             Por tratarse mayormente de menores, la ficha guarda los datos
             mínimos necesarios. La talla y el peso no viven acá: son mediciones

@@ -33,6 +33,20 @@ export interface Medicion {
   nota?: string;
 }
 
+// Hito de la trayectoria institucional (tabla real: deportista_hito).
+// Los nombres de categoría son SNAPSHOTS de texto (sobreviven al
+// borrado de la categoría); el club destino de un pase es texto libre
+// a propósito — los datos del menor nunca viajan a otro club.
+export interface HitoTrayectoria {
+  id: string;
+  tipo: "ingreso" | "promocion" | "debut_primera" | "pase_salida" | "otro";
+  fecha: string;
+  categoriaOrigenNombre?: string | null;
+  categoriaDestinoNombre?: string | null;
+  clubDestinoNombre?: string | null;
+  detalle?: string | null;
+}
+
 export interface Deportista {
   id: string;
   nombre: string;
@@ -44,8 +58,10 @@ export interface Deportista {
   docInterno?: string | null;
   consentimientoOk: boolean;
   mediciones: Record<string, Medicion[]>; // atributoId -> serie ordenada por fecha
-  // Hitos de la trayectoria (cambios de categoría, ingreso al club):
-  // se dibujan como líneas verticales en el gráfico de evolución.
+  // Trayectoria institucional (ingreso, promociones, debut, pase).
+  hitos?: HitoTrayectoria[];
+  // Vista {fecha, evento} de los hitos (derivada con historialDe()):
+  // se dibuja como líneas verticales en la curva y en el informe.
   historial?: { fecha: string; evento: string }[];
 }
 
@@ -117,6 +133,8 @@ export interface ClubResumen {
   medicionesMes: number;
   consentimientoPct: number;
   categoriasActivas: number;
+  /** pases de SALIDA informados por el club en los últimos 12 meses */
+  pases12m: number;
 }
 
 export const CLUB = { nombre: "Club Atlético Antoniana", localidad: "Salta" };
@@ -417,9 +435,16 @@ export const DEPORTISTAS: Deportista[] = [
     id: "d01", nombre: "Thiago", apellido: "Guaymás", categoriaId: "div-9",
     fechaNacimiento: "2013-04-12", sexo: "M", lateralidad: "zurdo",
     consentimientoOk: true,
+    hitos: [
+      { id: "h01", tipo: "ingreso", fecha: "2023-03-04" },
+      {
+        id: "h02", tipo: "promocion", fecha: "2026-02-01",
+        categoriaOrigenNombre: "Escuelita 2013", categoriaDestinoNombre: "9ª División",
+      },
+    ],
     historial: [
       { fecha: "2023-03-04", evento: "Ingresó al club" },
-      { fecha: "2026-02-01", evento: "Pasó a 9ª División" },
+      { fecha: "2026-02-01", evento: "Pasó de Escuelita 2013 a 9ª División" },
     ],
     mediciones: {
       talla: serieHistorica([
@@ -1138,15 +1163,18 @@ export const CLUBES: ClubResumen[] = [
         100,
     ),
     categoriasActivas: categoriasConPlantel().length,
+    pases12m: 2,
   },
   {
     id: "smi", nombre: "Sportivo del Milagro", localidad: "Salta Capital",
     departamento: "Capital", esEsteClub: false, deportistas: 88,
     medicionesMes: 121, consentimientoPct: 93, categoriasActivas: 9,
+    pases12m: 1,
   },
   {
     id: "avl", nombre: "Atlético Valle de Lerma", localidad: "Cerrillos",
     departamento: "Cerrillos", esEsteClub: false, deportistas: 34,
     medicionesMes: 52, consentimientoPct: 100, categoriasActivas: 4,
+    pases12m: 0,
   },
 ];

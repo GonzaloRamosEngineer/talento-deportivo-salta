@@ -17,6 +17,8 @@ de ese archivo para el alcance por categoría del profesor).
 | Registrar asistencia / sesiones | ✅ sus categorías | ✅ | ❌ | ❌ |
 | Registrar consentimiento firmado | ✅ | ✅ | ❌ | ❌ |
 | Alta/edición de deportistas | ✅ sus categorías | ✅ | ❌ | ❌ |
+| Trayectoria (`deportista_hito`: ingreso, promociones, debut, pase) | ✅ sus categorías | ✅ | ✅ (lectura) | ❌ — solo el agregado `pases_12m` |
+| Baja por pase a otro club (los datos NO viajan con el pase) | ✅ sus categorías | ✅ | ❌ | ❌ |
 | Borrar deportistas | ❌ | ✅ | ❌ | ❌ |
 | Gestionar categorías y staff (membresías) | ❌ | ✅ | ❌ | ❌ |
 | Ver agenda (entrenamientos y partidos) | ✅ sus categorías | ✅ | ✅ (lectura) | ❌ |

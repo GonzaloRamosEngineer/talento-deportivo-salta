@@ -34,6 +34,7 @@ interface FilaObservatorio {
   consentimiento_pct: number;
   categorias_activas: number;
   ultima_medicion: string | null;
+  pases_12m: number;
 }
 
 export function useObservatorio(): Observatorio {
@@ -88,6 +89,7 @@ export function useObservatorio(): Observatorio {
         medicionesMes: c.mediciones_30d,
         consentimientoPct: c.consentimiento_pct,
         categoriasActivas: c.categorias_activas,
+        pases12m: c.pases_12m,
       })),
       ultimaMedicion: new Map(
         (cargado?.clubes ?? [])

@@ -36,6 +36,7 @@ type Campo =
   | "apellido"
   | "apellidoNombre"
   | "nacimiento"
+  | "ingreso"
   | "categoria"
   | "doc"
   | "sexo"
@@ -49,6 +50,7 @@ const CAMPO_LABEL: Record<Campo, string> = {
   apellido: "Apellido",
   apellidoNombre: "Apellido y nombre (junto)",
   nacimiento: "Fecha de nacimiento",
+  ingreso: "Ingreso al club",
   categoria: "Categoría",
   doc: "Identificador interno",
   sexo: "Sexo",
@@ -75,6 +77,7 @@ function campoDeEncabezado(h: string): Campo | null {
     return "apellidoNombre";
   if (/^apellidos?$/.test(n)) return "apellido";
   if (/^nombres?$/.test(n)) return "nombre";
+  if (/ingres|alta|antig|desde/.test(n)) return "ingreso";
   if (/nac|fecha/.test(n)) return "nacimiento";
   if (/categor|divisi|^cat\.?$/.test(n)) return "categoria";
   if (/tutor|responsable|madre|padre|familia/.test(n)) {
@@ -176,6 +179,7 @@ interface FilaPreview {
   nombre: string;
   apellido: string;
   fechaNacimiento: string | null;
+  fechaIngreso: string | null;
   sexo: "M" | "F" | "X" | null;
   doc: string;
   categoria: CategoriaDB | null;
@@ -418,6 +422,7 @@ export default function ImportarPlantelPage() {
         nombre,
         apellido,
         fechaNacimiento,
+        fechaIngreso: parseFecha(celdaDe(fila, "ingreso")),
         sexo: parseSexo(celdaDe(fila, "sexo")),
         doc: celdaDe(fila, "doc"),
         categoria,
@@ -488,6 +493,24 @@ export default function ImportarPlantelPage() {
         if (!eTut) conTutor += tutores.length;
         // Si el tutor falla, el deportista igual quedó: se completa
         // desde la ficha. No frena la importación.
+      }
+      // Trayectoria: hito de ingreso SOLO para filas que traen la
+      // fecha en la planilla — si no viene, no se inventa (se puede
+      // cargar después desde la ficha). Falla no frena el import.
+      const ingresos = lote.flatMap((f, i) =>
+        f.fechaIngreso
+          ? [
+              {
+                deportista_id: deps[i].id as string,
+                tipo: "ingreso",
+                fecha: f.fechaIngreso,
+                registrado_por: sesion.membresia?.id ?? null,
+              },
+            ]
+          : [],
+      );
+      if (ingresos.length) {
+        await supabase.from("deportista_hito").insert(ingresos);
       }
       cargados += lote.length;
       setExistentes((prev) => {

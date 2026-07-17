@@ -135,7 +135,7 @@ export default function Observatorio() {
                   ` · última jornada ${formatFecha(ultimaMedicion.get(c.id)!)}`}
               </span>
             </span>
-            <span className="grid w-full grid-cols-3 gap-3 border-t border-border pt-3 text-center sm:w-auto sm:border-t-0 sm:pt-0">
+            <span className="grid w-full grid-cols-4 gap-3 border-t border-border pt-3 text-center sm:w-auto sm:border-t-0 sm:pt-0">
               <span>
                 <span className="block text-sm font-extrabold tabular-nums">
                   {c.deportistas}
@@ -160,12 +160,22 @@ export default function Observatorio() {
                   consent.
                 </span>
               </span>
+              <span>
+                <span className="block text-sm font-extrabold tabular-nums">
+                  {c.pases12m}
+                </span>
+                <span className="block text-[10px] text-muted-foreground">
+                  pases 12 m
+                </span>
+              </span>
             </span>
           </div>
         ))}
         <p className="px-1 text-[11px] leading-snug text-muted-foreground">
           Las tarjetas no se abren a propósito: para ver datos individuales se
           requiere membresía en ese club. La plataforma no tiene esa llave.
+          Los pases son los de salida que informa cada club — totales, sin
+          nombres.
         </p>
       </section>
 

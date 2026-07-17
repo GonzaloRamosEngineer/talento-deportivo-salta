@@ -91,9 +91,10 @@ Construir SOLO:
   (talla, peso) se registra sin juzgar mejora/retroceso.
 
 NO construir todavía: finanzas, valorización, gamificación/logros,
-tácticas, multi-disciplina por deportista, historial de cambio de
-categoría, offline-sync real. (El alta de clubes ya salió de esta
-lista: es la pantalla de plataforma `/plataforma/clubes`, Ola 1.5.)
+tácticas, multi-disciplina por deportista, offline-sync real. (El
+alta de clubes ya salió de esta lista —pantalla `/plataforma/clubes`,
+Ola 1.5— y el historial de cambio de categoría también: es la
+trayectoria, ver `deportista_hito` más abajo.)
 
 ## Etapa actual: backend real creado, UI en transición mock→real
 El circuito de gestión del admin YA es real (2026-07-12): `/club`
@@ -265,6 +266,33 @@ PISAN el plan de `negocio/10` donde difieran:
   recuerda que aceptar NO actualiza la guía (eso va por
   lib/como-medir.ts). `resolverSugerencia` exige `estado='pendiente'`
   (no re-resuelve).
+- **Trayectoria + pases hechos (2026-07-17, migración
+  `20260717150000_trayectoria_pases.sql` APLICADA)**: tabla
+  `deportista_hito` (tipos ingreso/promocion/debut_primera/
+  pase_salida/otro; snapshots de TEXTO de las categorías + FKs
+  nullable; `club_id` denorm por trigger; unique por
+  deportista/tipo/fecha + únicos parciales para ingreso y debut; RLS
+  heredada vía deportista: lectura `alcanza_categoria`, escritura
+  `opera_categoria` — patrón tutor/consentimiento). **REGLA: el pase
+  NO mueve datos** — `club_destino_nombre` es texto libre, JAMÁS FK a
+  `club`; la baja por pase deja `categoria_id` intacta (solo
+  `activo=false`) para que el profe siga viendo la trayectoria.
+  Hitos automáticos a nivel APLICACIÓN (sin triggers de negocio):
+  ingreso en el alta (`fechaIngreso`, default hoy, editable) y en el
+  import (columna opcional "ingreso" — si la planilla no la trae NO
+  se inventa), promoción al mover de categoría en editar, pase en la
+  nueva baja "por pase". UI: `components/trayectoria-club.tsx`
+  (timeline en la tab Ficha + chips "En el club" / "De escuelita a
+  Primera" + alta manual de debut/otro/ingreso faltante; fechas del
+  timeline SIEMPRE con año). Lógica pura en `lib/trayectoria.ts`
+  (`etiquetaHito` = única fuente de copys; `historialDe` alimenta la
+  prop `hitos` de la curva y la sección del informe, que ya existían).
+  `useDatos` trae `deportista_hito` anidado y deriva
+  `Deportista.hitos` + `historial`. Observatorio: columna `pases_12m`
+  en la RPC (pases de salida informados, 12 meses — la matriz de
+  flujos origen→destino queda para cuando los destinos estén
+  normalizados). E2E: `scripts/e2e-trayectoria.mjs` (11 asserts,
+  auto-limpia).
 - Pendientes vivos: revisión del PF sobre el contenido del Módulo B y
   sobre umbrales/nota/presentación Moore del Módulo D. Cuentas demo y
   rotación de clave de DB: diferidos por decisión (la vitrina es

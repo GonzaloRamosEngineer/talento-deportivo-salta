@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import {
   AlertCircle,
   ArrowLeft,
+  ArrowRightLeft,
   Archive,
   Loader2,
   Save,
@@ -44,8 +45,11 @@ export function EditarDeportistaCliente({ id }: { id: string }) {
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState("");
   // dos pasos para las bajas: primer tap arma, segundo confirma
-  const [confirmando, setConfirmando] = useState<"baja" | "borrado" | null>(null);
+  const [confirmando, setConfirmando] = useState<"baja" | "pase" | "borrado" | null>(
+    null,
+  );
   const [ejecutandoBaja, setEjecutandoBaja] = useState(false);
+  const [clubDestino, setClubDestino] = useState("");
 
   if (datos.cargando) {
     return (
@@ -125,6 +129,32 @@ export function EditarDeportistaCliente({ id }: { id: string }) {
       setError(`No se pudo guardar: ${eUpd.message}`);
       return;
     }
+    // El movimiento de categoría queda en la trayectoria (hito de
+    // promoción con snapshots de nombre). Si el hito falla, la edición
+    // ya está guardada: se avisa sin frenar.
+    if (cambioDeCategoria) {
+      const origen = datos.categorias.find((c) => c.id === deportista.categoriaId);
+      const destino = datos.categorias.find((c) => c.id === f.categoriaId);
+      const { error: eHito } = await crearClienteBrowser()
+        .from("deportista_hito")
+        .insert({
+          deportista_id: id,
+          tipo: "promocion",
+          fecha: new Date().toLocaleDateString("en-CA"),
+          categoria_origen_id: deportista.categoriaId || null,
+          categoria_destino_id: f.categoriaId,
+          categoria_origen_nombre: origen?.nombre ?? null,
+          categoria_destino_nombre: destino?.nombre ?? "Nueva categoría",
+          registrado_por: datos.membresiaId,
+        });
+      if (eHito && eHito.code !== "23505") {
+        setError(
+          `El cambio se guardó, pero el hito de trayectoria no (${eHito.message}). Podés cargarlo a mano desde la ficha.`,
+        );
+        datos.recargar();
+        return;
+      }
+    }
     datos.recargar();
     router.push(`/deportistas/${id}`);
   };
@@ -139,6 +169,44 @@ export function EditarDeportistaCliente({ id }: { id: string }) {
     setEjecutandoBaja(false);
     if (eBaja) {
       setError(`No se pudo dar de baja: ${eBaja.message}`);
+      return;
+    }
+    datos.recargar();
+    router.push("/deportistas");
+  };
+
+  // Baja por pase: registra el hito de salida (con el club destino en
+  // TEXTO — los datos del menor no viajan a ningún lado) y desactiva.
+  // La categoría queda intacta: el profe sigue viendo su trayectoria.
+  const bajaPorPase = async () => {
+    if (clubDestino.trim().length < 3) {
+      setError("Contanos a qué club se fue (mínimo 3 caracteres).");
+      return;
+    }
+    setEjecutandoBaja(true);
+    setError("");
+    const supabase = crearClienteBrowser();
+    const { error: eHito } = await supabase.from("deportista_hito").insert({
+      deportista_id: id,
+      tipo: "pase_salida",
+      fecha: new Date().toLocaleDateString("en-CA"),
+      club_destino_nombre: clubDestino.trim(),
+      registrado_por: datos.membresiaId,
+    });
+    if (eHito && eHito.code !== "23505") {
+      setEjecutandoBaja(false);
+      setError(`No se pudo registrar el pase: ${eHito.message}`);
+      return;
+    }
+    const { error: eBaja } = await supabase
+      .from("deportista")
+      .update({ activo: false })
+      .eq("id", id);
+    setEjecutandoBaja(false);
+    if (eBaja) {
+      setError(
+        `El pase quedó registrado pero la baja falló: ${eBaja.message}. Reintentá la baja.`,
+      );
       return;
     }
     datos.recargar();
@@ -363,6 +431,52 @@ export function EditarDeportistaCliente({ id }: { id: string }) {
                 className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-warning/50 bg-card px-3.5 text-xs font-bold text-warning"
               >
                 <Archive className="size-3.5" aria-hidden /> Dar de baja
+              </button>
+            )}
+          </div>
+
+          <div className="flex flex-wrap items-center gap-3 border-t border-warning/20 pt-3">
+            <div className="min-w-0 flex-1">
+              <p className="text-sm font-bold">Baja por pase a otro club</p>
+              <p className="text-xs text-muted-foreground">
+                Registra la salida en su trayectoria y lo da de baja. Sus datos
+                NO se comparten con el otro club: quedan acá, como siempre.
+              </p>
+            </div>
+            {confirmando === "pase" ? (
+              <div className="flex w-full flex-col gap-2 sm:w-auto">
+                <input
+                  value={clubDestino}
+                  onChange={(e) => setClubDestino(e.target.value)}
+                  maxLength={120}
+                  placeholder="Club de destino — como te lo informaron"
+                  className="h-10 w-full rounded-xl border border-input bg-card px-3 text-sm outline-none focus:border-ring sm:w-72"
+                />
+                <div className="flex justify-end gap-2">
+                  <button
+                    onClick={() => setConfirmando(null)}
+                    className="h-10 rounded-xl border border-border bg-card px-3.5 text-xs font-bold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    onClick={() => void bajaPorPase()}
+                    disabled={ejecutandoBaja}
+                    className="flex h-10 items-center gap-1.5 rounded-xl bg-warning px-3.5 text-xs font-bold text-white disabled:opacity-60"
+                  >
+                    {ejecutandoBaja && (
+                      <Loader2 className="size-3.5 animate-spin" aria-hidden />
+                    )}
+                    Confirmar el pase
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <button
+                onClick={() => setConfirmando("pase")}
+                className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-warning/50 bg-card px-3.5 text-xs font-bold text-warning"
+              >
+                <ArrowRightLeft className="size-3.5" aria-hidden /> Registrar pase
               </button>
             )}
           </div>
