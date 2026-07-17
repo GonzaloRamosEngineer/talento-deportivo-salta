@@ -232,6 +232,18 @@ PISAN el plan de `negocio/10` donde difieran:
   proyección de talla adulta. Gotcha JSX de este Next: `{expr} texto`
   puede COMERSE el espacio previo al texto — usar template literals
   (`{`al menos ${meses} meses`}`) en copys con interpolación.
+- **Sesión B hecha (2026-07-17): filtros de seguimiento en
+  `/deportistas`** (solo frontend, computados de useDatos): "En
+  estirón" (ritmo de talla sobre el umbral por sexo, lee los
+  parámetros globales), "Mejorando en 3+" (tendencia "creciendo" en
+  3+ habilidades, cada deportista contra SUS últimas 3 mediciones —
+  NUNCA contra la media del grupo: rankear contra la media en
+  formativas premia al madurador temprano y es el scouting interno
+  que este producto prohíbe), "Sin medir 3+ semanas" (mismo umbral de
+  21 días que las alertas del panel; ancla HOY_DEMO en la demo) y
+  "Consentimiento pendiente". Chips combinables (Y lógico) con
+  contador, deep-link `?filtro=estiron,sin-medir`, nota explicativa
+  al activar. Aplican a la vista lista Y tabla (comparten `lista`).
 - Pendientes vivos: revisión del PF sobre el contenido del Módulo B y
   sobre umbrales/nota/presentación Moore del Módulo D. Cuentas demo y
   rotación de clave de DB: diferidos por decisión (la vitrina es

@@ -4,6 +4,7 @@ import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
+  CalendarClock,
   ChevronRight,
   ChevronsUpDown,
   ArrowUp,
@@ -14,12 +15,22 @@ import {
   Plus,
   Search,
   ShieldAlert,
+  Sprout,
   Table2,
+  TrendingUp,
   UsersRound,
 } from "lucide-react";
-import { edad, edadLabel, nivelActual, type Deportista } from "@/lib/mock-data";
+import {
+  edad,
+  edadLabel,
+  nivelActual,
+  HOY_DEMO,
+  type Deportista,
+} from "@/lib/mock-data";
 import { useDatos } from "@/lib/use-datos";
-import { tendenciaGeneral } from "@/lib/tendencia";
+import { tendencia, tendenciaGeneral } from "@/lib/tendencia";
+import { crecimiento, umbralPara } from "@/lib/crecimiento";
+import { useParametrosCrecimiento } from "@/lib/use-parametros";
 import { EstadoBadge } from "@/components/estado-badge";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { AvisoAcceso } from "@/components/aviso-acceso";
@@ -35,6 +46,26 @@ function valorDeColumna(d: Deportista, col: string): number | string | null {
   return nivelActual(d, col);
 }
 
+// Filtros de plantel (sesión B de negocio/10). Framing honesto:
+// "mejorando" compara a cada deportista contra SUS PROPIAS últimas 3
+// mediciones (tendencia "creciendo" en 3+ habilidades), nunca contra
+// la media del grupo — rankear contra la media en edades formativas
+// premia al que maduró antes. "En estirón" y "sin medir" son registro
+// observado / ausencia de registro, no juicios.
+const DIAS_SIN_MEDIR = 21; // mismo umbral que las alertas del panel
+const MIN_HABILIDADES_MEJORANDO = 3;
+
+type FiltroClave = "estiron" | "mejorando" | "sin-medir" | "consentimiento";
+
+const FILTROS: { clave: FiltroClave; label: string; icono: React.ElementType }[] = [
+  { clave: "estiron", label: "En estirón", icono: Sprout },
+  { clave: "mejorando", label: `Mejorando en ${MIN_HABILIDADES_MEJORANDO}+`, icono: TrendingUp },
+  { clave: "sin-medir", label: "Sin medir 3+ semanas", icono: CalendarClock },
+  { clave: "consentimiento", label: "Consentimiento pendiente", icono: ShieldAlert },
+];
+
+const CLAVES_FILTRO = new Set(FILTROS.map((f) => f.clave));
+
 function Deportistas() {
   const router = useRouter();
   const sp = useSearchParams();
@@ -48,6 +79,14 @@ function Deportistas() {
     sp.get("vista") === "tabla" ? "tabla" : "lista",
   );
   const [orden, setOrden] = useState<Orden>({ col: "nombre", dir: 1 });
+  // Filtros combinables (Y lógico), deep-linkeables: ?filtro=sin-medir
+  // o ?filtro=estiron,consentimiento
+  const [filtros, setFiltros] = useState<FiltroClave[]>(() =>
+    (sp.get("filtro") ?? "")
+      .split(",")
+      .filter((f): f is FiltroClave => CLAVES_FILTRO.has(f as FiltroClave)),
+  );
+  const parametros = useParametrosCrecimiento();
 
   // El alcance ya viene acotado del hook: RLS + categorías asignadas
   // con sesión real; permisos del selector demo sin sesión.
@@ -61,13 +100,69 @@ function Deportistas() {
     [categoriasVisibles],
   );
 
+  // Marcas por deportista para los filtros — todo se computa de lo que
+  // ya trae useDatos, nada nuevo sale de la base. La fecha de corte de
+  // "sin medir" es estable por día (string) para no invalidar el memo.
+  const atributoTalla = datos.atributos.find((a) => a.nombre === "Talla");
+  const limiteSinMedir = new Date(
+    (datos.real ? new Date() : HOY_DEMO).getTime() -
+      DIAS_SIN_MEDIR * 86_400_000,
+  ).toLocaleDateString("en-CA"); // YYYY-MM-DD local
+  const marcas = useMemo(() => {
+    const m = new Map<string, Record<FiltroClave, boolean>>();
+    for (const d of visibles) {
+      const talla = atributoTalla ? d.mediciones[atributoTalla.id] : undefined;
+      const estiron = crecimiento(talla, {
+        umbral: umbralPara(d.sexo, parametros),
+        minDias: parametros.minDiasTramo,
+      }).enAceleracion;
+      let creciendo = 0;
+      let ultima = "";
+      for (const a of datos.atributos) {
+        const serie = d.mediciones[a.id];
+        if (!serie?.length) continue;
+        if (tendencia(serie, a).estado === "creciendo") creciendo++;
+        const f = serie[serie.length - 1].fecha;
+        if (f > ultima) ultima = f;
+      }
+      m.set(d.id, {
+        estiron,
+        mejorando: creciendo >= MIN_HABILIDADES_MEJORANDO,
+        "sin-medir": !ultima || ultima < limiteSinMedir,
+        consentimiento: !d.consentimientoOk,
+      });
+    }
+    return m;
+  }, [visibles, datos.atributos, atributoTalla, parametros, limiteSinMedir]);
+
+  // Base: búsqueda + categoría (sobre esto se cuentan los chips)
+  const base = useMemo(
+    () =>
+      visibles.filter((d) => {
+        const coincideTexto = `${d.nombre} ${d.apellido}`
+          .toLowerCase()
+          .includes(busqueda.toLowerCase().trim());
+        const coincideCategoria =
+          !categoriaActiva || d.categoriaId === categoriaActiva;
+        return coincideTexto && coincideCategoria;
+      }),
+    [busqueda, categoriaActiva, visibles],
+  );
+
+  const conteos = useMemo(() => {
+    const c = { estiron: 0, mejorando: 0, "sin-medir": 0, consentimiento: 0 };
+    for (const d of base) {
+      const m = marcas.get(d.id);
+      if (!m) continue;
+      for (const f of FILTROS) if (m[f.clave]) c[f.clave]++;
+    }
+    return c;
+  }, [base, marcas]);
+
   const lista = useMemo(() => {
-    const filtrados = visibles.filter((d) => {
-      const coincideTexto = `${d.nombre} ${d.apellido}`
-        .toLowerCase()
-        .includes(busqueda.toLowerCase().trim());
-      const coincideCategoria = !categoriaActiva || d.categoriaId === categoriaActiva;
-      return coincideTexto && coincideCategoria;
+    const filtrados = base.filter((d) => {
+      const m = marcas.get(d.id);
+      return filtros.every((f) => m?.[f]);
     });
     return filtrados.sort((a, b) => {
       const va = valorDeColumna(a, orden.col);
@@ -80,7 +175,7 @@ function Deportistas() {
       }
       return (va - vb) * orden.dir;
     });
-  }, [busqueda, categoriaActiva, orden, visibles]);
+  }, [base, filtros, marcas, orden]);
 
   // Máximo por columna (única énfasis de la tabla: bold, sin semáforos)
   const maximos = useMemo(() => {
@@ -259,6 +354,64 @@ function Deportistas() {
           </button>
         ))}
       </div>
+
+      {/* Filtros de seguimiento (combinables entre sí) */}
+      {visibles.length > 0 && (
+        <div
+          className="flex gap-2 overflow-x-auto pb-1"
+          role="group"
+          aria-label="Filtros de seguimiento"
+        >
+          {FILTROS.map((f) => {
+            const activo = filtros.includes(f.clave);
+            const Icono = f.icono;
+            return (
+              <button
+                key={f.clave}
+                onClick={() =>
+                  setFiltros((prev) =>
+                    activo
+                      ? prev.filter((x) => x !== f.clave)
+                      : [...prev, f.clave],
+                  )
+                }
+                aria-pressed={activo}
+                className={cn(
+                  "flex h-9 shrink-0 items-center gap-1.5 rounded-full border px-3.5 text-sm font-semibold transition-colors",
+                  activo
+                    ? "border-secondary bg-secondary text-secondary-foreground"
+                    : "border-border bg-card text-muted-foreground",
+                )}
+              >
+                <Icono className="size-3.5" aria-hidden />
+                {f.label}
+                <span
+                  className={cn(
+                    "tabular-nums text-xs font-bold",
+                    activo ? "opacity-80" : "text-muted-foreground/70",
+                  )}
+                >
+                  {conteos[f.clave]}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
+      {filtros.length > 0 && (
+        <p className="-mt-2 px-1 text-[11px] leading-snug text-muted-foreground">
+          {filtros.includes("estiron") &&
+            "En estirón: ritmo de talla sobre el umbral de crecimiento acelerado (registro observado). "}
+          {filtros.includes("mejorando") &&
+            `Mejorando: tendencia en alza en ${MIN_HABILIDADES_MEJORANDO} o más habilidades, cada uno contra sus propias últimas 3 mediciones — nunca contra el resto del grupo. `}
+          {filtros.includes("sin-medir") &&
+            "Sin medir: ninguna medición registrada en las últimas 3 semanas (o nunca). "}
+          {filtros.includes("consentimiento") &&
+            "Consentimiento pendiente: falta registrar la firma del tutor. "}
+          Los filtros se combinan entre sí.
+        </p>
+      )}
 
       {/* ================= VISTA LISTA ================= */}
       {vista === "lista" && (
