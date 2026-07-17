@@ -173,11 +173,15 @@ PISAN el plan de `negocio/10` donde difieran:
 - **Revisión v6 RESUELTA**: modelo de acceso por categoría confirmado;
   "deportista sin categoría" lo ven solo admin + comisión (se dejó así).
 - **El club "Fundación Evolución Antoniana" es la VITRINA con datos
-  FICTICIOS** (no menores reales): 302 jugadores, ~16.600 mediciones con
-  historia, agenda/tablero/partidos llenos. Reseed con
+  FICTICIOS** (no menores reales): ~300 jugadores, ~16.000 mediciones
+  con historia, agenda/tablero/partidos llenos. Reseed con
   `scripts/sembrar-showcase.mjs` + `scripts/sembrar-showcase-agenda.mjs`
   (idempotentes, service role, tag `SHW-` / `@staff.demo.local`). Los
   clubes reales del piloto entran limpios por `/plataforma/clubes`.
+  Re-sembrado 2026-07-16 con talla modelada por TIEMPO (ritmo cm/año
+  según edad, ~35% de los 12-15 con arco de estirón, ruido ±0,3 cm)
+  para que el Módulo D muestre zonas aceleradas donde corresponde
+  (~15% del plantel) y no fabrique ritmos absurdos.
 - **Módulo B hecho (2026-07-14)**: drawer "¿Cómo medir?" —
   `lib/como-medir.ts` (guías por NOMBRE de atributo: protocolo paso a
   paso + materiales + diagrama SVG para objetivas; "cómo puntuar" +

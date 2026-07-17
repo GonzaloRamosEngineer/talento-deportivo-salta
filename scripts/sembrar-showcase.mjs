@@ -63,10 +63,38 @@ const FECHAS_HIST = ["2024-03-10", "2024-08-18", "2025-01-25", ...FECHAS];
 // ---------- generación de valores por atributo (según edad y talento) ----------
 function valores(nombreAtr, edad, talento, fechas) {
   const ruido = (i) => Math.sin(i * 2.1 + talento * 6); // -1..1 reproducible
+  // La talla se modela por TIEMPO (no por índice de jornada): ritmo en
+  // cm/año según edad, con arco de estirón para parte de los 12-15 años
+  // — así el Módulo D de la ficha marca zonas aceleradas donde
+  // biológicamente corresponde. Ruido de medición realista: ±0,3 cm
+  // (con el ±2 cm anterior, anualizado sobre tramos de ~3 meses, la
+  // vitrina mostraba chicos "achicándose" 10 cm/año).
+  if (nombreAtr === "Talla") {
+    const d0 = new Date(fechas[0] + "T12:00:00").getTime();
+    const diasDesde = (f) => (new Date(f + "T12:00:00").getTime() - d0) / 86400000;
+    const total = diasDesde(fechas[fechas.length - 1]);
+    let velocidad; // cm/año a los t días de la primera jornada
+    if (edad >= 18) { const r = entre(0, 0.8); velocidad = () => r; }
+    else if (edad >= 16) { const r = entre(1.5, 3.5); velocidad = () => r; }
+    else if (edad >= 12 && rnd() < 0.35) {
+      // en pleno estirón: campana que pica 8,5-11 cm/año dentro de la ventana
+      const vBase = entre(4, 5.5), pico = entre(8.5, 11);
+      const tPico = entre(total * 0.25, total * 0.75), ancho = entre(120, 200);
+      velocidad = (t) => vBase + (pico - vBase) * Math.exp(-(((t - tPico) / ancho) ** 2));
+    } else if (edad >= 12) { const r = entre(4, 5.5); velocidad = () => r; }
+    else { const r = entre(4.5, 5.8); velocidad = () => r; }
+    let talla = 78 + edad * 6.2 + entre(-4, 4);
+    let prev = 0;
+    return fechas.map((fecha, i) => {
+      const t = diasDesde(fecha);
+      talla += velocidad((prev + t) / 2) * ((t - prev) / 365.25);
+      prev = t;
+      const medida = Math.min(200, Math.max(70, talla + ruido(i) * 0.3));
+      return { fecha, valor: Number(medida.toFixed(1)) };
+    });
+  }
   let base, slope, dec, min, max;
   switch (nombreAtr) {
-    case "Talla":
-      base = 78 + edad * 6.2 + entre(-4, 4); slope = 0.6 + edad * 0.02; dec = 0; min = 70; max = 200; break;
     case "Peso":
       base = 8 + edad * 2.6 + entre(-3, 3); slope = 0.35; dec = 1; min = 12; max = 95; break;
     case "Velocidad 30m": // menor_mejor (segundos)
