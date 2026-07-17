@@ -190,9 +190,26 @@ PISAN el plan de `negocio/10` donde difieran:
   (`GUIA_PENDIENTE_REVISION`): al recibir la versión del PF, se
   reemplaza el texto ahí y se apaga el flag. Atributos nuevos del
   catálogo: agregar su guía en `GUIAS_MEDICION` (clave = nombre).
-- Pendientes vivos: Módulo D (el estirón) y la revisión del PF sobre
-  el contenido del Módulo B. Cuentas demo y rotación de clave de DB:
-  diferidos por decisión (la vitrina es ficticia).
+- **Módulo D hecho (2026-07-16, "el estirón" aterrizado)**: velocidad
+  de crecimiento observada sobre la serie de talla existente — CERO
+  cambio de esquema. `lib/crecimiento.ts` (puro): tramos entre
+  mediciones separadas ≥90 días (las más cercanas se absorben para no
+  anualizar ruido de tallímetro), `cmPorAnio` por tramo, umbral de
+  aceleración 7 cm/año (constante revisable por el PF, mismo régimen
+  que el contenido del Módulo B) y `zonasAceleracion()` (tramos
+  acelerados consecutivos fusionados). UI: card `components/estiron.tsx`
+  en la tab Evolución de la ficha cuando el atributo es Talla (ritmo
+  actual + historial de tramos + nota educativa SOLO informativa con
+  derivación al profesional del club) y sombreado "Crecimiento
+  acelerado (registro)" en la curva (prop `zonas` de `EvolutionChart`,
+  vía ReferenceArea). El atributo se identifica por NOMBRE ("Talla"),
+  como las guías del Módulo B. Lenguaje SIEMPRE de registro observado:
+  nada de madurez, PHV como diagnóstico ni proyección de talla adulta.
+  La estimación Moore et al. sigue EXCLUIDA hasta el aval del PF.
+- Pendientes vivos: revisión del PF sobre el contenido del Módulo B y
+  sobre el umbral/nota del Módulo D (+ decidir si avala Moore et al.).
+  Cuentas demo y rotación de clave de DB: diferidos por decisión (la
+  vitrina es ficticia).
 
 El observatorio también es real (2026-07-12, migración
 `20260712231049_observatorio_agregados.sql` APLICADA): la ÚNICA

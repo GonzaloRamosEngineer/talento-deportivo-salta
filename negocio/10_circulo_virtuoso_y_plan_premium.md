@@ -69,8 +69,17 @@ hecho y decidido al ejecutar. El resto del documento queda como diseño.
   versión, se reemplaza el contenido en `lib/como-medir.ts` y se apaga
   el flag. El pedido al PF sigue vivo — dejó de ser bloqueante.
 
-**Pendiente real que sigue:** Módulo D (el estirón). Del B queda solo
-la revisión del PF sobre el contenido base ya publicado.
+- **Módulo D (2026-07-16): CONSTRUIDO en su versión aterrizada.**
+  `lib/crecimiento.ts` + card "El estirón" (`components/estiron.tsx`)
+  en la ficha (tab Evolución, atributo Talla) + zona sombreada
+  "crecimiento acelerado (registro)" en la curva. Velocidad cm/año
+  entre mediciones separadas ≥90 días, umbral 7 cm/año (revisable por
+  el PF), nota educativa solo informativa con derivación al
+  profesional. Sin cambio de esquema, sin Mirwald, sin talla adulta.
+  **Moore et al. NO se construyó**: sigue esperando el aval del PF.
+
+**Pendiente real que sigue:** la revisión del PF — contenido base del
+Módulo B, umbral/nota del Módulo D y aval (o no) de Moore et al.
 
 ## 1 · El círculo virtuoso — adoptado, con una corrección
 

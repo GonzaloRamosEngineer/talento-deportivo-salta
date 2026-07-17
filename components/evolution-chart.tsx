@@ -4,6 +4,7 @@ import {
   Area,
   AreaChart,
   CartesianGrid,
+  ReferenceArea,
   ReferenceLine,
   ResponsiveContainer,
   Tooltip,
@@ -81,11 +82,14 @@ export function EvolutionChart({
   serie,
   atributo,
   hitos,
+  zonas,
 }: {
   serie: Medicion[];
   atributo: Atributo;
   /** eventos de trayectoria (ingreso, cambio de categoría) — líneas verticales */
   hitos?: { fecha: string; evento: string }[];
+  /** rangos sombreados (ej. zona de crecimiento acelerado en la talla) */
+  zonas?: { desde: string; hasta: string; etiqueta: string }[];
 }) {
   // En series que cruzan años, la etiqueta corta "12 mar" es ambigua:
   // pasa a "mar 24".
@@ -122,6 +126,19 @@ export function EvolutionChart({
         : { evento: h.evento, x: data[idx].label, alInicio: idx < serie.length / 2 };
     })
     .filter(Boolean) as { evento: string; x: string; alInicio: boolean }[];
+
+  // Cada zona se ancla a los puntos medidos que caen adentro del rango
+  // (el eje es categórico: ReferenceArea necesita labels existentes).
+  const zonasEnRango = (zonas ?? [])
+    .map((z) => {
+      const desdeIdx = serie.findIndex((m) => m.fecha >= z.desde);
+      if (desdeIdx === -1) return null;
+      let hastaIdx = serie.length - 1;
+      while (hastaIdx > desdeIdx && serie[hastaIdx].fecha > z.hasta) hastaIdx--;
+      if (hastaIdx <= desdeIdx) return null;
+      return { etiqueta: z.etiqueta, x1: data[desdeIdx].label, x2: data[hastaIdx].label };
+    })
+    .filter(Boolean) as { etiqueta: string; x1: string; x2: string }[];
 
   const valores = serie.map((m) => m.valor);
   const min = Math.min(...valores);
@@ -162,6 +179,24 @@ export function EvolutionChart({
             axisLine={false}
             tickFormatter={(v: number) => v.toLocaleString("es-AR")}
           />
+          {zonasEnRango.map((z) => (
+            <ReferenceArea
+              key={`${z.x1}-${z.x2}`}
+              x1={z.x1}
+              x2={z.x2}
+              fill="#d97706"
+              fillOpacity={0.07}
+              stroke="#d97706"
+              strokeOpacity={0.25}
+              strokeDasharray="4 4"
+              label={{
+                value: z.etiqueta,
+                position: "insideBottom",
+                fontSize: 10,
+                fill: "#b45309",
+              }}
+            />
+          ))}
           {hitosEnRango.map((h) => (
             <ReferenceLine
               key={h.evento}

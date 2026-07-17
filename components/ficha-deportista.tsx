@@ -29,6 +29,8 @@ import { useDatos, type Datos } from "@/lib/use-datos";
 import { useAgenda } from "@/lib/use-agenda";
 import { crearClienteBrowser } from "@/lib/supabase/client";
 import { tendencia, type Estado } from "@/lib/tendencia";
+import { crecimiento, zonasAceleracion } from "@/lib/crecimiento";
+import { Estiron } from "@/components/estiron";
 import { EstadoBadge } from "@/components/estado-badge";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { EvolutionChart } from "@/components/evolution-chart";
@@ -137,6 +139,15 @@ export function FichaDeportista({
   const atributo = datos.atributos.find((a) => a.id === atributoId);
   const serie = atributo ? (deportista.mediciones[atributo.id] ?? []) : [];
   const t = atributo ? tendencia(serie, atributo) : null;
+  // Módulo D: en la talla se marca la zona de crecimiento acelerado
+  // sobre la curva y se muestra la card "El estirón".
+  const esTalla = atributo?.nombre === "Talla";
+  const zonasEstiron = esTalla
+    ? zonasAceleracion(crecimiento(serie).tramos).map((z) => ({
+        ...z,
+        etiqueta: "Crecimiento acelerado (registro)",
+      }))
+    : undefined;
   const categoria = datos.categorias.find((c) => c.id === deportista.categoriaId);
   // Sesiones en las que aparece: reales (asistencia por excepción ya
   // materializada por useAgenda) o las del mock para la demo.
@@ -523,6 +534,7 @@ export function FichaDeportista({
                     serie={serie}
                     atributo={atributo}
                     hitos={deportista.historial}
+                    zonas={zonasEstiron}
                   />
                   <div className="mt-2 flex items-start gap-2 rounded-lg bg-muted px-3 py-2 text-[11px] leading-snug text-muted-foreground">
                     <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
@@ -542,6 +554,8 @@ export function FichaDeportista({
               )}
             </section>
           )}
+
+          {esTalla && serie.length > 0 && <Estiron serie={serie} />}
 
           {/* Historial: la vista tabla del gráfico */}
           {serie.length > 0 && atributo && (
