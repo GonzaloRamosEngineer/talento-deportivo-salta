@@ -229,54 +229,61 @@ export function FichaDeportista({
 
   return (
     <div className="flex flex-col gap-4">
-      {/* Encabezado de la ficha */}
-      <div className="flex items-center gap-4">
-        <AvatarIniciales
-          nombre={deportista.nombre}
-          apellido={deportista.apellido}
-          className="size-14 text-lg"
-        />
-        <div className="min-w-0 flex-1">
-          <h1 className="truncate text-xl font-extrabold tracking-tight">
-            {deportista.nombre} {deportista.apellido}
-          </h1>
-          <p className="text-sm text-muted-foreground">
-            {[
-              categoria?.nombre ?? "Sin categoría",
-              edadLabel(deportista.fechaNacimiento),
-              deportista.lateralidad,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </p>
+      {/* Encabezado de la ficha — en mobile el nombre ocupa su propia
+          fila (deja de competir por ancho con las acciones) y los botones
+          bajan a una fila propia; en pantallas anchas entra todo en una
+          sola línea. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+        <div className="flex min-w-0 flex-1 items-center gap-3">
+          <AvatarIniciales
+            nombre={deportista.nombre}
+            apellido={deportista.apellido}
+            className="size-14 shrink-0 text-lg"
+          />
+          <div className="min-w-0 flex-1">
+            <h1 className="text-xl font-extrabold leading-tight tracking-tight">
+              {deportista.nombre} {deportista.apellido}
+            </h1>
+            <p className="mt-0.5 text-sm text-muted-foreground">
+              {[
+                categoria?.nombre ?? "Sin categoría",
+                edadLabel(deportista.fechaNacimiento),
+                deportista.lateralidad,
+              ]
+                .filter(Boolean)
+                .join(" · ")}
+            </p>
+          </div>
         </div>
-        {datos.real && permisos.opera && (
+        <div className="flex shrink-0 items-center gap-2">
+          {datos.real && permisos.opera && (
+            <Link
+              href={`/deportistas/${deportista.id}/editar`}
+              aria-label="Editar deportista"
+              title="Editar deportista"
+              className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+            >
+              <Pencil className="size-4.5" aria-hidden />
+            </Link>
+          )}
           <Link
-            href={`/deportistas/${deportista.id}/editar`}
-            aria-label="Editar deportista"
-            title="Editar deportista"
+            href={`/deportistas/${deportista.id}/consentimiento`}
+            aria-label="Consentimiento imprimible"
+            title="Consentimiento imprimible"
             className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
           >
-            <Pencil className="size-4.5" aria-hidden />
+            <FileSignature className="size-4.5" aria-hidden />
           </Link>
-        )}
-        <Link
-          href={`/deportistas/${deportista.id}/consentimiento`}
-          aria-label="Consentimiento imprimible"
-          title="Consentimiento imprimible"
-          className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-        >
-          <FileSignature className="size-4.5" aria-hidden />
-        </Link>
-        <Link
-          href={`/deportistas/${deportista.id}/informe`}
-          aria-label="Informe imprimible"
-          title="Informe imprimible"
-          className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
-        >
-          <Printer className="size-4.5" aria-hidden />
-        </Link>
-        <CompartirInforme deportista={deportista} datos={datos} variante="icono" />
+          <Link
+            href={`/deportistas/${deportista.id}/informe`}
+            aria-label="Informe imprimible"
+            title="Informe imprimible"
+            className="flex size-10 shrink-0 items-center justify-center rounded-xl border border-border bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+          >
+            <Printer className="size-4.5" aria-hidden />
+          </Link>
+          <CompartirInforme deportista={deportista} datos={datos} variante="icono" />
+        </div>
       </div>
 
       {!consentimientoOk && (

@@ -78,6 +78,59 @@ function makeEndLabel(total: number, unidad: string) {
   };
 }
 
+// Rótulo de una zona (ej. crecimiento acelerado): al pie del área,
+// anclado a su borde derecho para que el texto completo quede dentro
+// del gráfico y no se corte contra el margen.
+function makeZonaLabel(texto: string) {
+  return function ZonaLabel(props: {
+    viewBox?: { x?: number; y?: number; width?: number; height?: number };
+  }) {
+    const vb = props.viewBox;
+    if (!vb || vb.x == null || vb.y == null || vb.width == null || vb.height == null)
+      return <g />;
+    return (
+      <text
+        x={vb.x + vb.width - 4}
+        y={vb.y + vb.height - 6}
+        textAnchor="end"
+        fontSize={10}
+        fontWeight={600}
+        fill="#b45309"
+      >
+        {texto}
+      </text>
+    );
+  };
+}
+
+// Rótulo de un hito, dibujado VERTICAL a lo largo de su línea. Al ir
+// vertical no compite por el ancho con la curva, el valor final ni los
+// demás hitos; `orden` desplaza en x a los que comparten ancla.
+function makeHitoLabel(texto: string, orden: number) {
+  const corto = texto.length > 26 ? `${texto.slice(0, 25)}…` : texto;
+  return function HitoLabel(props: {
+    viewBox?: { x?: number; y?: number; height?: number };
+  }) {
+    const vb = props.viewBox;
+    if (!vb || vb.x == null || vb.y == null) return <g />;
+    const tx = vb.x + 4 + orden * 11;
+    const ty = vb.y + 6;
+    return (
+      <text
+        x={tx}
+        y={ty}
+        transform={`rotate(90 ${tx} ${ty})`}
+        textAnchor="start"
+        fontSize={9}
+        fontWeight={600}
+        fill="#5f6d63"
+      >
+        {corto}
+      </text>
+    );
+  };
+}
+
 export function EvolutionChart({
   serie,
   atributo,
@@ -117,15 +170,21 @@ export function EvolutionChart({
     };
   });
 
-  // Cada hito se ancla al primer punto medido desde su fecha.
+  // Cada hito se ancla al primer punto medido desde su fecha. Cuando
+  // dos hitos caen sobre el mismo punto (misma etiqueta de eje), se les
+  // asigna un `orden` para separarlos y que sus rótulos no se encimen.
   const hitosEnRango = (hitos ?? [])
     .map((h) => {
       const idx = serie.findIndex((m) => m.fecha >= h.fecha);
-      return idx === -1
-        ? null
-        : { evento: h.evento, x: data[idx].label, alInicio: idx < serie.length / 2 };
+      return idx === -1 ? null : { evento: h.evento, x: data[idx].label };
     })
-    .filter(Boolean) as { evento: string; x: string; alInicio: boolean }[];
+    .filter(Boolean) as { evento: string; x: string }[];
+  const ocupadosPorX: Record<string, number> = {};
+  const hitosConOrden = hitosEnRango.map((h) => {
+    const orden = ocupadosPorX[h.x] ?? 0;
+    ocupadosPorX[h.x] = orden + 1;
+    return { ...h, orden };
+  });
 
   // Cada zona se ancla a los puntos medidos que caen adentro del rango
   // (el eje es categórico: ReferenceArea necesita labels existentes).
@@ -189,26 +248,17 @@ export function EvolutionChart({
               stroke="#d97706"
               strokeOpacity={0.25}
               strokeDasharray="4 4"
-              label={{
-                value: z.etiqueta,
-                position: "insideBottom",
-                fontSize: 10,
-                fill: "#b45309",
-              }}
+              label={makeZonaLabel(z.etiqueta)}
             />
           ))}
-          {hitosEnRango.map((h) => (
+          {hitosConOrden.map((h) => (
             <ReferenceLine
               key={h.evento}
               x={h.x}
               stroke={TINTA_MUTED}
               strokeWidth={1}
-              label={{
-                value: h.evento,
-                position: h.alInicio ? "insideTopLeft" : "insideTopRight",
-                fontSize: 10,
-                fill: "#5f6d63",
-              }}
+              strokeDasharray="3 3"
+              label={makeHitoLabel(h.evento, h.orden)}
             />
           ))}
           <Tooltip
