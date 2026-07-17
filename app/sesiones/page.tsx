@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { CalendarDays, Loader2, MapPin, Plus } from "lucide-react";
+import { CalendarDays, MapPin, Plus } from "lucide-react";
 import { DIAS } from "@/lib/mock-data";
 import { useDatos } from "@/lib/use-datos";
 import { useAgenda, lunesDe } from "@/lib/use-agenda";
@@ -11,6 +11,8 @@ import { Ayuda } from "@/components/ayuda";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { usePerfil } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
+
+import { CargandoPelota } from "@/components/cargando-pelota";
 
 function mismaFecha(a: Date, b: Date) {
   return (
@@ -38,9 +40,7 @@ export default function Agenda() {
 
   if (agenda.cargando) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
-      </div>
+      <CargandoPelota />
     );
   }
 

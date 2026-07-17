@@ -21,6 +21,8 @@ import { EstadoVacio } from "@/components/estado-vacio";
 import { DIAS } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
+import { CargandoPelota } from "@/components/cargando-pelota";
+
 // Gestión del cronograma semanal y los lugares del club (solo admin;
 // RLS: horario_escritura / lugar_escritura). De estos horarios fijos
 // se arma sola la agenda de cada semana: el profe solo pasa lista.
@@ -133,9 +135,7 @@ export default function AgendaClubPage() {
 
   if (sesion.cargando) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
-      </div>
+      <CargandoPelota />
     );
   }
 

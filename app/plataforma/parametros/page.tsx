@@ -18,6 +18,8 @@ import {
   type ParametrosPlataforma,
 } from "@/app/plataforma/actions";
 
+import { CargandoPelota } from "@/components/cargando-pelota";
+
 // Parámetros GLOBALES del Módulo D (el estirón), curados centralmente
 // como el catálogo de atributos: los setea la plataforma, los leen
 // todos los clubes. La escritura real pasa por la server action
@@ -164,10 +166,7 @@ export default function ParametrosPlataforma() {
       </div>
 
       {!datos && !error && (
-        <div className="flex items-center justify-center gap-2 py-16 text-sm font-semibold text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" aria-hidden />
-          Cargando parámetros…
-        </div>
+        <CargandoPelota texto="Cargando parámetros…" />
       )}
 
       {form && datos && (

@@ -11,7 +11,6 @@ import {
   ArrowDown,
   FileSpreadsheet,
   List,
-  Loader2,
   Plus,
   Search,
   ShieldAlert,
@@ -37,6 +36,8 @@ import { AvisoAcceso } from "@/components/aviso-acceso";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { usePerfil } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
+
+import { CargandoPelota } from "@/components/cargando-pelota";
 
 type Orden = { col: string; dir: 1 | -1 };
 
@@ -232,10 +233,7 @@ function Deportistas() {
 
   if (datos.cargando) {
     return (
-      <div className="flex items-center justify-center gap-2 py-24 text-sm font-semibold text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" aria-hidden />
-        Cargando deportistas…
-      </div>
+      <CargandoPelota texto="Cargando deportistas…" />
     );
   }
   if (datos.error) {

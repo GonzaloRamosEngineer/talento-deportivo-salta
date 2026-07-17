@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { PelotaDoodle } from "@/components/pelota-doodle";
+
 /**
  * La pelota de la landing. Se patea con el mouse (o con el dedo):
  * física propia —gravedad, pique, rodada, efecto— dentro de una
@@ -255,37 +257,7 @@ export function Pelota() {
 
       {/* La pelota */}
       <div ref={bolaRef} className="absolute left-0 top-0 will-change-transform">
-        <svg width={R * 2} height={R * 2} viewBox="0 0 48 48">
-          <circle
-            cx="24"
-            cy="24"
-            r="22"
-            fill="#fff"
-            stroke="var(--foreground)"
-            strokeWidth="2.5"
-          />
-          <polygon
-            points="24,17 30.5,21.5 28,29 20,29 17.5,21.5"
-            fill="var(--foreground)"
-          />
-          {[
-            [24, 17, 24, 6],
-            [30.5, 21.5, 41, 17],
-            [28, 29, 34, 40],
-            [20, 29, 14, 40],
-            [17.5, 21.5, 7, 17],
-          ].map(([x1, y1, x2, y2]) => (
-            <line
-              key={`${x1}-${y1}`}
-              x1={x1}
-              y1={y1}
-              x2={x2}
-              y2={y2}
-              stroke="var(--foreground)"
-              strokeWidth="2"
-            />
-          ))}
-        </svg>
+        <PelotaDoodle size={R * 2} fondo className="block text-foreground" />
       </div>
     </div>
   );

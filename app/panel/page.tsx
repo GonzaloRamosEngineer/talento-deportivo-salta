@@ -7,7 +7,6 @@ import {
   Dumbbell,
   Eye,
   Landmark,
-  Loader2,
   Settings,
   ShieldAlert,
   UserRound,
@@ -29,6 +28,8 @@ import { EstadoBadge } from "@/components/estado-badge";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { Sparkline } from "@/components/sparkline";
 import { usePerfil } from "@/components/perfil-context";
+
+import { CargandoPelota } from "@/components/cargando-pelota";
 
 // Selección curada para la demo mock: cubre los tres estados y las
 // categorías de la profesora demo. Con sesión real, los destacados se
@@ -53,9 +54,7 @@ function InicioPlataforma() {
 
   if (cargando) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
-      </div>
+      <CargandoPelota />
     );
   }
 
@@ -122,9 +121,7 @@ export default function Inicio() {
 
   if (agenda.cargando) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
-      </div>
+      <CargandoPelota />
     );
   }
 

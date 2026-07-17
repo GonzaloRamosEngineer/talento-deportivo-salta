@@ -24,6 +24,8 @@ import { AvisoAcceso } from "@/components/aviso-acceso";
 import { usePerfil } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
+import { CargandoPelota } from "@/components/cargando-pelota";
+
 // Detalle de sesión — dual (mock/real). Con sesión real y permiso de
 // operación, acá se PASA LISTA por excepción: todos arrancan
 // presentes y solo se marcan las faltas; en la base se guardan
@@ -56,9 +58,7 @@ export default function PaginaSesion({
 
   if (agenda.cargando) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
-      </div>
+      <CargandoPelota />
     );
   }
 

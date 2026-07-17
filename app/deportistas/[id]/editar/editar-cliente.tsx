@@ -18,6 +18,8 @@ import { useDatos } from "@/lib/use-datos";
 import { AvisoAcceso } from "@/components/aviso-acceso";
 import { cn } from "@/lib/utils";
 
+import { CargandoPelota } from "@/components/cargando-pelota";
+
 // Edición y baja del deportista — el resto del ciclo de vida que el
 // alta no cubre: corregir un dato, moverlo de categoría al cambiar el
 // año, y las dos bajas. RLS: editar/desactivar puede cualquiera que
@@ -53,9 +55,7 @@ export function EditarDeportistaCliente({ id }: { id: string }) {
 
   if (datos.cargando) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
-      </div>
+      <CargandoPelota />
     );
   }
   if (!datos.real) {

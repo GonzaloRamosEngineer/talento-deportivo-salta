@@ -21,6 +21,8 @@ import { EstadoVacio } from "@/components/estado-vacio";
 import type { CategoriaDB, TipoCategoria } from "@/lib/tipos-db";
 import { cn } from "@/lib/utils";
 
+import { CargandoPelota } from "@/components/cargando-pelota";
+
 // Gestión de categorías del club (paso 3 de docs/OPERACION.md).
 // Todo contra la base real: RLS solo deja escribir a admin_club
 // (categoria_insert_admin / update / delete).
@@ -162,9 +164,7 @@ export default function CategoriasPage() {
 
   if (sesion.cargando) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
-      </div>
+      <CargandoPelota />
     );
   }
 

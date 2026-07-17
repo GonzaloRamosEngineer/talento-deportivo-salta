@@ -6,7 +6,6 @@ import {
   CalendarDays,
   ChevronRight,
   Layers,
-  Loader2,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -14,6 +13,8 @@ import { crearClienteBrowser } from "@/lib/supabase/client";
 import { useClub } from "@/lib/use-club";
 import { AvisoAcceso } from "@/components/aviso-acceso";
 import { EscudoClub } from "@/components/escudo-club";
+
+import { CargandoPelota } from "@/components/cargando-pelota";
 
 // Hub de gestión del club (admin): la cadena de alta de
 // docs/OPERACION.md hecha pantalla — categorías → staff → deportistas.
@@ -64,9 +65,7 @@ export default function ClubPage() {
 
   if (sesion.cargando) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
-      </div>
+      <CargandoPelota />
     );
   }
 

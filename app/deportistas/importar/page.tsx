@@ -21,6 +21,8 @@ import { Ayuda } from "@/components/ayuda";
 import type { CategoriaDB } from "@/lib/tipos-db";
 import { cn } from "@/lib/utils";
 
+import { CargandoPelota } from "@/components/cargando-pelota";
+
 // Import de plantel desde la planilla que el club YA tiene (el "día 1
 // en el club"): se pega directo desde Excel (el portapapeles de Excel
 // es texto separado por tabs) o se sube el CSV. Todo se procesa en el
@@ -528,9 +530,7 @@ export default function ImportarPlantelPage() {
 
   if (sesion.cargando || (puedeOperar && categorias === null)) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
-      </div>
+      <CargandoPelota />
     );
   }
 

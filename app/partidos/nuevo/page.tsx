@@ -19,6 +19,8 @@ import { EstadoVacio } from "@/components/estado-vacio";
 import { usePerfil } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
+import { CargandoPelota } from "@/components/cargando-pelota";
+
 // Alta de partido — solo datos grupales. La citación arranca con todo
 // el plantel tildado (se destilda al que no viaja); el resultado se
 // carga después, desde el detalle. Solo con sesión real.
@@ -50,9 +52,7 @@ function FormPartido() {
 
   if (agenda.cargando) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
-      </div>
+      <CargandoPelota />
     );
   }
 
@@ -410,9 +410,7 @@ export default function NuevoPartido() {
   return (
     <Suspense
       fallback={
-        <div className="flex justify-center py-20">
-          <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
-        </div>
+        <CargandoPelota />
       }
     >
       <FormPartido />

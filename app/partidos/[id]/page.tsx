@@ -20,6 +20,8 @@ import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { AvisoAcceso } from "@/components/aviso-acceso";
 import { usePerfil } from "@/components/perfil-context";
 
+import { CargandoPelota } from "@/components/cargando-pelota";
+
 // Detalle de partido — dual (mock/real). SOLO datos grupales:
 // resultado del equipo y citados; nada individual de menores. En
 // escuelitas no se carga marcador (encuadre formativo).
@@ -55,9 +57,7 @@ export default function PaginaPartido({
 
   if (agenda.cargando) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
-      </div>
+      <CargandoPelota />
     );
   }
 

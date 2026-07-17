@@ -1,6 +1,6 @@
 "use client";
 
-import { Landmark, Loader2, ShieldCheck } from "lucide-react";
+import { Landmark, ShieldCheck } from "lucide-react";
 import { EscudoClub } from "@/components/escudo-club";
 import { ATRIBUTOS, formatFecha } from "@/lib/mock-data";
 import { useObservatorio } from "@/lib/use-observatorio";
@@ -8,6 +8,8 @@ import { usePerfil, PERFILES } from "@/components/perfil-context";
 import { AvisoAcceso } from "@/components/aviso-acceso";
 import { MapaSalta } from "@/components/mapa-salta";
 import { EnElRadar, Proximamente } from "@/components/proximamente";
+
+import { CargandoPelota } from "@/components/cargando-pelota";
 
 export default function Observatorio() {
   const { perfil, setPerfil, sesionReal } = usePerfil();
@@ -37,10 +39,7 @@ export default function Observatorio() {
 
   if (cargando) {
     return (
-      <div className="flex items-center justify-center gap-2 py-24 text-sm font-semibold text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" aria-hidden />
-        Cargando el observatorio…
-      </div>
+      <CargandoPelota texto="Cargando el observatorio…" />
     );
   }
   if (error) {

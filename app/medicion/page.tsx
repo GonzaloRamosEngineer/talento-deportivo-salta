@@ -22,6 +22,8 @@ import { ComoMedir } from "@/components/como-medir";
 import { usePerfil } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
+import { CargandoPelota } from "@/components/cargando-pelota";
+
 // "4,2" (teclado decimal AR) y "4.2" valen igual; null = no es número
 function parseValor(texto: string): number | null {
   const limpio = texto.trim().replace(",", ".");
@@ -201,10 +203,7 @@ function JornadaDeMedicion() {
 
   if (datos.cargando) {
     return (
-      <div className="flex items-center justify-center gap-2 py-24 text-sm font-semibold text-muted-foreground">
-        <Loader2 className="size-4 animate-spin" aria-hidden />
-        Cargando tus categorías…
-      </div>
+      <CargandoPelota texto="Cargando tus categorías…" />
     );
   }
   if (datos.error) {

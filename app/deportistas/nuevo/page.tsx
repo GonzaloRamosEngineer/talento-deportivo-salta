@@ -19,6 +19,8 @@ import { EstadoVacio } from "@/components/estado-vacio";
 import type { CategoriaDB } from "@/lib/tipos-db";
 import { cn } from "@/lib/utils";
 
+import { CargandoPelota } from "@/components/cargando-pelota";
+
 // Alta de deportista (paso 6 de docs/OPERACION.md): datos mínimos +
 // tutor + consentimiento en el MISMO formulario. Si el consentimiento
 // falta, el alta NO se bloquea (regla del piloto) pero queda marcado
@@ -108,9 +110,7 @@ export default function NuevoDeportistaPage() {
 
   if (sesion.cargando || (puedeOperar && categorias === null)) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
-      </div>
+      <CargandoPelota />
     );
   }
 

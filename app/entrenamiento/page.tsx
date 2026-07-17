@@ -29,6 +29,8 @@ import { Proximamente } from "@/components/proximamente";
 import { usePerfil } from "@/components/perfil-context";
 import { cn } from "@/lib/utils";
 
+import { CargandoPelota } from "@/components/cargando-pelota";
+
 // Tablero de entrenamiento — dual (mock/real), integrado con la agenda.
 // La planificación por jugador (a qué estación/área va cada uno) CUELGA
 // de la sesión del día de la categoría (sesion_entrenamiento): no crea
@@ -107,12 +109,7 @@ function Entrenamiento() {
 
   if (agenda.cargando) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2
-          className="size-6 animate-spin text-muted-foreground"
-          aria-hidden
-        />
-      </div>
+      <CargandoPelota />
     );
   }
 

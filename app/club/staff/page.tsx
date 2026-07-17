@@ -28,6 +28,8 @@ import {
 import { cn } from "@/lib/utils";
 import { estadoStaff, invitarMiembro, quitarMiembro, regenerarLink } from "./actions";
 
+import { CargandoPelota } from "@/components/cargando-pelota";
+
 // Staff del club (pasos 4-5 de docs/OPERACION.md): el admin invita
 // por LINK (lo comparte por WhatsApp), elige rol y asigna categorías.
 // El profe solo va a ver/operar las categorías tildadas acá (RLS v6).
@@ -252,9 +254,7 @@ export default function StaffPage() {
 
   if (sesion.cargando) {
     return (
-      <div className="flex justify-center py-20">
-        <Loader2 className="size-6 animate-spin text-muted-foreground" aria-hidden />
-      </div>
+      <CargandoPelota />
     );
   }
 

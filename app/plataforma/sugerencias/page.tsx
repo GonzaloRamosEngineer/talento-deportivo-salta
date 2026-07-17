@@ -20,6 +20,8 @@ import {
 } from "@/app/plataforma/actions";
 import { cn } from "@/lib/utils";
 
+import { CargandoPelota } from "@/components/cargando-pelota";
+
 // Bandeja de curaduría (sesión C): las sugerencias del staff de los
 // clubes sobre las guías del catálogo. Aceptar/rechazar registra la
 // decisión y se la muestra al autor; si se acepta, el contenido se
@@ -193,10 +195,7 @@ export default function SugerenciasPlataforma() {
       </p>
 
       {!sugerencias && !error && (
-        <div className="flex items-center justify-center gap-2 py-16 text-sm font-semibold text-muted-foreground">
-          <Loader2 className="size-4 animate-spin" aria-hidden />
-          Cargando sugerencias…
-        </div>
+        <CargandoPelota texto="Cargando sugerencias…" />
       )}
       {error && (
         <div className="flex items-start gap-2.5 rounded-xl bg-danger-soft p-3 text-xs font-semibold text-danger">
