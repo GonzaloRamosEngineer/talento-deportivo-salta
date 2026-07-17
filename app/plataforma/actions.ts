@@ -400,3 +400,92 @@ export async function guardarParametros(input: {
   if (error) return { ok: false, error: error.message };
   return { ok: true, data: null };
 }
+
+// ---------- Bandeja de sugerencias sobre las guías (sesión C) ----------
+
+export interface SugerenciaPlataforma {
+  id: string;
+  guia: string;
+  tipo: "agregar" | "modificar" | "eliminar";
+  texto: string;
+  estado: "pendiente" | "aceptada" | "rechazada";
+  respuesta: string | null;
+  creadoEn: string;
+  resueltoEn: string | null;
+  club: string;
+  autor: string;
+  funcion: string | null;
+}
+
+/**
+ * Todas las sugerencias, pendientes primero. La plataforma lee vía
+ * service role (el RLS de plataforma sigue en 0 filas): son textos de
+ * adultos del staff sobre contenido metodológico, sin datos de menores.
+ */
+export async function listarSugerencias(): Promise<Resultado<SugerenciaPlataforma[]>> {
+  if (!(await esPlataforma())) return { ok: false, error: "Solo para la plataforma." };
+  const admin = crearClienteAdmin();
+  const { data, error } = await admin
+    .from("sugerencia")
+    .select(
+      "id, guia, tipo, texto, estado, respuesta, creado_en, resuelto_en, club(nombre), membresia(nombre, funcion)",
+    )
+    .order("creado_en", { ascending: false })
+    .limit(200);
+  if (error) return { ok: false, error: error.message };
+  const filas = (data ?? []).map((s) => {
+    const club = s.club as unknown as { nombre: string } | null;
+    const autor = s.membresia as unknown as { nombre: string; funcion: string | null } | null;
+    return {
+      id: s.id as string,
+      guia: s.guia as string,
+      tipo: s.tipo as SugerenciaPlataforma["tipo"],
+      texto: s.texto as string,
+      estado: s.estado as SugerenciaPlataforma["estado"],
+      respuesta: (s.respuesta as string | null) ?? null,
+      creadoEn: s.creado_en as string,
+      resueltoEn: (s.resuelto_en as string | null) ?? null,
+      club: club?.nombre ?? "—",
+      autor: autor?.nombre ?? "—",
+      funcion: autor?.funcion ?? null,
+    };
+  });
+  filas.sort((a, b) =>
+    a.estado === "pendiente" && b.estado !== "pendiente" ? -1
+    : a.estado !== "pendiente" && b.estado === "pendiente" ? 1
+    : 0,
+  );
+  return { ok: true, data: filas };
+}
+
+/**
+ * Resuelve una sugerencia (aceptada/rechazada, con respuesta opcional
+ * que ve el autor). Registra la DECISIÓN: si se acepta, el contenido
+ * de la guía se actualiza aparte, por curaduría central
+ * (lib/como-medir.ts) — esta action no toca el catálogo.
+ */
+export async function resolverSugerencia(input: {
+  id: string;
+  estado: "aceptada" | "rechazada";
+  respuesta?: string;
+}): Promise<Resultado<null>> {
+  if (!(await esPlataforma())) return { ok: false, error: "Solo para la plataforma." };
+  const respuesta = input.respuesta?.trim() || null;
+  if (respuesta && respuesta.length > 1000) {
+    return { ok: false, error: "La respuesta supera los 1000 caracteres." };
+  }
+  const admin = crearClienteAdmin();
+  const { error, data } = await admin
+    .from("sugerencia")
+    .update({
+      estado: input.estado,
+      respuesta,
+      resuelto_en: new Date().toISOString(),
+    })
+    .eq("id", input.id)
+    .eq("estado", "pendiente")
+    .select("id");
+  if (error) return { ok: false, error: error.message };
+  if (!data?.length) return { ok: false, error: "Esa sugerencia ya fue resuelta (o no existe)." };
+  return { ok: true, data: null };
+}

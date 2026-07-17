@@ -19,6 +19,7 @@ import {
   type GuiaMedicion,
 } from "@/lib/como-medir";
 import { cn } from "@/lib/utils";
+import { SugerenciaGuia } from "@/components/sugerencia-guia";
 
 // Drawer "¿Cómo medir?" — Módulo B (negocio/10). Refuerza la
 // comparabilidad provincial: el protocolo escrito es lo que hace que
@@ -409,6 +410,8 @@ function DrawerComoMedir({
               </ul>
             </section>
           )}
+
+          <SugerenciaGuia guia={atributo.nombre} />
         </div>
       </div>
     </div>,

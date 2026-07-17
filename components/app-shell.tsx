@@ -10,6 +10,7 @@ import {
   ClipboardPlus,
   Dumbbell,
   Landmark,
+  MessageSquareText,
   Settings,
   Shield,
   Sprout,
@@ -152,6 +153,7 @@ function navPara(perfil: Perfil): NavItem[] {
       { href: "/observatorio", label: "Observatorio", icon: Landmark, destacado: true },
       { href: "/plataforma/clubes", label: "Clubes", icon: Shield },
       { href: "/plataforma/parametros", label: "Parámetros", icon: Sprout },
+      { href: "/plataforma/sugerencias", label: "Sugerencias", icon: MessageSquareText },
     ];
   }
   const base: NavItem[] = [

@@ -244,6 +244,27 @@ PISAN el plan de `negocio/10` donde difieran:
   "Consentimiento pendiente". Chips combinables (Y lógico) con
   contador, deep-link `?filtro=estiron,sin-medir`, nota explicativa
   al activar. Aplican a la vista lista Y tabla (comparten `lista`).
+- **Sesión C hecha (2026-07-17): circuito de sugerencias sobre las
+  guías** (migración `20260717120000_sugerencia.sql` APLICADA). El
+  contenido sigue siendo curaduría CENTRAL: la tabla registra el
+  pedido y su estado, jamás edita el catálogo. Tabla `sugerencia`
+  (club_id, membresia_id, guia = NOMBRE de atributo, tipo
+  agregar/modificar/eliminar, texto, estado
+  pendiente/aceptada/rechazada, respuesta, resuelto_en). RLS: INSERT
+  miembro solo a nombre de su propia membresía+club; SELECT solo el
+  AUTOR (ni el resto del club); DELETE autor solo pendiente
+  (retirarla); UPDATE nadie — la plataforma resuelve vía server
+  actions `listarSugerencias`/`resolverSugerencia` (service role +
+  gate app_metadata, el RLS de plataforma sigue en 0 filas; sin datos
+  de menores: texto de staff sobre metodología). UI:
+  `components/sugerencia-guia.tsx` al pie del drawer ¿Cómo medir?
+  (solo con membresía real — la demo anónima no lo ve): form
+  tipo+texto, lista de las propias por guía con estado y respuesta.
+  Bandeja `/plataforma/sugerencias` (nav "Sugerencias"): pendientes
+  primero, aceptar/no incorporar con respuesta opcional; el copy
+  recuerda que aceptar NO actualiza la guía (eso va por
+  lib/como-medir.ts). `resolverSugerencia` exige `estado='pendiente'`
+  (no re-resuelve).
 - Pendientes vivos: revisión del PF sobre el contenido del Módulo B y
   sobre umbrales/nota/presentación Moore del Módulo D. Cuentas demo y
   rotación de clave de DB: diferidos por decisión (la vitrina es
