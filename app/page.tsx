@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { LogoTalento } from "@/components/logo";
 import { CurvaHero } from "@/components/landing/curva-hero";
+import { Diferenciales } from "@/components/landing/diferenciales";
 import { Pelota } from "@/components/landing/pelota";
 import { Reveal } from "@/components/landing/reveal";
 
@@ -53,6 +54,14 @@ function NumeroGarabato({ n }: { n: string }) {
           stroke="var(--primary)"
           strokeWidth="2.5"
           strokeLinecap="round"
+          className="landing-trazo-vista"
+          style={
+            {
+              "--largo-trazo": 170,
+              "--trazo-dur": "0.7s",
+              "--trazo-delay": "0.3s",
+            } as React.CSSProperties
+          }
         />
       </svg>
       <span className="font-marker text-3xl font-bold text-primary">{n}</span>
@@ -295,9 +304,20 @@ export default function Landing() {
                     strokeWidth="5"
                     strokeLinecap="round"
                     opacity="0.75"
+                    className="landing-trazo-vista"
+                    style={
+                      {
+                        "--largo-trazo": 880,
+                        "--trazo-dur": "1.1s",
+                        "--trazo-delay": "0.5s",
+                      } as React.CSSProperties
+                    }
                   />
                 </svg>
-                <p className="font-marker absolute -bottom-9 right-0 rotate-[-2deg] text-xl font-bold text-destructive">
+                <p
+                  className="landing-nota-vista font-marker absolute -bottom-9 right-0 rotate-[-2deg] text-xl font-bold text-destructive"
+                  style={{ "--nota-delay": "1.7s" } as React.CSSProperties}
+                >
                   ¿y las mediciones de 2023? nadie sabe.
                 </p>
               </div>
@@ -405,13 +425,21 @@ export default function Landing() {
                     stroke="var(--primary)"
                     strokeWidth="2.5"
                     strokeLinecap="round"
+                    className="landing-trazo-vista"
+                    style={
+                      {
+                        "--largo-trazo": 340,
+                        "--trazo-dur": "1.2s",
+                        "--trazo-delay": "0.2s",
+                      } as React.CSSProperties
+                    }
                   />
                   {[
-                    [8, 62],
-                    [110, 42],
-                    [200, 38],
-                    [312, 12],
-                  ].map(([cx, cy]) => (
+                    [8, 62, 0.3],
+                    [110, 42, 0.65],
+                    [200, 38, 1],
+                    [312, 12, 1.35],
+                  ].map(([cx, cy, demora]) => (
                     <circle
                       key={cx}
                       cx={cx}
@@ -420,6 +448,8 @@ export default function Landing() {
                       fill="var(--primary)"
                       stroke="var(--card)"
                       strokeWidth="2"
+                      className="landing-punto-vista"
+                      style={{ animationDelay: `${demora}s` }}
                     />
                   ))}
                 </svg>
@@ -483,6 +513,9 @@ export default function Landing() {
             </Reveal>
           </div>
         </section>
+
+        {/* ---------- Los diferenciales, con viñeta propia ---------- */}
+        <Diferenciales />
 
         {/* ---------- Privacidad: el único bloque oscuro, a propósito ---------- */}
         <section id="privacidad" className="scroll-mt-16 bg-foreground">
