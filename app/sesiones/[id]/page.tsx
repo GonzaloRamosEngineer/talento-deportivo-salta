@@ -18,7 +18,14 @@ import {
 import { crearClienteBrowser } from "@/lib/supabase/client";
 import type { Sesion } from "@/lib/mock-data";
 import { useDatos } from "@/lib/use-datos";
-import { useAgenda, esVirtual, type Agenda } from "@/lib/use-agenda";
+import {
+  useAgenda,
+  claveHorario,
+  esVirtual,
+  fechaLocalISO,
+  sesionVirtual,
+  type Agenda,
+} from "@/lib/use-agenda";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { AvisoAcceso } from "@/components/aviso-acceso";
 import { usePerfil } from "@/components/perfil-context";
@@ -38,12 +45,32 @@ export default function PaginaSesion({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const { id } = use(params);
+  // El segmento llega percent-encodeado (los ids virtuales llevan ":")
+  const { id: idCrudo } = use(params);
+  const id = decodeURIComponent(idCrudo);
   const { permisos } = usePerfil();
   const datos = useDatos();
   const agenda = useAgenda(datos);
 
-  const sesion = agenda.sesiones.find((s) => s.id === id) ?? null;
+  // El hook solo trae las virtuales de la semana actual; una virtual
+  // de otra semana (navegación de la agenda) se reconstruye desde su
+  // id `v_<horarioId>_<fecha>`. Si ese día ya quedó una sesión
+  // registrada para la categoría, se muestra esa (link virtual viejo).
+  const sesion = (() => {
+    const encontrada = agenda.sesiones.find((s) => s.id === id);
+    if (encontrada) return encontrada;
+    const m = esVirtual(id) ? id.match(/^v_(.+)_(\d{4}-\d{2}-\d{2})$/) : null;
+    if (!m) return null;
+    const horario = agenda.horarios.find((h) => claveHorario(h) === m[1]);
+    if (!horario) return null;
+    const registrada = agenda.sesiones.find(
+      (s) =>
+        !esVirtual(s.id) &&
+        s.categoriaId === horario.categoriaId &&
+        fechaLocalISO(new Date(s.fecha)) === m[2],
+    );
+    return registrada ?? sesionVirtual(horario, m[2]);
+  })();
 
   if (!permisos.veClub) {
     return (

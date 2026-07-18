@@ -1,10 +1,22 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
-import { CalendarDays, MapPin, Plus } from "lucide-react";
+import {
+  CalendarDays,
+  ChevronLeft,
+  ChevronRight,
+  MapPin,
+  Plus,
+} from "lucide-react";
 import { DIAS } from "@/lib/mock-data";
 import { useDatos } from "@/lib/use-datos";
-import { useAgenda, lunesDe } from "@/lib/use-agenda";
+import {
+  useAgenda,
+  lunesDe,
+  esVirtual,
+  virtualesDeSemana,
+} from "@/lib/use-agenda";
 import { EventoCard } from "@/components/evento-card";
 import { AvisoAcceso } from "@/components/aviso-acceso";
 import { Ayuda } from "@/components/ayuda";
@@ -26,6 +38,8 @@ export default function Agenda() {
   const { permisos } = usePerfil();
   const datos = useDatos();
   const agenda = useAgenda(datos);
+  // Semana visible: 0 = la actual, -1 = pasada, +1 = próxima…
+  const [semana, setSemana] = useState(0);
 
   if (!permisos.veClub) {
     return (
@@ -45,8 +59,25 @@ export default function Agenda() {
   }
 
   const hoy = agenda.hoy;
+
+  // Semana visible, de lunes a domingo: la actual desplazada `semana`
+  // semanas. Las sesiones registradas ya vienen todas del hook; las
+  // virtuales del cronograma se generan para la semana que se mira.
+  const lunes = lunesDe(hoy);
+  lunes.setDate(lunes.getDate() + semana * 7);
+  const dias = Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(lunes);
+    d.setDate(lunes.getDate() + i);
+    return d;
+  });
+
+  const registradas = agenda.sesiones.filter((s) => !esVirtual(s.id));
+  const sesionesVista = [
+    ...registradas,
+    ...virtualesDeSemana(agenda.horarios, registradas, lunes),
+  ];
   const eventos = [
-    ...agenda.sesiones.map((sesion) => ({
+    ...sesionesVista.map((sesion) => ({
       tipo: "sesion" as const,
       fecha: sesion.fecha,
       sesion,
@@ -58,13 +89,22 @@ export default function Agenda() {
     })),
   ].sort((a, b) => a.fecha.localeCompare(b.fecha));
 
-  // Semana de lunes a domingo alrededor de HOY (real o demo)
-  const lunes = lunesDe(hoy);
-  const dias = Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(lunes);
-    d.setDate(lunes.getDate() + i);
-    return d;
-  });
+  const tituloSemana =
+    semana === 0
+      ? "Esta semana"
+      : semana === -1
+        ? "Semana pasada"
+        : semana === 1
+          ? "Semana que viene"
+          : semana < 0
+            ? "Semanas atrás"
+            : "Semanas adelante";
+  const mesInicio = dias[0].toLocaleDateString("es-AR", { month: "long" });
+  const mesFin = dias[6].toLocaleDateString("es-AR", { month: "long" });
+  const rangoSemana =
+    mesInicio === mesFin
+      ? `${dias[0].getDate()} al ${dias[6].getDate()} de ${mesFin}`
+      : `${dias[0].getDate()} de ${mesInicio} al ${dias[6].getDate()} de ${mesFin}`;
 
   const resultados = agenda.partidos
     .filter((p) => new Date(p.fecha) < hoy)
@@ -134,13 +174,38 @@ export default function Agenda() {
           suman nada: el estado vacío de arriba ya explica todo. */}
       {(agenda.horarios.length > 0 || eventos.length > 0) && (
       <section className="flex flex-col gap-3">
-        <h2 className="text-base font-extrabold">
-          Esta semana{" "}
-          <span className="text-sm font-semibold text-muted-foreground">
-            ({dias[0].getDate()} al {dias[6].getDate()} de{" "}
-            {dias[6].toLocaleDateString("es-AR", { month: "long" })})
-          </span>
-        </h2>
+        <div className="flex items-center justify-between gap-2">
+          <h2 className="min-w-0 text-base font-extrabold">
+            {tituloSemana}{" "}
+            <span className="block text-sm font-semibold text-muted-foreground sm:inline">
+              ({rangoSemana})
+            </span>
+          </h2>
+          <div className="flex shrink-0 items-center gap-1.5">
+            {semana !== 0 && (
+              <button
+                onClick={() => setSemana(0)}
+                className="h-9 rounded-full border border-border bg-card px-3 text-xs font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+              >
+                Hoy
+              </button>
+            )}
+            <button
+              onClick={() => setSemana((s) => s - 1)}
+              aria-label="Semana anterior"
+              className="flex size-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+            >
+              <ChevronLeft className="size-4.5" aria-hidden />
+            </button>
+            <button
+              onClick={() => setSemana((s) => s + 1)}
+              aria-label="Semana siguiente"
+              className="flex size-9 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+            >
+              <ChevronRight className="size-4.5" aria-hidden />
+            </button>
+          </div>
+        </div>
         {dias.map((dia) => {
           const delDia = eventos.filter((e) =>
             mismaFecha(new Date(e.fecha), dia),

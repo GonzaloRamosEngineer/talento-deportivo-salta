@@ -70,6 +70,55 @@ export function esVirtual(sesionId: string): boolean {
   return sesionId.startsWith("v_");
 }
 
+/** Clave estable de un horario: su uuid con datos reales; en el mock
+ *  (sin id) se deriva de categoría+día+hora. Es lo que viaja en el id
+ *  de las sesiones virtuales. */
+export function claveHorario(h: Horario): string {
+  return h.id ?? `${h.categoriaId}~${h.diaSemana}~${h.hora}`;
+}
+
+/** sesión virtual (aún no registrada) de un horario del cronograma en
+ *  una fecha local YYYY-MM-DD */
+export function sesionVirtual(h: Horario, iso: string): Sesion {
+  return {
+    id: `v_${claveHorario(h)}_${iso}`,
+    fecha: `${iso}T${h.hora}:00`,
+    categoriaId: h.categoriaId,
+    atributoFocoId: null,
+    entrenador: h.entrenador,
+    lugarId: h.lugarId,
+    estado: "programada",
+    descripcion: "",
+    asistencia: [],
+    asignaciones: [],
+  };
+}
+
+/** Sesiones virtuales de la semana que arranca en `lunes`: un horario
+ *  del cronograma sin sesión registrada ese día (misma categoría +
+ *  misma fecha local). Sirve para CUALQUIER semana — la agenda navega
+ *  pasado y futuro con esto. */
+export function virtualesDeSemana(
+  horarios: Horario[],
+  sesiones: Sesion[],
+  lunes: Date,
+): Sesion[] {
+  const registradas = new Set(
+    sesiones
+      .filter((s) => !esVirtual(s.id))
+      .map((s) => `${s.categoriaId}|${fechaLocalISO(new Date(s.fecha))}`),
+  );
+  const virtuales: Sesion[] = [];
+  for (const h of horarios) {
+    const dia = new Date(lunes);
+    dia.setDate(lunes.getDate() + (h.diaSemana - 1));
+    const iso = fechaLocalISO(dia);
+    if (registradas.has(`${h.categoriaId}|${iso}`)) continue;
+    virtuales.push(sesionVirtual(h, iso));
+  }
+  return virtuales;
+}
+
 interface FilaSesion {
   id: string;
   categoria_id: string | null;
@@ -298,32 +347,10 @@ export function useAgenda(datos: Datos): Agenda {
       };
     });
 
-    // Sesiones virtuales de la semana de HOY: cada horario sin sesión
-    // registrada ese día (misma categoría + misma fecha local).
-    const registradas = new Set(
-      listo.sesiones
-        .filter((s) => s.categoria_id)
-        .map((s) => `${s.categoria_id}|${fechaLocalISO(new Date(s.fecha))}`),
-    );
-    const lunes = lunesDe(hoy);
-    for (const h of horarios) {
-      const dia = new Date(lunes);
-      dia.setDate(lunes.getDate() + (h.diaSemana - 1));
-      const iso = fechaLocalISO(dia);
-      if (registradas.has(`${h.categoriaId}|${iso}`)) continue;
-      sesiones.push({
-        id: `v_${h.id}_${iso}`,
-        fecha: `${iso}T${h.hora}:00`,
-        categoriaId: h.categoriaId,
-        atributoFocoId: null,
-        entrenador: h.entrenador,
-        lugarId: h.lugarId,
-        estado: "programada",
-        descripcion: "",
-        asistencia: [],
-        asignaciones: [],
-      });
-    }
+    // Sesiones virtuales de la semana de HOY (el panel y el tablero se
+    // paran acá; la agenda genera además las de la semana que se mire,
+    // con el mismo helper).
+    sesiones.push(...virtualesDeSemana(horarios, sesiones, lunesDe(hoy)));
 
     const partidos: Partido[] = listo.partidos.map((p) => ({
       id: p.id,
