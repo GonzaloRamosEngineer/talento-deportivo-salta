@@ -634,28 +634,164 @@ export default function Landing() {
       </main>
 
       {/* ---------- Footer ---------- */}
-      <footer className="border-t border-border">
-        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-muted-foreground md:flex-row md:px-8">
-          <div className="flex items-center gap-2.5">
-            <LogoTalento className="size-7" />
-            <span className="font-bold text-foreground">
-              Talento Deportivo Salta
-            </span>
+      <footer className="relative overflow-hidden border-t border-border">
+        <div className="mx-auto max-w-6xl px-4 pt-14 md:px-8 md:pt-16">
+          <Reveal className="flex flex-col gap-12 bg-background">
+            {/* Marca + mapa del sitio */}
+            <div className="flex flex-col gap-10 md:flex-row md:items-start md:justify-between md:gap-16">
+              <div className="max-w-sm">
+                <Link href="/" className="flex w-fit items-center gap-2.5">
+                  <LogoTalento className="size-9" />
+                  <span className="text-base font-extrabold tracking-tight">
+                    Talento Deportivo <span className="text-primary">Salta</span>
+                  </span>
+                </Link>
+                <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+                  La plataforma que guarda la evolución física y técnica de
+                  cada deportista de club formador, medición a medición.
+                </p>
+                <p className="font-marker mt-4 rotate-[-1deg] text-xl text-primary">
+                  el talento es una curva
+                </p>
+              </div>
+
+              <nav
+                aria-label="Mapa del sitio"
+                className="grid grid-cols-2 gap-x-12 gap-y-8 text-sm"
+              >
+                <div>
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-muted-foreground">
+                    Producto
+                  </p>
+                  <ul className="mt-3.5 flex flex-col gap-2.5 font-semibold">
+                    <li>
+                      <a
+                        href="#como-funciona"
+                        className="transition-colors hover:text-primary"
+                      >
+                        Cómo funciona
+                      </a>
+                    </li>
+                    <li>
+                      <Link
+                        href="/login"
+                        className="transition-colors hover:text-primary"
+                      >
+                        Entrá a la demo
+                      </Link>
+                    </li>
+                    <li>
+                      <Link
+                        href="/login"
+                        className="transition-colors hover:text-primary"
+                      >
+                        Ingresar
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
+                <div>
+                  <p className="text-[11px] font-extrabold uppercase tracking-[0.18em] text-muted-foreground">
+                    Confianza
+                  </p>
+                  <ul className="mt-3.5 flex flex-col gap-2.5 font-semibold">
+                    <li>
+                      <a
+                        href="#privacidad"
+                        className="transition-colors hover:text-primary"
+                      >
+                        Datos de menores
+                      </a>
+                    </li>
+                    <li>
+                      <Link
+                        href="/privacidad"
+                        className="transition-colors hover:text-primary"
+                      >
+                        Política de privacidad
+                      </Link>
+                    </li>
+                  </ul>
+                </div>
+              </nav>
+            </div>
+
+            {/* Créditos institucionales: DMG crea el producto; la
+                Fundación es el socio que lo implementa en Salta.
+                (bg-background en el Reveal: los SVG traen fondo blanco
+                y el multiply necesita el fondo dentro del stacking
+                context que crea el transform del revelado.) */}
+            {/* En táctil no hay hover: los logos van a color directo y
+                el grayscale→color queda solo donde hay puntero. */}
+            <div className="flex flex-col items-center justify-center gap-6 border-t border-border pt-8 sm:flex-row sm:gap-10">
+              <a
+                href="https://www.digitalmatchglobal.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3"
+              >
+                {/* PNG horneados en alta resolución desde los SVG
+                    originales (que embebían bitmaps con máscaras y se
+                    pixelaban al achicarse) y recortados al arte. */}
+                {/* El isologo de DMG es apaisado: va más bajo que el
+                    escudo (cuadrado) para igualar la masa óptica. */}
+                <img
+                  src="/dmg.png"
+                  alt="Digital Match Global"
+                  className="h-9 w-auto mix-blend-multiply transition-[filter] duration-300 [@media(hover:hover)]:grayscale [@media(hover:hover)]:group-hover:grayscale-0 motion-reduce:transition-none md:h-10"
+                />
+                <div className="leading-tight">
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-muted-foreground">
+                    Desarrollado por
+                  </p>
+                  <p className="text-sm font-extrabold transition-colors group-hover:text-primary">
+                    Digital Match Global
+                  </p>
+                </div>
+              </a>
+              <span aria-hidden className="hidden h-12 w-px bg-border sm:block" />
+              <a
+                href="https://www.evolucionantoniana.com/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex items-center gap-3"
+              >
+                <img
+                  src="/fundea.png"
+                  alt="Fundación Evolución Antoniana"
+                  className="h-12.5 w-auto mix-blend-multiply transition-[filter] duration-300 [@media(hover:hover)]:grayscale [@media(hover:hover)]:group-hover:grayscale-0 motion-reduce:transition-none md:h-13.75"
+                />
+                <div className="leading-tight">
+                  <p className="text-[10px] font-extrabold uppercase tracking-[0.18em] text-muted-foreground">
+                    Junto a
+                  </p>
+                  <p className="text-sm font-extrabold transition-colors group-hover:text-primary">
+                    Fundación Evolución Antoniana
+                  </p>
+                </div>
+              </a>
+            </div>
+          </Reveal>
+        </div>
+
+        {/* Firma visual: wordmark gigante, apenas presente */}
+        <p
+          aria-hidden
+          className="pointer-events-none mb-[-1.2vw] mt-10 select-none whitespace-nowrap text-center text-[8.5vw] font-extrabold leading-none tracking-tight text-foreground/5"
+        >
+          TALENTO DEPORTIVO
+        </p>
+
+        <div className="border-t border-border">
+          <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-1.5 px-4 py-4 text-xs text-muted-foreground md:flex-row md:px-8">
+            <p>
+              © {new Date().getFullYear()} Digital Match Global · Talento
+              Deportivo Salta
+            </p>
+            <p className="font-marker -rotate-1 text-sm">
+              hecho en Salta, con datos que se quedan en el club
+            </p>
           </div>
-          <p className="text-center">
-            Una iniciativa de <strong>Fundación Evolución Antoniana</strong>{" "}
-            · desarrollo <strong>Digital Match Global</strong>
-          </p>
-          <p className="flex items-center gap-2">
-            <Link
-              href="/privacidad"
-              className="font-semibold underline underline-offset-2 hover:text-foreground"
-            >
-              Privacidad
-            </Link>
-            <span aria-hidden>·</span>
-            Hecho en Salta · {new Date().getFullYear()}
-          </p>
         </div>
       </footer>
     </div>
