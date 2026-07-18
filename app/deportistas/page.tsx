@@ -30,6 +30,7 @@ import { useDatos } from "@/lib/use-datos";
 import { tendencia, tendenciaGeneral } from "@/lib/tendencia";
 import { crecimiento, umbralPara } from "@/lib/crecimiento";
 import { useParametrosCrecimiento } from "@/lib/use-parametros";
+import { Ayuda } from "@/components/ayuda";
 import { EstadoBadge } from "@/components/estado-badge";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { AvisoAcceso } from "@/components/aviso-acceso";
@@ -249,7 +250,9 @@ function Deportistas() {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex items-end justify-between gap-3">
+      {/* En mobile el título va a ancho completo y la botonera en su
+          propia fila; compartir renglón dejaba todo encimado. */}
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
           <h1 className="text-2xl font-extrabold tracking-tight">Deportistas</h1>
           <p className="text-sm text-muted-foreground">
@@ -258,32 +261,33 @@ function Deportistas() {
             {visibles.length > 0 && " · tocá para ver la ficha y su evolución"}
           </p>
         </div>
-        {permisos.opera && (
-          <>
-            {datos.real && (
+        <div className="flex items-center gap-2">
+          {permisos.opera && (
+            <>
+              {datos.real && (
+                <Link
+                  href="/deportistas/importar"
+                  aria-label="Importar plantel desde una planilla"
+                  title="Importar plantel desde una planilla"
+                  className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                >
+                  <FileSpreadsheet className="size-4" aria-hidden />
+                  Importar
+                </Link>
+              )}
               <Link
-                href="/deportistas/importar"
-                aria-label="Importar plantel desde una planilla"
-                title="Importar plantel desde una planilla"
-                className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl border border-border bg-card px-3.5 text-sm font-bold text-muted-foreground transition-colors hover:border-primary/40 hover:text-foreground"
+                href="/deportistas/nuevo"
+                className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-sm font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
               >
-                <FileSpreadsheet className="size-4" aria-hidden />
-                <span className="hidden sm:inline">Importar</span>
+                <Plus className="size-4" aria-hidden /> Nuevo
               </Link>
-            )}
-            <Link
-              href="/deportistas/nuevo"
-              className="flex h-10 shrink-0 items-center gap-1.5 rounded-xl bg-primary px-3.5 text-sm font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.98]"
-            >
-              <Plus className="size-4" aria-hidden /> Nuevo
-            </Link>
-          </>
-        )}
-        <div
-          className="flex shrink-0 rounded-lg border border-border bg-card p-0.5"
-          role="tablist"
-          aria-label="Cambiar vista"
-        >
+            </>
+          )}
+          <div
+            className="ml-auto flex shrink-0 rounded-lg border border-border bg-card p-0.5 sm:ml-0"
+            role="tablist"
+            aria-label="Cambiar vista"
+          >
           <button
             onClick={() => setVista("lista")}
             aria-label="Vista lista"
@@ -296,18 +300,19 @@ function Deportistas() {
           >
             <List className="size-4.5" aria-hidden />
           </button>
-          <button
-            onClick={() => setVista("tabla")}
-            aria-label="Vista tabla"
-            className={cn(
-              "flex size-9 items-center justify-center rounded-md transition-colors",
-              vista === "tabla"
-                ? "bg-secondary text-secondary-foreground"
-                : "text-muted-foreground",
-            )}
-          >
-            <Table2 className="size-4.5" aria-hidden />
-          </button>
+            <button
+              onClick={() => setVista("tabla")}
+              aria-label="Vista tabla"
+              className={cn(
+                "flex size-9 items-center justify-center rounded-md transition-colors",
+                vista === "tabla"
+                  ? "bg-secondary text-secondary-foreground"
+                  : "text-muted-foreground",
+              )}
+            >
+              <Table2 className="size-4.5" aria-hidden />
+            </button>
+          </div>
         </div>
       </div>
 
@@ -425,20 +430,21 @@ function Deportistas() {
                 >
                   <AvatarIniciales nombre={d.nombre} apellido={d.apellido} />
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-1.5 text-sm font-bold">
-                      <span className="truncate">
-                        {d.apellido}, {d.nombre}
-                      </span>
-                      {!d.consentimientoOk && (
-                        <ShieldAlert
-                          className="size-3.5 shrink-0 text-warning"
-                          aria-label="Consentimiento pendiente"
-                        />
-                      )}
+                    <span className="block truncate text-sm font-bold">
+                      {d.apellido}, {d.nombre}
                     </span>
+                    {/* El pendiente va como texto legible en la línea
+                        secundaria, no como ícono suelto pegado al
+                        nombre (no se entendía qué era). */}
                     <span className="block text-xs text-muted-foreground">
                       {cat?.nombre ?? "Sin categoría"} · {edadLabel(d.fechaNacimiento)}
                     </span>
+                    {!d.consentimientoOk && (
+                      <span className="mt-0.5 flex items-center gap-1 whitespace-nowrap text-xs font-semibold text-warning">
+                        <ShieldAlert className="size-3 shrink-0" aria-hidden />
+                        Falta consentimiento
+                      </span>
+                    )}
                   </span>
                   <EstadoBadge estado={t.estado} />
                   <ChevronRight
@@ -471,7 +477,16 @@ function Deportistas() {
         </p>
       )}
       {vista === "tabla" && lista.length > 0 && (
-        <div className="rounded-2xl border border-border bg-card">
+        <>
+          <Ayuda
+            titulo="¿Cómo se usa la tabla?"
+            bullets={[
+              "Tocá el encabezado de una columna (Vel, Res…) para ordenar el plantel por esa habilidad; tocá de nuevo y se invierte el orden.",
+              "Deslizá la tabla hacia el costado para recorrer todas las habilidades — el nombre queda siempre fijo a la izquierda.",
+              "En negrita, el mejor valor del grupo filtrado. Ojo: en atributos de tiempo (Velocidad 30m) el mejor es el MENOR.",
+            ]}
+          />
+          <div className="rounded-2xl border border-border bg-card">
           <div className="overflow-x-auto">
             <table className="w-full min-w-max border-collapse text-sm">
               <thead>
@@ -557,11 +572,11 @@ function Deportistas() {
             </table>
           </div>
           <p className="border-t border-border px-3 py-2 text-[11px] text-muted-foreground">
-            Último valor registrado de cada habilidad. En negrita, el mejor del
-            grupo filtrado (en Velocidad 30m, el menor tiempo). Deslizá para ver
-            más columnas.
+            Último valor registrado de cada habilidad · deslizá para ver más
+            columnas.
           </p>
-        </div>
+          </div>
+        </>
       )}
     </div>
   );

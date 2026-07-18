@@ -287,16 +287,21 @@ export function FichaDeportista({
       </div>
 
       {!consentimientoOk && (
-        <div className="flex flex-wrap items-start gap-2.5 rounded-xl bg-warning-soft p-3.5 text-sm text-warning">
-          <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
-          <p className="min-w-0 flex-1 font-semibold">
-            Consentimiento del tutor pendiente.{" "}
-            <span className="font-normal">
-              Registrá el formulario firmado antes de seguir cargando datos.
-            </span>
-          </p>
+        <div className="rounded-xl bg-warning-soft p-3.5 text-sm text-warning">
+          {/* Texto a ancho completo y botones en fila propia: si
+              comparten renglón, los botones exprimen el texto a una
+              palabra por línea en mobile. */}
+          <div className="flex items-start gap-2.5">
+            <ShieldAlert className="mt-0.5 size-4 shrink-0" aria-hidden />
+            <p className="min-w-0 flex-1 font-semibold">
+              Consentimiento del tutor pendiente.{" "}
+              <span className="font-normal">
+                Registrá el formulario firmado antes de seguir cargando datos.
+              </span>
+            </p>
+          </div>
           {permisos.opera && (
-            <div className="flex shrink-0 items-center gap-2">
+            <div className="mt-3 flex flex-wrap items-center gap-2">
               <Link
                 href={`/deportistas/${deportista.id}/consentimiento`}
                 className="flex h-9 items-center gap-1.5 rounded-lg border border-warning/40 px-3 text-xs font-bold text-warning transition-colors hover:bg-warning/10"

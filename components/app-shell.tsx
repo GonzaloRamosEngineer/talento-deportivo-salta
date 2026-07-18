@@ -27,22 +27,38 @@ import { crearClienteBrowser } from "@/lib/supabase/client";
 import { useClub } from "@/lib/use-club";
 import { PERFILES, usePerfil, type Perfil } from "@/components/perfil-context";
 
-/** Subtítulo de la marca: club real (con escudo si tiene) o el mock. */
-function MarcaClub({ perfil, className }: { perfil: Perfil; className: string }) {
+/** Subtítulo de la marca: club real (con escudo si tiene) o el mock.
+ *  `unaLinea`: en el header mobile no hay alto para dos líneas — el
+ *  nombre largo va truncado con elipsis; el sidebar mantiene el
+ *  line-clamp de 2 líneas. */
+function MarcaClub({
+  perfil,
+  className,
+  unaLinea = false,
+}: {
+  perfil: Perfil;
+  className: string;
+  unaLinea?: boolean;
+}) {
   const club = useClub();
   if (perfil === "super_admin") {
     return <p className={className}>Provincia de Salta</p>;
   }
   const nombre = club.club?.nombre ?? CLUB.nombre;
   const escudo = club.club?.escudoUrl;
-  // Nombres largos: hasta 2 líneas prolijas (line-clamp), nunca
-  // desbordar el encuadre ni cortar con "…" en la primera palabra.
   return (
     <p className={cn("flex min-w-0 items-center gap-1.5", className)}>
       {escudo && (
         <EscudoClub url={escudo} nombre={nombre} className="size-4 rounded-[5px] p-0" />
       )}
-      <span className="line-clamp-2 min-w-0 break-words leading-snug">{nombre}</span>
+      <span
+        className={cn(
+          "min-w-0",
+          unaLinea ? "truncate" : "line-clamp-2 wrap-break-word leading-snug",
+        )}
+      >
+        {nombre}
+      </span>
     </p>
   );
 }
@@ -134,7 +150,6 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ElementType;
-  destacado?: boolean;
 }
 
 function navPara(perfil: Perfil): NavItem[] {
@@ -150,7 +165,7 @@ function navPara(perfil: Perfil): NavItem[] {
     // mundo es el observatorio (agregados) y el alta institucional.
     return [
       { href: "/panel", label: "Inicio", icon: Home },
-      { href: "/observatorio", label: "Observatorio", icon: Landmark, destacado: true },
+      { href: "/observatorio", label: "Observatorio", icon: Landmark },
       { href: "/plataforma/clubes", label: "Clubes", icon: Shield },
       { href: "/plataforma/parametros", label: "Parámetros", icon: Sprout },
       { href: "/plataforma/sugerencias", label: "Sugerencias", icon: MessageSquareText },
@@ -159,7 +174,7 @@ function navPara(perfil: Perfil): NavItem[] {
   const base: NavItem[] = [
     { href: "/panel", label: "Inicio", icon: Home },
     { href: "/deportistas", label: "Deportistas", icon: Users },
-    { href: "/medicion", label: "Medir", icon: ClipboardPlus, destacado: true },
+    { href: "/medicion", label: "Medir", icon: ClipboardPlus },
     { href: "/entrenamiento", label: "Entrenar", icon: Dumbbell },
     { href: "/sesiones", label: "Agenda", icon: CalendarDays },
   ];
@@ -205,7 +220,7 @@ function SelectorPerfil({ compacto = false }: { compacto?: boolean }) {
         className={cn(
           "flex items-center gap-1.5 rounded-full bg-secondary font-bold text-secondary-foreground transition-colors",
           compacto
-            ? "px-2.5 py-1 text-[10px] uppercase tracking-wide"
+            ? "max-w-36 px-2.5 py-1 text-[10px] uppercase tracking-wide"
             : "w-full justify-between rounded-lg px-3 py-2.5 text-xs",
         )}
         aria-expanded={abierto}
@@ -254,9 +269,18 @@ function SelectorPerfil({ compacto = false }: { compacto?: boolean }) {
   );
 }
 
+/** Etiqueta corta del rol para el header mobile (la pill completa no
+ *  entra sin pisar el nombre del club). */
+const ROL_CORTO: Record<Perfil, string> = {
+  profesor: "Profe",
+  admin_club: "Admin",
+  comision: "Comisión",
+  super_admin: "Plataforma",
+};
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { perfil } = usePerfil();
+  const { perfil, sesionReal } = usePerfil();
   const nav = navPara(perfil);
 
   // La landing pública (/), el login y la página de privacidad viven
@@ -318,17 +342,29 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           <Link href="/panel" className="flex min-w-0 flex-1 items-center gap-2.5">
             <LogoTalento className="size-8 shrink-0" />
             <div className="min-w-0 flex-1 leading-tight">
-              <p className="text-sm font-extrabold tracking-tight">
-                Talento Deportivo
+              <p className="flex items-baseline gap-1.5 text-sm font-extrabold tracking-tight">
+                <span className="shrink-0">Talento Deportivo</span>
+                {/* Con sesión real el rol va acá (texto informativo) y
+                    no como pill a la derecha: le deja todo el ancho al
+                    nombre del club. */}
+                {sesionReal && (
+                  <span className="truncate text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                    · {ROL_CORTO[perfil]}
+                  </span>
+                )}
               </p>
               <MarcaClub
                 perfil={perfil}
+                unaLinea
                 className="text-[11px] text-muted-foreground"
               />
             </div>
           </Link>
           <div className="flex shrink-0 items-center gap-1">
-            <SelectorPerfil compacto />
+            {/* En la demo anónima el selector de perfil es interactivo
+                y tiene que seguir a mano; con sesión real ya se muestra
+                arriba, inline. */}
+            {!sesionReal && <SelectorPerfil compacto />}
             <BotonSesion icono />
           </div>
         </header>
@@ -341,29 +377,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* ---------- Barra inferior (mobile) ---------- */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-md items-stretch justify-around">
-          {nav.map(({ href, label, icon: Icon, destacado }) => {
+          {nav.map(({ href, label, icon: Icon }) => {
             const activa = esActiva(pathname, href);
-            if (destacado) {
+            // La sección ACTIVA es la que lleva el círculo verde
+            // elevado; el resto queda como ícono plano. El círculo
+            // "viaja" con la navegación.
+            if (activa) {
               return (
                 <Link
                   key={href}
                   href={href}
                   className="flex flex-col items-center gap-0.5 px-2 pb-1.5 pt-2"
                 >
-                  <span
-                    className={cn(
-                      "-mt-5 flex size-12 items-center justify-center rounded-full border-4 border-background text-primary-foreground shadow-md transition-colors",
-                      activa ? "bg-primary" : "bg-primary/90",
-                    )}
-                  >
+                  <span className="-mt-5 flex size-12 items-center justify-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow-md">
                     <Icon className="size-5" aria-hidden />
                   </span>
-                  <span
-                    className={cn(
-                      "text-[10px] font-bold",
-                      activa ? "text-primary" : "text-muted-foreground",
-                    )}
-                  >
+                  <span className="text-[10px] font-bold text-primary">
                     {label}
                   </span>
                 </Link>
@@ -373,10 +402,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={href}
                 href={href}
-                className={cn(
-                  "flex min-w-14 flex-col items-center gap-0.5 px-2 pb-1.5 pt-2.5 text-[10px] font-bold transition-colors",
-                  activa ? "text-primary" : "text-muted-foreground",
-                )}
+                className="flex min-w-14 flex-col items-center gap-0.5 px-2 pb-1.5 pt-2.5 text-[10px] font-bold text-muted-foreground transition-colors hover:text-foreground"
               >
                 <Icon className="size-5" aria-hidden />
                 {label}

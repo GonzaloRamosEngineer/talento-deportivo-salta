@@ -18,10 +18,13 @@ import { usePerfil } from "@/components/perfil-context";
 // Mismo patrón que el informe: los controles se ocultan al imprimir
 // (print:hidden) y el shell lo esconden las reglas @media print.
 
-// línea con texto fijo + espacio punteado para completar a mano
+// línea con texto fijo + espacio punteado para completar a mano.
+// min-w-fit: la línea nunca se comprime por debajo de su contenido —
+// en pantallas angostas baja entera al renglón siguiente (flex-wrap
+// del padre) en vez de encimarse con lo que tiene al lado.
 function Linea({ texto, valor }: { texto: string; valor?: string | null }) {
   return (
-    <span className="inline-flex min-w-0 flex-1 items-baseline gap-1">
+    <span className="inline-flex max-w-full min-w-fit flex-1 items-baseline gap-1">
       <span className="shrink-0">{texto}</span>
       <span className="min-w-24 flex-1 border-b border-dotted border-foreground/50 px-1 font-semibold">
         {valor || " "}
@@ -189,7 +192,7 @@ function Consentimiento({
             </p>
             <p className="flex flex-wrap gap-x-2 gap-y-2 text-foreground">
               <Linea texto="en mi carácter de" valor={tutor?.relacion} />
-              <span className="shrink-0">
+              <span className="min-w-0">
                 del deportista arriba indicado, autorizo a
               </span>
             </p>
