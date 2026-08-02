@@ -293,10 +293,35 @@ PISAN el plan de `negocio/10` donde difieran:
   flujos origen→destino queda para cuando los destinos estén
   normalizados). E2E: `scripts/e2e-trayectoria.mjs` (11 asserts,
   auto-limpia).
+- **T-001 del plan CTO hecho (2026-08-02) — contención de la demo.** El
+  diagnóstico externo (`docs/PLAN_CTO_PRIORIZADO.md`, backlog vivo y
+  fuente de verdad de prioridades) encontró una cadena de TOMA DE CUENTA:
+  la clave demo estaba en el bundle y `plataforma@demo.talento.ar` tenía
+  `app_metadata.plataforma`, así que cualquier visitante podía acuñar un
+  recovery link del admin de cualquier club vía `linkAdminClub`. Se
+  eliminó esa cuenta (el botón "Liga / Secretaría" es ahora un deep-link
+  ANÓNIMO a `/observatorio?perfil=super_admin`, que ya corría sobre el
+  mock agregado), la clave salió del código a `DEMO_PASSWORD` (server
+  only; el login demo pasa por la server action `entrarComoDemo` en
+  `app/login/actions.ts`) y las cuentas demo llevan
+  `app_metadata.demo = true`. **`lib/demo.ts` es la fuente de verdad del
+  bloqueo**: toda action que toque Auth o use service role rechaza cuentas
+  demo (`invitarMiembro`, `regenerarLink`, `quitarMiembro`, el gate
+  `esPlataforma()`). Al agregar una action sensible nueva: sumarle el
+  guard. Verificación: `scripts/contener-demo.mjs` (auditoría +
+  `--aplicar`) y `scripts/verificar-contencion-demo.mjs` (9 asserts
+  contra el backend con la clave publishable). La auditoría confirmó que
+  la instancia NO tiene clubes reales, así que no hubo exposición de
+  menores. Gotcha del login demo: después de la server action se navega
+  con `location.assign`, no `router.push` — la cookie la escribió el
+  server y `PerfilProvider` necesita remontarse o queda con el perfil
+  anterior.
 - Pendientes vivos: revisión del PF sobre el contenido del Módulo B y
-  sobre umbrales/nota/presentación Moore del Módulo D. Cuentas demo y
-  rotación de clave de DB: diferidos por decisión (la vitrina es
-  ficticia).
+  sobre umbrales/nota/presentación Moore del Módulo D. **Demo y
+  producción siguen en el MISMO proyecto Supabase (T-003) y el recovery
+  administrado sigue vivo para cuentas ya activadas (T-002): ver el plan
+  antes de tocar `app/club/staff/actions.ts` o
+  `app/plataforma/actions.ts`.**
 
 El observatorio también es real (2026-07-12, migración
 `20260712231049_observatorio_agregados.sql` APLICADA): la ÚNICA

@@ -2,6 +2,7 @@
 
 import { crearClienteServer } from "@/lib/supabase/server";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
+import { esCuentaDemo, MOTIVO_DEMO } from "@/lib/demo";
 import type { RolMembresia } from "@/lib/tipos-db";
 
 /**
@@ -19,6 +20,13 @@ import type { RolMembresia } from "@/lib/tipos-db";
  * su club (misma regla que es_admin_de en RLS). La escritura de
  * membresia/membresia_categoria se hace con el cliente de SESIÓN del
  * que llama, para que RLS siga siendo la última palabra.
+ *
+ * T-001 del plan CTO: las cuentas de la VITRINA pública quedan fuera de
+ * todo lo que toque Auth. El admin demo sigue viendo la pantalla de
+ * staff (son lecturas por RLS sobre datos ficticios), pero no puede
+ * invitar, regenerar links ni quitar miembros: hasta que demo y
+ * producción sean proyectos separados (T-003), una clave pública con
+ * acceso a `generateLink` es una vía de toma de cuenta.
  */
 
 type Resultado<T> = { ok: true; data: T } | { ok: false; error: string };
@@ -35,7 +43,12 @@ async function adminActual() {
     .eq("auth_user_id", user.id)
     .maybeSingle();
   if (!m || m.rol !== "admin_club") return null;
-  return { supabase, membresiaId: m.id as string, clubId: m.club_id as string };
+  return {
+    supabase,
+    membresiaId: m.id as string,
+    clubId: m.club_id as string,
+    esDemo: esCuentaDemo(user),
+  };
 }
 
 function linkDeAcceso(origen: string, tokenHash: string, tipo: "invite" | "recovery") {
@@ -65,6 +78,7 @@ export async function invitarMiembro(input: {
 }): Promise<Resultado<{ link: string }>> {
   const ctx = await adminActual();
   if (!ctx) return { ok: false, error: "Solo el admin del club puede invitar staff." };
+  if (ctx.esDemo) return { ok: false, error: MOTIVO_DEMO };
 
   const nombre = input.nombre.trim();
   const email = input.email.trim().toLowerCase();
@@ -156,6 +170,7 @@ export async function regenerarLink(input: {
 }): Promise<Resultado<{ link: string }>> {
   const ctx = await adminActual();
   if (!ctx) return { ok: false, error: "Solo el admin del club puede generar links." };
+  if (ctx.esDemo) return { ok: false, error: MOTIVO_DEMO };
   if (!origenValido(input.origen)) return { ok: false, error: "Origen inválido." };
   const email = input.email.trim().toLowerCase();
 
@@ -215,6 +230,7 @@ export async function estadoStaff(): Promise<Resultado<Record<string, { entro: b
 export async function quitarMiembro(membresiaId: string): Promise<Resultado<null>> {
   const ctx = await adminActual();
   if (!ctx) return { ok: false, error: "Solo el admin del club puede quitar staff." };
+  if (ctx.esDemo) return { ok: false, error: MOTIVO_DEMO };
   if (membresiaId === ctx.membresiaId) {
     return { ok: false, error: "No podés quitarte a vos mismo del club." };
   }

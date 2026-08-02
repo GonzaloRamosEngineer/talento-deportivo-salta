@@ -7,6 +7,12 @@
  *   5. plataforma ve pases_12m en el observatorio
  * Corre contra localhost:3210 con las cuentas demo. Auto-limpia.
  *   node scripts/e2e-trayectoria.mjs
+ *
+ * La clave demo sale de DEMO_PASSWORD (T-001: ya no está en el código).
+ * El paso 5 usa una cuenta de plataforma EFÍMERA con clave aleatoria,
+ * que se crea y se borra acá mismo: la cuenta demo de plataforma se
+ * eliminó y este test no debe reintroducir un privilegio permanente con
+ * clave conocida.
  */
 import { readFileSync } from "node:fs";
 import { createClient } from "@supabase/supabase-js";
@@ -16,6 +22,10 @@ const env = Object.fromEntries(readFileSync(new URL("../.env.local", import.meta
 const admin = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SECRET_KEY, { auth: { autoRefreshToken: false, persistSession: false } });
 const BASE = "http://localhost:3210";
 const APELLIDO = "Pruebatrayectoria";
+const PASSWORD_DEMO = env.DEMO_PASSWORD;
+if (!PASSWORD_DEMO) throw new Error("Falta DEMO_PASSWORD en .env.local");
+const EMAIL_PLATAFORMA_E2E = "plataforma-e2e@talento.local";
+const PASSWORD_PLATAFORMA_E2E = crypto.randomUUID();
 let fallos = 0;
 const ok = (c, m) => { console.log(`${c ? "✓" : "✗"} ${m}`); if (!c) fallos++; };
 const setValor = (sel, v) => async (page) => page.evaluate(({ sel, v }) => {
@@ -28,7 +38,7 @@ const setValor = (sel, v) => async (page) => page.evaluate(({ sel, v }) => {
 const browser = await puppeteer.launch({ executablePath: "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome", headless: "new" });
 const page = await browser.newPage();
 await page.setViewport({ width: 420, height: 1400, isMobile: true, deviceScaleFactor: 2 });
-const login = async (email) => {
+const login = async (email, pass = PASSWORD_DEMO) => {
   await page.goto(`${BASE}/login`, { waitUntil: "networkidle0" });
   if (!(await page.$("input#email"))) {
     await page.evaluate(() => { [...document.querySelectorAll("button,a")].find((b) => b.getAttribute("aria-label")?.toLowerCase().includes("salir") || b.innerText === "Salir")?.click(); });
@@ -36,7 +46,7 @@ const login = async (email) => {
     await page.goto(`${BASE}/login`, { waitUntil: "networkidle0" });
   }
   await page.type("#email", email);
-  await page.type("#password", "TalentoDemo26");
+  await page.type("#password", pass);
   await Promise.all([page.waitForNavigation({ waitUntil: "networkidle0", timeout: 30000 }), page.click("button[type=submit]")]);
 };
 const texto = () => page.evaluate(() => document.body.innerText.toLowerCase());
@@ -102,8 +112,15 @@ ok(hPase.length === 1 && hPase[0].club_destino_nombre === "Club E2E Destino", "h
 const t4 = await texto();
 ok(!t4.includes(APELLIDO.toLowerCase()), "ya no aparece en la lista de deportistas");
 
-// ---- 5. plataforma ve pases_12m ----
-await login("plataforma@demo.talento.ar");
+// ---- 5. plataforma ve pases_12m (cuenta efímera, ver cabecera) ----
+const { data: platE2E, error: ePlat } = await admin.auth.admin.createUser({
+  email: EMAIL_PLATAFORMA_E2E,
+  password: PASSWORD_PLATAFORMA_E2E,
+  email_confirm: true,
+  app_metadata: { plataforma: true },
+});
+if (ePlat) throw ePlat;
+await login(EMAIL_PLATAFORMA_E2E, PASSWORD_PLATAFORMA_E2E);
 await page.goto(`${BASE}/observatorio`, { waitUntil: "networkidle0" });
 await page.waitForFunction(() => document.body.innerText.toLowerCase().includes("pases 12 m"), { timeout: 20000 });
 const pases = await page.evaluate(() => {
@@ -113,7 +130,13 @@ const pases = await page.evaluate(() => {
 ok(Number(pases) >= 4, `observatorio muestra pases 12m = ${pases} (3 vitrina + 1 e2e)`);
 
 await browser.close();
-// limpieza total (cascada borra hitos)
+// limpieza total (cascada borra hitos) + la cuenta de plataforma efímera
+await admin.auth.admin.deleteUser(platE2E.user.id);
+const { data: platResid } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
+ok(
+  !platResid.users.some((u) => u.email === EMAIL_PLATAFORMA_E2E),
+  "limpieza: cuenta de plataforma efímera borrada",
+);
 await admin.from("deportista").delete().eq("id", dep.id);
 const { data: resid } = await admin.from("deportista_hito").select("id").eq("deportista_id", dep.id);
 ok(resid.length === 0, "limpieza: deportista y hitos de prueba borrados");

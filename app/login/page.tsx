@@ -19,17 +19,23 @@ import {
 import { crearClienteBrowser } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { LogoTalento } from "@/components/logo";
+import { entrarComoDemo } from "./actions";
 
 /**
  * Login real (Supabase Auth) con el lenguaje visual del login de
  * DMGFit —card glassy con tilt, glow que sigue el mouse, estados en
  * el botón— traducido a "Cancha clara". Además del form, ofrece
- * ACCESO RÁPIDO por perfil: cuatro usuarios demo reales (sesión y
- * RLS de verdad), pensado para recorrer la demo desde el celular
- * sin tipear nada.
+ * ACCESO RÁPIDO por perfil, pensado para recorrer la demo desde el
+ * celular sin tipear nada.
+ *
+ * T-001 del plan CTO: la contraseña demo YA NO vive acá (era pública
+ * en el bundle). El acceso rápido pasa por la server action
+ * `entrarComoDemo`, que la lee de `DEMO_PASSWORD`. El perfil
+ * Liga/Secretaría dejó de ser una cuenta con `app_metadata.plataforma`
+ * —podía acuñar links de recuperación de administradores reales— y
+ * ahora es un deep-link ANÓNIMO al observatorio, que ya corre sobre el
+ * mock agregado (`lib/use-observatorio.ts`).
  */
-
-const PASSWORD_DEMO = "TalentoDemo26";
 
 const ACCESOS_DEMO: {
   email: string;
@@ -54,12 +60,6 @@ const ACCESOS_DEMO: {
     titulo: "Estoy en la comisión directiva",
     detalle: "Todo el club, solo consulta",
     icon: UserRound,
-  },
-  {
-    email: "plataforma@demo.talento.ar",
-    titulo: "Liga / Secretaría de Deportes",
-    detalle: "Observatorio provincial, solo agregados",
-    icon: Landmark,
   },
 ];
 
@@ -107,6 +107,13 @@ export default function LoginPage() {
     });
   };
 
+  const fallo = (mensaje: string) => {
+    setEstado("error");
+    setDemoActivo(null);
+    setError(mensaje);
+    setTimeout(() => setEstado("idle"), 1600);
+  };
+
   const entrar = async (mail: string, pass: string): Promise<void> => {
     setEstado("checking");
     setError("");
@@ -116,20 +123,33 @@ export default function LoginPage() {
       password: pass,
     });
     if (e) {
-      setEstado("error");
-      setDemoActivo(null);
-      setError(
-        /invalid/i.test(e.message)
-          ? "Usuario o contraseña incorrectos."
-          : e.message,
-      );
-      setTimeout(() => setEstado("idle"), 1600);
+      fallo(/invalid/i.test(e.message) ? "Usuario o contraseña incorrectos." : e.message);
       return;
     }
     // El rol de la pantalla ya no lo decide este flag: lo lee
     // PerfilProvider desde `membresia` (RLS) al detectar la sesión.
     setEstado("success");
     setTimeout(() => router.push("/panel"), 400);
+  };
+
+  /**
+   * La sesión demo la abre el SERVER (la contraseña no está en el
+   * bundle). Se navega con `location.assign` y no con `router.push`:
+   * la cookie la escribió la action, así que el PerfilProvider del
+   * layout tiene que remontarse para leer la sesión nueva — un push
+   * del router lo dejaría con el perfil anterior.
+   */
+  const entrarDemo = async (mail: string): Promise<void> => {
+    setDemoActivo(mail);
+    setEstado("checking");
+    setError("");
+    const r = await entrarComoDemo(mail);
+    if (!r.ok) {
+      fallo(r.error);
+      return;
+    }
+    setEstado("success");
+    window.location.assign("/panel");
   };
 
   const onSubmit = (e: React.FormEvent) => {
@@ -220,10 +240,7 @@ export default function LoginPage() {
                   key={mail}
                   type="button"
                   disabled={estado === "checking"}
-                  onClick={() => {
-                    setDemoActivo(mail);
-                    void entrar(mail, PASSWORD_DEMO);
-                  }}
+                  onClick={() => void entrarDemo(mail)}
                   className={cn(
                     "flex w-full items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3.5 text-left transition-all hover:border-primary/50 hover:bg-secondary/50 active:scale-[0.99] disabled:opacity-60",
                     demoActivo === mail && "border-primary bg-secondary/70",
@@ -244,6 +261,26 @@ export default function LoginPage() {
                   </span>
                 </button>
               ))}
+
+              {/* Liga / Secretaría: el observatorio son agregados, así que
+                  se recorre SIN sesión (mock anónimo). Ya no hay cuenta
+                  demo con privilegios de plataforma. */}
+              <Link
+                href="/observatorio?perfil=super_admin"
+                className="flex w-full items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3.5 text-left transition-all hover:border-primary/50 hover:bg-secondary/50 active:scale-[0.99]"
+              >
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
+                  <Landmark className="size-5" aria-hidden />
+                </span>
+                <span className="min-w-0">
+                  <span className="block text-sm font-extrabold leading-tight">
+                    Liga / Secretaría de Deportes
+                  </span>
+                  <span className="block truncate text-xs text-muted-foreground">
+                    Observatorio provincial, solo agregados
+                  </span>
+                </span>
+              </Link>
             </div>
 
             {/* ---------- Separador ---------- */}

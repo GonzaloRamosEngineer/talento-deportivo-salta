@@ -22,6 +22,9 @@ const env = Object.fromEntries(
     .map((l) => [l.slice(0, l.indexOf("=")).trim(), l.slice(l.indexOf("=") + 1).trim()]),
 );
 const admin = createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SECRET_KEY);
+// T-001: la clave demo ya no está en el código, sale del entorno.
+const PASSWORD_DEMO = env.DEMO_PASSWORD;
+if (!PASSWORD_DEMO) throw new Error("Falta DEMO_PASSWORD en .env.local");
 
 let fallos = 0;
 const ok = (cond, msg) => {
@@ -96,7 +99,7 @@ try {
   /* ---------- login profe ---------- */
   await page.goto(`${BASE}/login`, { waitUntil: "networkidle2" });
   await setValor(page, "#email", "profe@demo.talento.ar");
-  await setValor(page, "#password", "TalentoDemo26");
+  await setValor(page, "#password", PASSWORD_DEMO);
   await clickPorTexto(page, "Ingresar", "button[type=submit]");
   await page.waitForFunction(() => location.pathname === "/panel", { timeout: 25000 });
   ok(true, "login profe → /panel");

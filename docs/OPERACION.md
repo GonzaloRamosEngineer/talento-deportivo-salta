@@ -131,7 +131,7 @@ defecto, se tocan solo las faltas), partidos con citación y resultado.
   asistencia para una sesión con 1 falta) y limpia lo que crea el
   recorrido.
 
-## Los 4 accesos demo (login público)
+## Los accesos demo (login público)
 
 El login (`/login`) permite entrar con usuarios REALES (sesión y RLS
 de verdad) para recorrer cada perfil — pensado para demo en celular:
@@ -141,13 +141,47 @@ de verdad) para recorrer cada perfil — pensado para demo en celular:
 | "Soy profe de una categoría" | `profe@demo.talento.ar` | `entrenador` (9ª + Escuelita 2016) |
 | "Administro un club" | `admin@demo.talento.ar` | `admin_club` |
 | "Estoy en la comisión directiva" | `comision@demo.talento.ar` | `comision_directiva` |
-| "Liga / Secretaría de Deportes" | `plataforma@demo.talento.ar` | plataforma (sin membresía) |
+| "Liga / Secretaría de Deportes" | *(sin cuenta)* | deep-link anónimo a `/observatorio?perfil=super_admin` |
 
-Contraseña de todos: `TalentoDemo26` (en
-`scripts/crear-usuarios-demo.mjs`). **⚠ Antes de cargar datos reales
-del piloto: borrar estos usuarios o rotar la contraseña** — hoy son
-inofensivos porque la base solo tiene el catálogo y categorías (sin
-deportistas).
+**Contraseña: sale de la variable de entorno `DEMO_PASSWORD`** (server
+only, sin `NEXT_PUBLIC_`). Tiene que estar en `.env.local` **y en las
+env vars de Vercel**, o el acceso rápido de la demo no funciona en el
+deploy. Rotarla = cambiar la variable y correr
+`node scripts/crear-usuarios-demo.mjs`; no hace falta redeploy de código.
+
+### Contención de la demo (T-001 del plan CTO, 2026-08-02)
+
+Tres cosas cambiaron y no hay que deshacerlas sin leer
+`docs/PLAN_CTO_PRIORIZADO.md`:
+
+1. **No existe más `plataforma@demo.talento.ar`.** Tenía
+   `app_metadata.plataforma`, y como la clave estaba publicada en el
+   bundle, cualquier visitante podía enumerar clubes y administradores
+   reales y acuñar un recovery link para tomarle la cuenta a un admin
+   (`linkAdminClub` en `app/plataforma/actions.ts`). El observatorio de
+   la demo son agregados, así que se recorre sin sesión, con el mock de
+   `lib/use-observatorio.ts`.
+2. **La clave no está en el código.** El acceso rápido pasa por la
+   server action `entrarComoDemo` (`app/login/actions.ts`).
+3. **Las cuentas demo están bloqueadas en el server** para todo lo que
+   toque Auth o use service role: llevan `app_metadata.demo = true` y
+   `lib/demo.ts` las rechaza en `invitarMiembro`, `regenerarLink`,
+   `quitarMiembro` y el gate `esPlataforma()`. El admin demo sigue
+   viendo `/club/staff` (lecturas por RLS sobre datos ficticios) pero no
+   puede invitar ni generar links.
+
+Scripts:
+
+- `node scripts/contener-demo.mjs` — auditoría (¿hay clubes reales?, ¿qué
+  cuentas tienen privilegio de plataforma?, pre-flight de T-002B).
+  Con `--aplicar` ejecuta la contención.
+- `node scripts/verificar-contencion-demo.mjs` — 9 asserts contra el
+  backend con la clave publishable (lo mismo que puede hacer un
+  visitante). Correr `npm run build` antes: dos asserts revisan que
+  ninguna clave demo viaje en el bundle.
+
+Pendiente que esto NO resuelve: demo y producción siguen compartiendo el
+mismo proyecto Supabase. Eso es T-003, y es condición para el piloto.
 
 ## Regla de oro para no perderse
 

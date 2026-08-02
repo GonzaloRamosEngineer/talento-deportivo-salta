@@ -2,6 +2,7 @@
 
 import { crearClienteServer } from "@/lib/supabase/server";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
+import { esCuentaDemo } from "@/lib/demo";
 
 /**
  * Server actions de la PLATAFORMA (pasos 1-2 de docs/OPERACION.md,
@@ -33,12 +34,24 @@ export interface ClubPlataforma {
   admin: { nombre: string; email: string | null; entro: boolean } | null;
 }
 
+/**
+ * Gate de plataforma. `app_metadata` solo se escribe con service role,
+ * así que el usuario no puede autoasignárselo.
+ *
+ * T-001 del plan CTO: ninguna cuenta de la vitrina pública pasa este
+ * gate, ni siquiera si alguien le devolviera el flag. La cuenta
+ * `plataforma@demo.talento.ar` se eliminó porque desde acá podía
+ * enumerar clubes y administradores reales y acuñar un recovery link
+ * para tomar la cuenta de un admin (`linkAdminClub`). Es defensa en
+ * profundidad, no la contención principal.
+ */
 async function esPlataforma(): Promise<boolean> {
   const supabase = await crearClienteServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  return Boolean(user?.app_metadata?.plataforma);
+  if (!user || esCuentaDemo(user)) return false;
+  return Boolean(user.app_metadata?.plataforma);
 }
 
 function linkDeAcceso(origen: string, tokenHash: string, tipo: "invite" | "recovery") {
