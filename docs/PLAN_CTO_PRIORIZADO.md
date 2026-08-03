@@ -319,25 +319,72 @@ Criterios de aceptación:
 - **Complejidad:** media.
 - **Impacto:** muy alto.
 - **Responsable:** por asignar.
-- **Dependencias:** T-002. Requiere SMTP propio.
+- **Dependencias:** T-002. El dominio de envío es una dependencia EXTERNA
+  (Fundación + DNS), pero **no bloquea**: ver más abajo.
 
 Al eliminar el recovery administrado, "perdí mi clave" deja de ser tarea del
 admin y pasa a ser autoservicio. Sin esto, T-002 deja gente afuera.
 
+### Decisión de remitente (2026-08-02)
+
+El remitente es de la **Fundación**, no de Digital Match Global. Dos razones
+ya escritas en el proyecto: `/privacidad` declara a la Fundación responsable
+del tratamiento y publica `contacto@evolucionantoniana.com`; y
+`negocio/00_documento_madre.md` define que "las cajas no se mezclan" (DMG
+provee desarrollo bajo contrato y figura al pie de la app, no como remitente
+institucional).
+
+| Qué | Valor |
+|---|---|
+| Subdominio de envío | `talento.evolucionantoniana.com` |
+| From | `no-responder@talento.evolucionantoniana.com` |
+| Reply-To | `contacto@evolucionantoniana.com` |
+
+**Subdominio y no el dominio raíz**: `evolucionantoniana.com` tiene Google
+Workspace en producción (incluida la cuenta de los backups a Drive). Habilitar
+envío externo sobre el raíz implica tocar los registros que hacen funcionar ese
+Workspace — un error ahí no rompe la plataforma, rompe el correo de toda la
+Fundación. El subdominio se verifica aislado y no comparte reputación de envío.
+
+El pedido completo para quien administre el DNS está en **`docs/SETUP_CORREO.md`**
+(autocontenido, con checklist de 7 puntos para volver).
+
+### Secuencia: el dominio NO bloquea
+
+El SMTP por defecto de Supabase manda ~2 mails/hora. Eso fue el motivo para
+hacer la invitación por link/WhatsApp —que es carga masiva— pero alcanza de
+sobra para recuperaciones de clave puntuales en un piloto de 2 profesores. Así:
+
+1. **Ahora:** implementar el autoservicio con el SMTP default. T-002 se puede
+   cerrar sin esperar a nadie.
+2. **Antes de que el piloto crezca:** cambiar a Resend sobre el subdominio de la
+   Fundación. Es configuración de Auth + variables de entorno, no código.
+
 Acciones:
 
-- Configurar SMTP propio (Resend) en Auth de Supabase — vía Management API,
-  nunca `supabase config push`.
 - Pantalla "Olvidé mi clave" en `/login` → `resetPasswordForEmail`.
+- Registrar la URL de retorno en los *Redirect URLs* permitidos de Auth
+  (si no, el enlace del mail muere en un error).
+- Plantilla del mail de recuperación en español, con la voz del producto.
 - El enlace llega exclusivamente al email del titular y aterriza en
   `/cuenta/clave`, que ya existe.
 - La respuesta al usuario no revela si el email existe.
+- Configurar SMTP propio (Resend) cuando el dominio esté verificado — por panel
+  o Management API, **nunca `supabase config push`**. Subir el límite de mails
+  por hora, que viene bajo por defecto.
 
 Criterios de aceptación:
 
 - Un usuario recupera su clave sin intervención de ningún admin.
 - Ningún admin obtiene tokens de otra persona por ninguna vía.
-- El circuito funciona en producción con el dominio propio.
+- El circuito funciona con el SMTP default (piloto) y luego con el dominio
+  propio, sin cambios de código.
+
+Pendiente relacionado, NO parte de esta tarea: la app vive en
+`talentodeportivosalta.vercel.app`. Cuando el mail salga del dominio de la
+Fundación, el enlace apuntará a un `.vercel.app` — mail de un dominio, enlace a
+otro, que es el patrón que se enseña a desconfiar. Conviene un dominio propio de
+la app en algún momento, para que remitente y enlace sean coherentes.
 
 ### [ ] T-003 · Separar Supabase demo y producción
 
