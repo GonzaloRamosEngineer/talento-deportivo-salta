@@ -207,10 +207,11 @@ Auth. Eso lo hacemos nosotros una vez que el envío esté andando.
 
 ## 7. Opcional, para más adelante: dominio propio de la aplicación
 
-Hoy la app vive en `talentodeportivosalta.vercel.app`. Cuando el mail salga de
-`talento.evolucionantoniana.com`, el enlace que contiene va a apuntar a un dominio
-`.vercel.app`. Funciona, pero para un tutor o un profe es una señal rara: mail de un
-dominio, enlace a otro. Es el patrón que enseñan a desconfiar.
+Hoy la app vive en `talentodeportivo.digitalmatchglobal.com`. Cuando el mail salga de
+`talento.evolucionantoniana.com`, el enlace que contiene va a apuntar a un dominio de
+Digital Match. Funciona, pero para un tutor o un profe es una señal rara: mail de un
+dominio institucional, enlace al dominio del proveedor. Es el patrón que enseñan a
+desconfiar.
 
 No bloquea nada y no es urgente, pero cuando se pueda conviene un dominio propio para la
 app —`talentodeportivosalta.com.ar`, o un subdominio de la Fundación— para que remitente

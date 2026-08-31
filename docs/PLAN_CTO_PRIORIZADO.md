@@ -39,8 +39,11 @@ Las estimaciones suponen una persona senior que conoce el repositorio. No incluy
 
 ## Próxima tarea recomendada
 
-> **Comenzar por T-001: contención inmediata de cuentas demo.**  
-> Es una tarea corta, reduce el mayor riesgo actual y prepara la separación definitiva entre demo y producción.
+> **T-001 cerrada y desplegada (2026-08-30). Seguir por T-002B: imponer
+> "una cuenta = un club".**  
+> Va antes de T-002 porque T-002 vincula usuarios existentes y necesita la
+> regla ya definida. El pre-flight está OK (nadie tiene dos membresías), así
+> que es media jornada y una migración sin migración de datos.
 
 ---
 
@@ -166,9 +169,21 @@ Evidencia:
   `npm run build` exitoso.
 - Fecha de cierre: 2026-08-02.
 
-Acción pendiente del lado de infra, **bloquea el deploy**: agregar
-`DEMO_PASSWORD` a las env vars de Vercel. Sin eso, el acceso rápido de la
-demo publicada devuelve "La demo no está configurada en este entorno".
+**Cierre en producción: 2026-08-30.** `DEMO_PASSWORD` cargada en Vercel
+(production + preview, sensitive), branch mergeado a `main` por
+fast-forward (`7047661`) y desplegado en
+`talentodeportivo.digitalmatchglobal.com`. Verificado sobre el sitio: el
+bundle de `/login` ya no contiene `TalentoDemo26` ni
+`plataforma@demo.talento.ar`, y los tres perfiles demo entran.
+
+Lección para el resto de las tareas P0: **el script de contención corre
+contra el mismo Supabase que sirve producción** (la separación es T-003).
+Al rotar la clave el 2026-08-02 sin desplegar el frontend nuevo, la
+vitrina pública quedó rota 4 semanas — el `/login` desplegado seguía
+mandando la clave vieja del bundle y devolvía "Usuario o contraseña
+incorrectos". Nadie se dio cuenta porque nada lo monitorea. Hasta T-003,
+**todo cambio de backend hay que desplegarlo el mismo día**, y conviene
+un smoke del acceso demo después de cada deploy.
 
 ### [ ] T-002 · Corregir invitaciones y recuperación de cuentas
 
@@ -380,11 +395,13 @@ Criterios de aceptación:
 - El circuito funciona con el SMTP default (piloto) y luego con el dominio
   propio, sin cambios de código.
 
-Pendiente relacionado, NO parte de esta tarea: la app vive en
-`talentodeportivosalta.vercel.app`. Cuando el mail salga del dominio de la
-Fundación, el enlace apuntará a un `.vercel.app` — mail de un dominio, enlace a
-otro, que es el patrón que se enseña a desconfiar. Conviene un dominio propio de
-la app en algún momento, para que remitente y enlace sean coherentes.
+Pendiente relacionado, NO parte de esta tarea: la app ya tiene dominio propio,
+`talentodeportivo.digitalmatchglobal.com` (el `.vercel.app` sigue respondiendo).
+Es un dominio de Digital Match, no de la Fundación, así que la incoherencia
+sigue en pie pero cambió de forma: el mail saldría de
+`talento.evolucionantoniana.com` y el enlace llevaría a un dominio del
+proveedor. Evaluar en T-002C si conviene un subdominio de la Fundación para la
+app, o si alcanza con que el mail lo explique.
 
 ### [ ] T-003 · Separar Supabase demo y producción
 
@@ -743,7 +760,7 @@ T-002C para no dejar a nadie sin recuperación):
 | 5 | T-004 · Next.js 16.2.12 y dependencias | ½ día | Muy alto |
 | 6 | T-003 · Separar demo y producción | 1–2 días | Crítico antes del piloto |
 
-- [x] T-001 · Contención demo. *(2026-08-02 — falta `DEMO_PASSWORD` en Vercel)*
+- [x] T-001 · Contención demo. *(código 2026-08-02; en producción 2026-08-30)*
 - [ ] T-002 · Recuperación e invitaciones.
 - [ ] T-002B · Una cuenta = un club.
 - [ ] T-002C · Autoservicio de clave (Resend).
@@ -811,6 +828,7 @@ Requiere evidencia de retención, calidad metodológica, costos operativos reale
 | 2026-08-02 | T-001 | **CERRADA.** Cuenta de plataforma demo eliminada, clave fuera del bundle (`DEMO_PASSWORD` + server action), cuentas demo bloqueadas en el server vía `lib/demo.ts`. Se mantiene el perfil admin en la demo en modo lectura (decisión de producto: la vitrina vende el circuito de gestión). Auditoría: no hay clubes reales, no hubo exposición de menores | Gastón + agente | branch `fix/p0-contencion-demo`; `verificar-contencion-demo.mjs` 9 OK; smoke puppeteer del rechazo backend |
 | 2026-08-02 | T-002B | Pre-flight OK: ningún `auth_user_id` tiene membresía en más de un club, la constraint se puede aplicar sin migrar datos | Agente | `scripts/contener-demo.mjs` |
 | 2026-08-02 | T-004 | Línea base confirmada: 7 vulnerabilidades (5 altas). Next 16.2.10 con 9 avisos, incluidos bypass de middleware en App Router y disclosure de Server Functions internas. Fix = `next@16.2.12` (patch) | Por asignar | `npm audit --omit=dev` del 2026-08-02 |
+| 2026-08-30 | T-001 | **DESPLEGADA.** `DEMO_PASSWORD` en Vercel, merge ff a `main` y deploy verificado en el sitio. Hallazgo colateral: la demo pública estuvo caída 4 semanas porque la clave se rotó en el backend compartido sin desplegar el frontend. Regla nueva hasta T-003: cambio de backend = deploy el mismo día + smoke del acceso demo | Gastón + agente | `main` en `7047661`; bundle de `/login` sin `TalentoDemo26`; `verificar-contencion-demo.mjs` 9 OK; los 3 perfiles verificados a mano |
 
 ## Riesgos que deben permanecer visibles
 
