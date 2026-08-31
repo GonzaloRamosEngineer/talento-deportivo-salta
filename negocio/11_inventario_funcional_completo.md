@@ -173,7 +173,7 @@ Orden sugerido; ninguno bloquea el piloto.
 |---|---|---|---|---|
 | 1 | **Revisión del PF** | Cuello de botella HUMANO, no de código: validar contenido de guías (Módulo B), umbrales y nota del estirón, y presentación de Moore et al. Al recibirla se reemplaza texto y se apagan los flags "pendiente de revisión" | Horas (código) | YA — es el pendiente vivo |
 | 2 | **Piloto con club real** | Secuencia completa ya operativa por pantalla (`docs/OPERACION.md`): la plataforma crea el club → admin arma categorías e invita staff → importan plantel → primera jornada | 0 código | Decisión comercial |
-| 3 | Higiene pre-menores-reales | Rotar cuentas demo (`TalentoDemo26`) y clave de DB (diferido a propósito: la vitrina es ficticia) | Horas | Antes del primer menor real |
+| 3 | Higiene pre-menores-reales | Rotar cuentas demo y clave de DB (diferido a propósito: la vitrina es ficticia) | Horas | Antes del primer menor real |
 | 4 | Email transaccional (Resend) | Invitaciones de staff también por mail + notificación a la plataforma cuando entra una sugerencia | 1 sesión | Con el piloto andando |
 | 5 | Firma electrónica del consentimiento | Link al tutor, firma en pantalla, huella de auditoría (la foto del papel se DESCARTÓ por decisión) | 2-3 sesiones | Cuando haya varios clubes |
 | 6 | Supabase Pro + PITR | Backups point-in-time pagos | Config | Con volumen real de menores |

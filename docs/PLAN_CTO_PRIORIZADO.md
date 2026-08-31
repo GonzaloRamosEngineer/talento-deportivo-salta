@@ -99,7 +99,7 @@ Acciones:
 - Eliminar o deshabilitar `plataforma@demo.talento.ar`.
 - Retirar de la demo pública el perfil administrador, o bloquearle invitaciones
   y gestión sensible.
-- Quitar `TalentoDemo26` del bundle público. **Rotar la clave y volver a
+- Quitar la clave demo del bundle público. **Rotar la clave y volver a
   escribirla en `login/page.tsx` no sirve: seguiría siendo pública.**
 - Rotar las credenciales conocidas.
 - Invalidar sesiones activas.
@@ -173,7 +173,7 @@ Evidencia:
 (production + preview, sensitive), branch mergeado a `main` por
 fast-forward (`7047661`) y desplegado en
 `talentodeportivo.digitalmatchglobal.com`. Verificado sobre el sitio: el
-bundle de `/login` ya no contiene `TalentoDemo26` ni
+bundle de `/login` ya no contiene la clave vieja ni
 `plataforma@demo.talento.ar`, y los tres perfiles demo entran.
 
 Lección para el resto de las tareas P0: **el script de contención corre
@@ -828,7 +828,7 @@ Requiere evidencia de retención, calidad metodológica, costos operativos reale
 | 2026-08-02 | T-001 | **CERRADA.** Cuenta de plataforma demo eliminada, clave fuera del bundle (`DEMO_PASSWORD` + server action), cuentas demo bloqueadas en el server vía `lib/demo.ts`. Se mantiene el perfil admin en la demo en modo lectura (decisión de producto: la vitrina vende el circuito de gestión). Auditoría: no hay clubes reales, no hubo exposición de menores | Gastón + agente | branch `fix/p0-contencion-demo`; `verificar-contencion-demo.mjs` 9 OK; smoke puppeteer del rechazo backend |
 | 2026-08-02 | T-002B | Pre-flight OK: ningún `auth_user_id` tiene membresía en más de un club, la constraint se puede aplicar sin migrar datos | Agente | `scripts/contener-demo.mjs` |
 | 2026-08-02 | T-004 | Línea base confirmada: 7 vulnerabilidades (5 altas). Next 16.2.10 con 9 avisos, incluidos bypass de middleware en App Router y disclosure de Server Functions internas. Fix = `next@16.2.12` (patch) | Por asignar | `npm audit --omit=dev` del 2026-08-02 |
-| 2026-08-30 | T-001 | **DESPLEGADA.** `DEMO_PASSWORD` en Vercel, merge ff a `main` y deploy verificado en el sitio. Hallazgo colateral: la demo pública estuvo caída 4 semanas porque la clave se rotó en el backend compartido sin desplegar el frontend. Regla nueva hasta T-003: cambio de backend = deploy el mismo día + smoke del acceso demo | Gastón + agente | `main` en `7047661`; bundle de `/login` sin `TalentoDemo26`; `verificar-contencion-demo.mjs` 9 OK; los 3 perfiles verificados a mano |
+| 2026-08-30 | T-001 | **DESPLEGADA.** `DEMO_PASSWORD` en Vercel, merge ff a `main` y deploy verificado en el sitio. Hallazgo colateral: la demo pública estuvo caída 4 semanas porque la clave se rotó en el backend compartido sin desplegar el frontend. Regla nueva hasta T-003: cambio de backend = deploy el mismo día + smoke del acceso demo | Gastón + agente | `main` en `7047661`; bundle de `/login` sin la clave vieja; `verificar-contencion-demo.mjs` 9 OK; los 3 perfiles verificados a mano |
 
 ## Riesgos que deben permanecer visibles
 

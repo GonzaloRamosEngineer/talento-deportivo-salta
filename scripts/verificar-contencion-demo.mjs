@@ -26,6 +26,7 @@ const anon = () =>
 
 let ok = 0;
 let fallos = 0;
+let omitidos = 0;
 const assert = (cond, titulo, detalle = "") => {
   if (cond) {
     ok++;
@@ -36,8 +37,23 @@ const assert = (cond, titulo, detalle = "") => {
   }
 };
 
+const omitir = (titulo, motivo) => {
+  omitidos++;
+  console.log(`~ ${titulo} — OMITIDO: ${motivo}`);
+};
+
 const password = env.DEMO_PASSWORD;
 if (!password) throw new Error("Falta DEMO_PASSWORD en .env.local");
+
+/**
+ * La clave vieja del bundle NO va literal acá: el repo es público y un
+ * literal con forma de contraseña dispara el escáner de secretos en
+ * cada push (GitGuardian, 2026-08-30). Está revocada desde el
+ * 2026-08-02, así que no es un secreto vivo, pero es ruido evitable.
+ * Vive en `DEMO_PASSWORD_ANTERIOR` de `.env.local`; sin esa variable los
+ * dos asserts que la usan quedan OMITIDOS, nunca en verde silencioso.
+ */
+const passwordVieja = env.DEMO_PASSWORD_ANTERIOR;
 
 // ---------- 1. La cuenta de plataforma demo no entra ----------
 {
@@ -54,15 +70,20 @@ if (!password) throw new Error("Falta DEMO_PASSWORD en .env.local");
 }
 
 // ---------- 2. La clave vieja quedó fuera de servicio ----------
-{
+if (!passwordVieja) {
+  omitir(
+    "La clave publicada en el bundle ya no sirve",
+    "falta DEMO_PASSWORD_ANTERIOR en .env.local",
+  );
+} else {
   const c = anon();
   const { data, error } = await c.auth.signInWithPassword({
     email: "admin@demo.talento.ar",
-    password: "TalentoDemo26",
+    password: passwordVieja,
   });
   assert(
     !!error && !data?.session,
-    "La clave publicada en el bundle (TalentoDemo26) ya no sirve",
+    "La clave publicada en el bundle ya no sirve",
     error ? "" : "¡SIGUE ENTRANDO!",
   );
 }
@@ -128,8 +149,16 @@ if (sesionAdmin) {
       return "";
     }
   };
+  if (!passwordVieja) {
+    omitir(
+      "La clave vieja no está en .next/static ni .next/server",
+      "falta DEMO_PASSWORD_ANTERIOR en .env.local",
+    );
+  }
   for (const [aguja, titulo] of [
-    ["TalentoDemo26", "La clave vieja no está en .next/static ni .next/server"],
+    ...(passwordVieja
+      ? [[passwordVieja, "La clave vieja no está en .next/static ni .next/server"]]
+      : []),
     [password, "La clave demo NUEVA tampoco está en el bundle"],
   ]) {
     const hits = buscar(aguja);
@@ -138,5 +167,7 @@ if (sesionAdmin) {
   }
 }
 
-console.log(`\n${ok} OK · ${fallos} fallos\n`);
+console.log(
+  `\n${ok} OK · ${fallos} fallos${omitidos ? ` · ${omitidos} omitidos` : ""}\n`,
+);
 process.exit(fallos > 0 ? 1 : 0);
