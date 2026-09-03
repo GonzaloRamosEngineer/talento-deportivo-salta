@@ -17,6 +17,45 @@ PLATAFORMA (service role)          ADMIN DEL CLUB                    PROFE
                                     sobre todo el club)
 ```
 
+### 0 · La cuenta de plataforma — SE DA DE ALTA POR SCRIPT
+
+Antes de que exista el primer club hace falta la cuenta que lo va a
+crear. El perfil plataforma (la "Liga / Secretaría de Deportes",
+`perfil = "super_admin"` en la UI) **no es un rol de `membresia`** y por
+eso no se puede crear desde ninguna pantalla. Se identifica por:
+
+- `app_metadata.plataforma = true` — solo se escribe con service role,
+  así que el usuario no puede autoasignárselo. Es el mismo gate de
+  `esPlataforma()` (`app/plataforma/actions.ts`) y de `es_plataforma()`
+  en la RPC del observatorio.
+- **Cero filas en `membresia`**, a propósito (regla #4 de CLAUDE.md).
+  `perfil-context.tsx` resuelve plataforma ANTES de mirar `membresia`,
+  así que una cuenta con las dos cosas perdería el acceso al club sin
+  avisar. El script se niega si el email ya es staff.
+
+```
+node scripts/crear-plataforma.mjs <email>            # auditoría, no toca nada
+node scripts/crear-plataforma.mjs <email> --aplicar  # crea o promueve
+node scripts/crear-plataforma.mjs <email> --aplicar --nueva-clave
+```
+
+Imprime la clave generada UNA sola vez y no la guarda en ningún archivo.
+Se entra por `/login` → "O CON TU CUENTA" (no por las tarjetas de la
+demo, que son otras cuentas). Verificado sobre el backend con la clave
+publishable: el JWT lleva el flag, `observatorio_clubes()` devuelve los
+agregados reales, y la sesión **no** lee `deportista` ni `membresia` por
+RLS — o sea agregados sí, datos individuales de menores no.
+
+⚠ **Tratar como llave maestra.** Una cuenta de plataforma puede
+`linkAdminClub()`, es decir acuñar un link de recuperación del admin de
+cualquier club: eso es T-002 del plan CTO y sigue abierto. Mientras
+tanto: una sola cuenta de plataforma, clave larga en gestor, y revisar
+`node scripts/contener-demo.mjs` (punto 2) para confirmar que no aparezca
+ninguna otra.
+
+Alta real: `gramos@digitalmatchglobal.com` (2026-09-03), la primera
+desde que T-001 eliminó `plataforma@demo.talento.ar`.
+
 ### 1-2 · Alta del club y su primer admin — LO HACE LA PLATAFORMA
 
 Decisión de MVP: **no hay onboarding self-service de clubes**. Un
