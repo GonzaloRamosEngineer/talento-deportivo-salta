@@ -647,11 +647,30 @@ Garantías requeridas:
 - El atributo debe ser global o corresponder a la disciplina.
 - El valor debe respetar naturaleza, unidad y rangos razonables.
 
+Hallazgo abierto (2026-09-13): **el perfil por defecto es un rol, y debería
+ser un estado.**
+
+`components/perfil-context.tsx` resuelve `perfil = "profesor"` cuando una
+sesión real no tiene membresía. No da acceso a nada —el alcance lo gobierna
+el RLS, no ese estado de cliente— y desde ese día la UI ya no lo muestra
+(`sinMembresia` pinta una pantalla que explica la situación, sin rol ni
+navegación). Pero el modelo sigue diciendo "profesor" cuando la respuesta
+correcta es "ninguno".
+
+Mientras sea un rol por defecto, cualquier pantalla nueva que consulte
+`perfil` sin chequear antes `sinMembresia` va a tratar a esa sesión como
+profesor. Hoy no pasa; es una trampa puesta para el futuro.
+
+Corresponde a esta tarea porque es modelado de autorización: el tipo `Perfil`
+debería admitir la ausencia de rol de forma explícita, en vez de que el
+código de UI tenga que acordarse de mirar un flag aparte.
+
 Criterios de aceptación:
 
 - Todos los intentos cruzados entre clubes fallan en base de datos.
 - Un UUID conocido de otro club no permite crear relaciones ni modificar datos.
 - Las reglas tienen tests positivos y negativos.
+- Una sesión sin membresía no resuelve a ningún rol por defecto.
 
 ### [ ] T-007 · Crear suite automática de seguridad, RLS y CI
 
@@ -966,3 +985,4 @@ Requiere evidencia de retención, calidad metodológica, costos operativos reale
 | 2026-09-13 | T-004 | **CERRADA.** El objetivo `next@16.2.12` del diagnóstico había quedado viejo: al retomar, el audit marcaba `next` como **CRITICAL** hasta 16.3.2 con fix en **16.3.5**. Se subió a 16.3.5 (arrastra el fix de `postcss` y `sharp`), `npm audit fix` para el resto y `shadcn` movido a devDependencies. De 14 vulnerabilidades (9 altas, 1 crítica) a **0**. El aumento desde las 7 del baseline no fue por cambios de código sino por advisories nuevos. Queda pendiente Dependabot/Renovate | Gastón + agente | branch `fix/t004-dependencias`; `npm audit` 0; build + smoke de 9 rutas |
 | 2026-09-13 | T-002B | **CERRADA y en producción.** Constraint `unique (auth_user_id)` aplicada por `supabase db push`. Secuencia usada: backup verificado por conteo de filas → código desplegado ANTES que la migración (cierra la ventana de carrera) → pre-flight repetido → push → verificación. Datos intactos: 17/17/308/17.082, idénticos al backup. Habilita T-002: ya hay respuesta definida para "el email pertenece a otro club" sin emitir ningún token | Gastón + agente | migración `20260913120000`; `scripts/preflight-una-cuenta-un-club.mjs`; validación local con savepoints |
 | 2026-09-13 | T-002C | **CERRADA.** Autoservicio andando de punta a punta sobre el dominio propio: pantalla en /login, mail en español con el diseño del producto y enlace a /auth/confirmar en nuestro dominio. Verificado que `verifyOtp` resuelve el token `pkce_` SIN el code verifier, así que la recuperación no está atada al mismo navegador ni dispositivo. Frente de correo completo: Resend + SMTP propio + casilla info@ | Gastón + agente | prueba cruzada localhost→producción; mail a bandeja de entrada |
+| 2026-09-13 | UX/Auth | Una sesión real sin membresía caía en el fallback de "profesor" y veía el MOCK: club y deportistas inventados, con la app aparentemente funcional. No era fuga (datos ficticios, RLS intacto) pero en una plataforma sobre datos de chicos se lee como "se perdieron los datos del club". El caso dejó de ser teórico con T-002C: quien fue dado de baja ahora vuelve a entrar por su cuenta. Se agregó `sinMembresia` al contexto (solo se afirma si la consulta salió bien) con pantalla, sin rol y sin navegación. Aparte: el cartel "los paneles siguen con datos de ejemplo" NO estaba condicionado y se lo comían los usuarios reales — el error inverso y más caro. **Queda abierto en T-006**: el perfil por defecto sigue siendo un rol y debería ser un estado | Gastón + agente | commits `929775b`, `6e053ed` |
