@@ -51,7 +51,7 @@ en `negocio/10`):
 | Frontend | Next.js 16 (App Router) + React + TypeScript | Mobile-first (el profe carga desde el celular en el predio) |
 | UI | Tailwind v4 + shadcn/ui, sistema "Cancha clara" | Gráficos Recharts; diagramas SVG propios |
 | Backend | Supabase (PostgreSQL + Auth + RLS + Storage) | Migraciones versionadas por CLI, nunca a mano |
-| Deploy | Vercel (deploy automático desde main) | prod: talentodeportivosalta.vercel.app |
+| Deploy | Vercel (deploy automático desde main) | prod: talentodeportivo.com.ar (dominio propio desde 2026-09-13; el `.vercel.app` y `talentodeportivo.digitalmatchglobal.com` siguen respondiendo) |
 | Backups | pg_dump en Docker → Google Drive institucional (offsite) | Pilot-grade sin costo; PITR pago cuando haya volumen |
 | Datos demo | Hooks duales mock/real | La demo pública anónima vive sin tocar la base |
 

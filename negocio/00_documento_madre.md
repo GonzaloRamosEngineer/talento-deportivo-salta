@@ -3,7 +3,7 @@
 
 *(Nombre de trabajo — pendiente de definir)*
 
-**Impulsan:** Fundación Evolución Antoniana · Digital Match Global
+**Producto de:** Digital Match Global · **Socio institucional y de impacto:** Fundación Evolución Antoniana
 **Referente:** (tu nombre) — Ing. en Sistemas · Diplomado en Transformación Digital · Gestor Deportivo CONMEBOL
 **Ámbito:** Provincia de Salta, Argentina
 **Versión:** 2.0 — Actualizado post-revisión técnica pre-código
@@ -23,7 +23,7 @@ Este proyecto propone una plataforma digital que registra a los deportistas de b
 
 Es importante ser precisos desde esta primera página: el sistema registra evolución observable, no demuestra que el entrenamiento la produce. En deportistas jóvenes buena parte de la mejora física responde a la maduración natural, no solo al trabajo del entrenador. El valor del proyecto no depende de una promesa de causalidad, sino de dar por primera vez visibilidad y memoria a algo que hoy no se registra en absoluto.
 
-La propuesta no es vender software club por club, sino constituirse gradualmente como infraestructura pública digital del deporte formativo salteño, con la Fundación Evolución Antoniana como brazo de implementación e impacto social y Digital Match Global como brazo de desarrollo tecnológico. Pero esa escala institucional es un horizonte, no el punto de partida: el proyecto arranca y se valida en un único club, con foco total en que el hábito de carga de datos prenda entre los entrenadores.
+La propuesta no es vender software club por club, sino constituirse gradualmente como infraestructura pública digital del deporte formativo salteño, con Digital Match Global como titular y desarrollador del producto y la Fundación Evolución Antoniana como socio de implementación e impacto social en Salta. Pero esa escala institucional es un horizonte, no el punto de partida: el proyecto arranca y se valida en un único club, con foco total en que el hábito de carga de datos prenda entre los entrenadores.
 
 ## 2. Fundamentos y contexto
 
@@ -89,7 +89,7 @@ La decisión adoptada es que, si esta capa se construye en algún momento, cualq
 
 ## 11. Modelo de gobernanza
 
-El proyecto involucra a una organización sin fines de lucro y a una empresa con fines de lucro sobre una iniciativa de eventual destino público, lo que bien resuelto es una fortaleza y mal resuelto es un riesgo de transparencia. La Fundación Evolución Antoniana lidera la relación institucional, la implementación y la medición de impacto social. Digital Match Global provee el desarrollo y mantenimiento tecnológico bajo contrato transparente y auditable. El referente del proyecto articula ambas partes. Las cajas no se mezclan: cada organización factura y rinde según su naturaleza.
+El proyecto involucra a una organización sin fines de lucro y a una empresa con fines de lucro sobre una iniciativa de eventual destino público, lo que bien resuelto es una fortaleza y mal resuelto es un riesgo de transparencia. Digital Match Global es titular del producto y de su propiedad intelectual, y provee el desarrollo y mantenimiento bajo contrato transparente y auditable. La Fundación Evolución Antoniana lidera la relación institucional, la implementación y la medición de impacto social en Salta, con una licencia de uso en condiciones preferenciales. Esa distinción no riñe con el tratamiento de datos: sobre los datos de los deportistas, la Fundación y el club son responsables del tratamiento y DMG es encargado (ver `/privacidad` en la app). **Estado al 2026-09-13: el Convenio Marco que instrumenta esto sigue en BORRADOR, sin firmar, condicionado a constituir la entidad argentina de DMG. Hasta que se firme, lo anterior es la intención acordada, no un hecho oponible.** El referente del proyecto articula ambas partes. Las cajas no se mezclan: cada organización factura y rinde según su naturaleza.
 
 ## 12. Plan por fases
 

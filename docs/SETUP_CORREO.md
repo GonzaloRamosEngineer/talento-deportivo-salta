@@ -12,6 +12,39 @@ Este documento está pensado para ejecutarse de una sola vez y volver con la
 
 ---
 
+## ESTADO (actualizado el 2026-09-13) — LEER ANTES QUE EL RESTO
+
+Este documento se escribió como **pedido a la Fundación**. Ese pedido **ya se cumplió**:
+`talentodeportivo.evolucionantoniana.com` figura **Verified** en Resend desde ~agosto de
+2026 (DKIM verificado también por `dig`). Nadie lo registró acá ni en el plan, así que
+durante semanas se dio por bloqueada una tarea que no lo estaba.
+
+**Pero la decisión de remitente CAMBIÓ**, porque cambió el dominio de la app:
+
+- Desde el **2026-09-13** la app vive en **`talentodeportivo.com.ar`**, dominio propio
+  registrado en NIC Argentina a nombre del titular de DMG, con el DNS delegado a Vercel.
+- Por lo tanto el remitente pasa a ser **`no-reply@talentodeportivo.com.ar`**: el mail de
+  recuperación lleva adentro un enlace a `talentodeportivo.com.ar`, y remitente y enlace
+  tienen que coincidir. Mandarlo desde el dominio de la Fundación reintroduce justo la
+  señal de desconfianza que este documento describe en la sección 7.
+- El **Reply-To sigue siendo `contacto@evolucionantoniana.com`**, que es el canal que
+  publica la política de privacidad: la Fundación y el club son responsables del
+  tratamiento, DMG es encargado. El remitente identifica al producto; la respuesta humana
+  cae en el responsable. No se pisan.
+- **`talentodeportivo.evolucionantoniana.com` NO se borra de Resend**: puede estar en uso
+  por el sitio de la Fundación, y su reputación ya está construida.
+
+Todo lo que sigue queda como registro de cómo se pidió y por qué. Las razones técnicas
+(subdominio aislado, no tocar el Workspace del dominio raíz) siguen siendo correctas para
+`evolucionantoniana.com`; no aplican a `talentodeportivo.com.ar`, que es un dominio nuevo
+sin correo institucional encima.
+
+**Pendiente, no urgente:** la cuenta de Resend pertenece a la organización
+`evolucionantoniana`. Si el producto es de DMG, la cuenta de envío debería migrar a una
+organización de DMG. No bloquea el piloto.
+
+---
+
 ## 1. Qué necesitamos y por qué
 
 La plataforma tiene que poder mandar **un solo tipo de mail**: el enlace para que una
@@ -80,8 +113,8 @@ Con un subdominio dedicado:
 
 | Qué | Valor |
 |---|---|
-| Subdominio de envío | `talento.evolucionantoniana.com` |
-| Remitente (From) | `no-responder@talento.evolucionantoniana.com` |
+| Subdominio de envío | ~~`talento.evolucionantoniana.com`~~ → **`talentodeportivo.com.ar`** (ver ESTADO) |
+| Remitente (From) | ~~`no-responder@talento...`~~ → **`no-reply@talentodeportivo.com.ar`** |
 | Nombre visible | `Talento Deportivo Salta` |
 | Responder a (Reply-To) | `contacto@evolucionantoniana.com` |
 
@@ -180,7 +213,7 @@ Datos a cargar:
 | Port | `465` |
 | Username | `resend` (literal, esa palabra) |
 | Password | la API Key de Resend (`re_...`) |
-| Sender email | `no-responder@talento.evolucionantoniana.com` |
+| Sender email | **`no-reply@talentodeportivo.com.ar`** |
 | Sender name | `Talento Deportivo Salta` |
 
 Si el puerto 465 da problemas, la alternativa es `587`.
@@ -205,27 +238,25 @@ Auth. Eso lo hacemos nosotros una vez que el envío esté andando.
 
 ---
 
-## 7. Opcional, para más adelante: dominio propio de la aplicación
+## 7. RESUELTO — dominio propio de la aplicación
 
-Hoy la app vive en `talentodeportivo.digitalmatchglobal.com`. Cuando el mail salga de
-`talento.evolucionantoniana.com`, el enlace que contiene va a apuntar a un dominio de
-Digital Match. Funciona, pero para un tutor o un profe es una señal rara: mail de un
-dominio institucional, enlace al dominio del proveedor. Es el patrón que enseñan a
-desconfiar.
+**Hecho el 2026-09-13.** La app tiene dominio propio: **`talentodeportivo.com.ar`**,
+registrado en NIC Argentina a nombre del titular de DMG (no de la Fundación: el activo
+queda del lado de quien retiene la propiedad intelectual). DNS delegado a
+`ns1/ns2.vercel-dns.com`, apex canónico y `www` con redirect 308.
 
-No bloquea nada y no es urgente, pero cuando se pueda conviene un dominio propio para la
-app —`talentodeportivosalta.com.ar`, o un subdominio de la Fundación— para que remitente
-y enlace sean coherentes. Anotarlo como pendiente, no como parte de este pedido.
-
----
+Eso resuelve la incoherencia que describía este apartado —mail institucional con enlace al
+dominio del proveedor— por la vía de darle dominio propio al producto, y de paso deja el
+DNS de envío bajo control de DMG, sin depender de terceros para los registros de Resend.
 
 ## 8. Checklist para volver
 
 Cuando esté todo hecho, hace falta confirmar estos siete puntos:
 
 - [ ] **1.** La Fundación autorizó figurar como remitente.
-- [ ] **2.** El subdominio elegido es `talento.evolucionantoniana.com`.
-      *(Si por algún motivo se usó otro nombre, indicar cuál.)*
+- [x] **2.** ~~El subdominio elegido es `talento.evolucionantoniana.com`.~~
+      **Se usó `talentodeportivo.evolucionantoniana.com` y quedó Verified. Superado: el
+      envío pasa a `talentodeportivo.com.ar` (ver ESTADO).**
 - [ ] **3.** El dominio figura **Verified** en Resend. *(Captura de pantalla o confirmación.)*
 - [ ] **4.** Los 3–4 registros DNS están cargados y responden a `dig`.
       *(Pegar la salida de los comandos de la sección 5.)*

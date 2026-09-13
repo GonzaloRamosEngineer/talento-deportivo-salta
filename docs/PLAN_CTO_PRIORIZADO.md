@@ -172,7 +172,8 @@ Evidencia:
 **Cierre en producción: 2026-08-30.** `DEMO_PASSWORD` cargada en Vercel
 (production + preview, sensitive), branch mergeado a `main` por
 fast-forward (`7047661`) y desplegado en
-`talentodeportivo.digitalmatchglobal.com`. Verificado sobre el sitio: el
+`talentodeportivo.com.ar` (antes `talentodeportivo.digitalmatchglobal.com`).
+Verificado sobre el sitio: el
 bundle de `/login` ya no contiene la clave vieja ni
 `plataforma@demo.talento.ar`, y los tres perfiles demo entran.
 
@@ -334,35 +335,41 @@ Criterios de aceptación:
 - **Complejidad:** media.
 - **Impacto:** muy alto.
 - **Responsable:** por asignar.
-- **Dependencias:** T-002. El dominio de envío es una dependencia EXTERNA
-  (Fundación + DNS), pero **no bloquea**: ver más abajo.
+- **Dependencias:** T-002. La dependencia externa de DNS **YA NO EXISTE**
+  (2026-09-13): ver la decisión de remitente, actualizada.
 
 Al eliminar el recovery administrado, "perdí mi clave" deja de ser tarea del
 admin y pasa a ser autoservicio. Sin esto, T-002 deja gente afuera.
 
-### Decisión de remitente (2026-08-02)
+### Decisión de remitente — CORREGIDA el 2026-09-13
 
-El remitente es de la **Fundación**, no de Digital Match Global. Dos razones
-ya escritas en el proyecto: `/privacidad` declara a la Fundación responsable
-del tratamiento y publica `contacto@evolucionantoniana.com`; y
-`negocio/00_documento_madre.md` define que "las cajas no se mezclan" (DMG
-provee desarrollo bajo contrato y figura al pie de la app, no como remitente
-institucional).
+**La decisión del 2026-08-02 (remitente de la Fundación) queda superada.**
+
+Dos hechos la cambiaron:
+
+1. El pedido de `docs/SETUP_CORREO.md` **se cumplió y nadie lo registró**:
+   `talentodeportivo.evolucionantoniana.com` está **Verified** en Resend desde
+   ~agosto de 2026 (DKIM confirmado por `dig`). Durante semanas se dio por
+   bloqueada una tarea que no lo estaba. Lección operativa: el estado de las
+   dependencias externas se verifica, no se supone.
+2. La app tiene **dominio propio desde el 2026-09-13**:
+   `talentodeportivo.com.ar`, con el DNS delegado a Vercel y bajo control de
+   DMG. El mail de recuperación lleva adentro un enlace a ese dominio, así que
+   remitente y enlace deben coincidir.
 
 | Qué | Valor |
 |---|---|
-| Subdominio de envío | `talento.evolucionantoniana.com` |
-| From | `no-responder@talento.evolucionantoniana.com` |
+| Dominio de envío | `talentodeportivo.com.ar` |
+| From | `no-reply@talentodeportivo.com.ar` |
 | Reply-To | `contacto@evolucionantoniana.com` |
 
-**Subdominio y no el dominio raíz**: `evolucionantoniana.com` tiene Google
-Workspace en producción (incluida la cuenta de los backups a Drive). Habilitar
-envío externo sobre el raíz implica tocar los registros que hacen funcionar ese
-Workspace — un error ahí no rompe la plataforma, rompe el correo de toda la
-Fundación. El subdominio se verifica aislado y no comparte reputación de envío.
+El Reply-To sigue siendo de la Fundación a propósito: `/privacidad` declara a la
+Fundación y al club **responsables del tratamiento** y a DMG **encargado**. El
+remitente identifica al producto; la respuesta humana cae en el responsable.
 
-El pedido completo para quien administre el DNS está en **`docs/SETUP_CORREO.md`**
-(autocontenido, con checklist de 7 puntos para volver).
+`talentodeportivo.evolucionantoniana.com` **no se borra** de Resend. Pendiente
+menor: la cuenta de Resend es de la organización `evolucionantoniana`; si el
+producto es de DMG, debería migrar. No bloquea el piloto.
 
 ### Secuencia: el dominio NO bloquea
 
@@ -372,8 +379,9 @@ sobra para recuperaciones de clave puntuales en un piloto de 2 profesores. Así:
 
 1. **Ahora:** implementar el autoservicio con el SMTP default. T-002 se puede
    cerrar sin esperar a nadie.
-2. **Antes de que el piloto crezca:** cambiar a Resend sobre el subdominio de la
-   Fundación. Es configuración de Auth + variables de entorno, no código.
+2. **Antes de que el piloto crezca:** cambiar a Resend sobre
+   `talentodeportivo.com.ar`. Es configuración de Auth + variables de entorno,
+   no código. El DNS ya está bajo control de DMG, así que no depende de nadie.
 
 Acciones:
 
@@ -395,13 +403,14 @@ Criterios de aceptación:
 - El circuito funciona con el SMTP default (piloto) y luego con el dominio
   propio, sin cambios de código.
 
-Pendiente relacionado, NO parte de esta tarea: la app ya tiene dominio propio,
-`talentodeportivo.digitalmatchglobal.com` (el `.vercel.app` sigue respondiendo).
-Es un dominio de Digital Match, no de la Fundación, así que la incoherencia
-sigue en pie pero cambió de forma: el mail saldría de
-`talento.evolucionantoniana.com` y el enlace llevaría a un dominio del
-proveedor. Evaluar en T-002C si conviene un subdominio de la Fundación para la
-app, o si alcanza con que el mail lo explique.
+Pendiente relacionado **RESUELTO el 2026-09-13**: la app dejó de vivir en un
+dominio del proveedor. Está en `talentodeportivo.com.ar`, dominio propio del
+producto registrado a nombre del titular de DMG. `lib/site.ts` es la fuente de
+verdad del dominio en el repo y `NEXT_PUBLIC_SITE_URL` lo pisa en Vercel. Los
+dominios viejos siguen respondiendo a propósito: hay links de invitación
+circulando.
+
+---
 
 ### [ ] T-003 · Separar Supabase demo y producción
 
@@ -838,4 +847,6 @@ Requiere evidencia de retención, calidad metodológica, costos operativos reale
 - La plataforma registra evolución observada; no demuestra causalidad ni predice talento.
 - El observatorio debe trabajar con agregados y mínimos de muestra, nunca rankings individuales.
 - La operación humana y el acompañamiento al club son más importantes que el costo de infraestructura.
-
+| 2026-09-13 | Dominio | **Dominio propio en producción: `talentodeportivo.com.ar`**, registrado en NIC Argentina a nombre del titular de DMG (nunca de la Fundación: el activo queda del lado de quien retiene la IP). Delegado a `ns1/ns2.vercel-dns.com`, apex canónico, `www` con 308. Descartados `.online` y `.club` por renovación cara, deliverability y peso institucional; `talentodeportivo.com` estaba tomado desde 2011 | Gastón + agente | `dig NS/A`, HTTPS 200 en apex y 308 en www |
+| 2026-09-13 | Atribución | `/privacidad` decía **"desarrollada e impulsada por la Fundación"** sin mencionar a DMG. Corregido: DMG desarrolla y provee (**encargado del tratamiento**); la Fundación y el club son **responsables del tratamiento**. Alineados `negocio/00_documento_madre.md` (decía "Impulsan: Fundación · DMG") y `negocio/11`. ⚠️ El Convenio Marco que instrumenta la IP sigue SIN FIRMAR y la entidad argentina sin constituir | Gastón + agente | commit `eb74883`, verificado en producción |
+| 2026-09-13 | T-002C | La dependencia externa de DNS **ya estaba cumplida hace un mes** y nadie lo registró. Remitente corregido a `no-reply@talentodeportivo.com.ar` para que coincida con el enlace del mail | Gastón + agente | Resend: `talentodeportivo.evolucionantoniana.com` Verified; DKIM confirmado por `dig` |
