@@ -39,13 +39,17 @@ Las estimaciones suponen una persona senior que conoce el repositorio. No incluy
 
 ## Próxima tarea recomendada
 
-> **Cerradas: T-001 (2026-08-30), T-004 y T-002B (ambas 2026-09-13, en
-> producción). Sigue T-002 + T-002C, que se hacen juntas.**  
-> T-002 elimina el recovery administrado y T-002C da el autoservicio que lo
-> reemplaza: separarlas dejaría gente sin poder recuperar la clave. T-002B ya
-> definió qué hacer cuando el email pertenece a otro club, que era lo que
-> bloqueaba a T-002. El correo ya no bloquea nada: Resend y la casilla
-> `info@talentodeportivo.com.ar` están operativos sobre el dominio propio.
+> **Cerradas: T-001 (2026-08-30), y T-004 + T-002B + T-002C (2026-09-13).
+> Sigue T-002, la última P0, y ahora se puede cerrar sin dejar a nadie
+> afuera.**  
+> T-002 elimina el recovery administrado —el circuito por el que un admin
+> recibe un token capaz de entrar como otra persona—. No se podía tocar antes
+> por dos razones, y las dos están resueltas: T-002B definió qué hacer cuando
+> el email pertenece a otro club (rechazar, sin emitir token) y T-002C dio la
+> salida para quien pierde la clave (autoservicio por mail, verificado de
+> punta a punta).
+>
+> Después de T-002: **T-003 → T-007 (arnés de tests) → T-005 + T-006.**
 >
 > Orden acordado el 2026-09-13 para lo que queda del Gate A:
 > **T-002B → T-002 + T-002C → T-003 → T-007 (arnés de tests) → T-005 + T-006.**
@@ -370,7 +374,7 @@ mediciones — los cuatro idénticos al backup previo.
 Backup verificado antes de aplicar (no solo ejecutado: se contaron las filas
 dentro del dump). Es la primera evidencia concreta para T-011.
 
-### [ ] T-002C · Recuperación de clave autoservicio con Resend
+### [x] T-002C · Recuperación de clave autoservicio con Resend
 
 - **Prioridad:** P0, cierra el hueco funcional que deja T-002.
 - **Esfuerzo:** ½–1 día.
@@ -444,6 +448,36 @@ Criterios de aceptación:
 - Ningún admin obtiene tokens de otra persona por ninguna vía.
 - El circuito funciona con el SMTP default (piloto) y luego con el dominio
   propio, sin cambios de código.
+
+Cómo se resolvió (2026-09-13):
+
+- `pedirRecuperacion()` en `app/login/actions.ts`, del lado del server para
+  poder aplicar el guard de cuentas demo (su clave vive en `DEMO_PASSWORD` y
+  es compartida, así que no se recupera — con la misma respuesta genérica,
+  para no delatar cuáles son demo).
+- **No revela si el email existe.** Respuesta idéntica exista la cuenta o no;
+  los errores se registran en el server. Única excepción, el 429 por límite
+  de envíos: depende del ritmo de pedidos, no de que la cuenta exista.
+- `/login` con tres modos: login, recuperar, enviado.
+- No hizo falta tocar `/cuenta/clave` ni `/auth/confirmar`: ambos ya
+  contemplaban `type=recovery`.
+
+**Hallazgo verificado sobre PKCE.** `@supabase/ssr` usa PKCE por defecto, así
+que `resetPasswordForEmail` emite un `token_hash` con prefijo `pkce_` (la
+invitación del panel, que va por la API admin, no lo lleva). La duda era si
+`verifyOtp` necesitaba el *code verifier* guardado en cookie — lo que ataría
+la recuperación al mismo navegador y rompería el caso típico: pedirla en el
+celular y abrir el mail en la compu.
+
+**No lo necesita.** Probado el 2026-09-13 pidiendo el reset desde
+`localhost:3000` y abriendo el enlace en `talentodeportivo.com.ar`: dos
+orígenes sin cookie compartida, y el circuito cerró igual hasta
+`/cuenta/clave` con la sesión iniciada. El flujo es independiente del
+dispositivo. **No forzar `flowType: 'implicit'`: no hace falta.**
+
+El segundo criterio ("ningún admin obtiene tokens de otra persona") **no lo
+cierra esta tarea**: el recovery administrado sigue vivo hasta T-002. Lo que
+T-002C aporta es la salida que hacía falta para poder eliminarlo.
 
 Pendiente relacionado **RESUELTO el 2026-09-13**: la app dejó de vivir en un
 dominio del proveedor. Está en `talentodeportivo.com.ar`, dominio propio del
@@ -844,14 +878,14 @@ T-002C para no dejar a nadie sin recuperación):
 | 1 | T-001 · Deshabilitar plataforma y admin demo privilegiados | 30–90 min | Crítico |
 | 2 | T-002 · Eliminar el recovery entregado a administradores | ½–1 día | Crítico |
 | 3 | ~~T-002B · Imponer "una cuenta = un club"~~ **HECHA** | ½ día | Muy alto |
-| 4 | T-002C · Recuperación autoservicio con Resend | ½–1 día | Muy alto |
+| 4 | ~~T-002C · Recuperación autoservicio con Resend~~ **HECHA** | ½–1 día | Muy alto |
 | 5 | ~~T-004 · Next.js y dependencias~~ **HECHA (16.3.5)** | ½ día | Muy alto |
 | 6 | T-003 · Separar demo y producción | 1–2 días | Crítico antes del piloto |
 
 - [x] T-001 · Contención demo. *(código 2026-08-02; en producción 2026-08-30)*
 - [ ] T-002 · Recuperación e invitaciones.
 - [x] T-002B · Una cuenta = un club. *(2026-09-13, en producción)*
-- [ ] T-002C · Autoservicio de clave (Resend).
+- [x] T-002C · Autoservicio de clave (Resend). *(2026-09-13)*
 - [x] T-004 · Dependencias. *(2026-09-13, 0 vulnerabilidades)*
 - [ ] T-003 · Separación demo/producción.
 
@@ -931,3 +965,4 @@ Requiere evidencia de retención, calidad metodológica, costos operativos reale
 | 2026-09-13 | T-002C | La dependencia externa de DNS **ya estaba cumplida hace un mes** y nadie lo registró. Remitente corregido a `no-reply@talentodeportivo.com.ar` para que coincida con el enlace del mail | Gastón + agente | Resend: `talentodeportivo.evolucionantoniana.com` Verified; DKIM confirmado por `dig` |
 | 2026-09-13 | T-004 | **CERRADA.** El objetivo `next@16.2.12` del diagnóstico había quedado viejo: al retomar, el audit marcaba `next` como **CRITICAL** hasta 16.3.2 con fix en **16.3.5**. Se subió a 16.3.5 (arrastra el fix de `postcss` y `sharp`), `npm audit fix` para el resto y `shadcn` movido a devDependencies. De 14 vulnerabilidades (9 altas, 1 crítica) a **0**. El aumento desde las 7 del baseline no fue por cambios de código sino por advisories nuevos. Queda pendiente Dependabot/Renovate | Gastón + agente | branch `fix/t004-dependencias`; `npm audit` 0; build + smoke de 9 rutas |
 | 2026-09-13 | T-002B | **CERRADA y en producción.** Constraint `unique (auth_user_id)` aplicada por `supabase db push`. Secuencia usada: backup verificado por conteo de filas → código desplegado ANTES que la migración (cierra la ventana de carrera) → pre-flight repetido → push → verificación. Datos intactos: 17/17/308/17.082, idénticos al backup. Habilita T-002: ya hay respuesta definida para "el email pertenece a otro club" sin emitir ningún token | Gastón + agente | migración `20260913120000`; `scripts/preflight-una-cuenta-un-club.mjs`; validación local con savepoints |
+| 2026-09-13 | T-002C | **CERRADA.** Autoservicio andando de punta a punta sobre el dominio propio: pantalla en /login, mail en español con el diseño del producto y enlace a /auth/confirmar en nuestro dominio. Verificado que `verifyOtp` resuelve el token `pkce_` SIN el code verifier, así que la recuperación no está atada al mismo navegador ni dispositivo. Frente de correo completo: Resend + SMTP propio + casilla info@ | Gastón + agente | prueba cruzada localhost→producción; mail a bandeja de entrada |
