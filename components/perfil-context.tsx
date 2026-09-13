@@ -115,12 +115,20 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      const { data: m } = await supabase
+      // Sin filtrar por club: desde T-002B la base impone
+      // `unique (auth_user_id)`, así que no puede haber dos filas. Antes sí
+      // podía, y el resultado era este fallback degradando a "profesor" con
+      // sesión real — el modo de falla silencioso que documenta T-002B.
+      const { data: m, error: eM } = await supabase
         .from("membresia")
         .select("id, rol")
         .eq("auth_user_id", user.id)
         .maybeSingle();
       if (cancelado) return;
+
+      if (eM) {
+        console.error("[perfil-context] no se pudo leer la membresía:", eM.message);
+      }
 
       if (!m) {
         // Usuario autenticado sin membresía ni plataforma: no debería

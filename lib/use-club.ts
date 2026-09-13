@@ -45,12 +45,19 @@ export function useClub(): SesionClub {
         return;
       }
 
-      const { data: m } = await supabase
+      // Sin filtrar por club: desde T-002B la base impone
+      // `unique (auth_user_id)`, así que no puede haber dos filas.
+      const { data: m, error: eM } = await supabase
         .from("membresia")
         .select("id, rol, club_id, nombre")
         .eq("auth_user_id", user.id)
         .maybeSingle();
       if (cancelado) return;
+      if (eM) {
+        // Antes esto caía en la misma rama que "no tiene membresía" y el
+        // problema quedaba invisible. No son lo mismo: acá hubo un fallo.
+        console.error("[use-club] no se pudo leer la membresía:", eM.message);
+      }
       if (!m) {
         setEstado({
           ...VACIA,
