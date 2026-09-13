@@ -47,11 +47,11 @@ function MarcaClub({
     return <p className={className}>Provincia de Salta</p>;
   }
   // Mientras no se sabe qué club es, no se dice ninguno. El fallback a
-  // CLUB.nombre del mock hacía que un profe de la Fundación viera
-  // "Club Atlético Antoniana" por un segundo antes de que apareciera el suyo.
+  // CLUB.nombre del mock hacía que un profe viera el club de la demo por un
+  // segundo antes de que apareciera el suyo.
   if (cargandoSesion || club.cargando) return null;
-  // Sin club no se cae al mock: mostrar "Club Atlético Antoniana" a alguien
-  // que no pertenece a ningún club es afirmarle algo falso desde la marca.
+  // Sin club no se cae al mock: mostrarle el club de la demo a alguien que
+  // no pertenece a ninguno es afirmarle algo falso desde la marca.
   if (sinMembresia) return null;
   const nombre = club.club?.nombre ?? CLUB.nombre;
   const escudo = club.club?.escudoUrl;

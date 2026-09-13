@@ -137,7 +137,13 @@ export interface ClubResumen {
   pases12m: number;
 }
 
-export const CLUB = { nombre: "Club Atlético Antoniana", localidad: "Salta" };
+// El club de la demo se llama IGUAL que la vitrina real de la base
+// ("Club Fundación Evolución Antoniana"). Antes decía "Club Atlético
+// Antoniana" y eso rompía la demo de dos formas: el visitante anónimo veía
+// un club y, al tocar "entrar como profe" —que abre una sesión REAL sobre
+// la vitrina—, veía otro. Y además se parecía demasiado al nombre de un
+// club que existe en Salta, para colgarle ~300 deportistas inventados.
+export const CLUB = { nombre: "Club Fundación Evolución Antoniana", localidad: "Salta" };
 // CLUBES se define al final del archivo: las métricas de Antoniana se
 // calculan de los propios datos mock para que nunca queden desfasadas.
 
@@ -1153,7 +1159,7 @@ const medicionesUltimoMes = DEPORTISTAS.reduce(
 
 export const CLUBES: ClubResumen[] = [
   {
-    id: "cja", nombre: "Club Atlético Antoniana", localidad: "Salta Capital",
+    id: "cja", nombre: "Club Fundación Evolución Antoniana", localidad: "Salta Capital",
     departamento: "Capital", esEsteClub: true,
     deportistas: DEPORTISTAS.length,
     medicionesMes: medicionesUltimoMes,

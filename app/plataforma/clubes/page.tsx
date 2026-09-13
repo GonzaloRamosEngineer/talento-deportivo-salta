@@ -323,7 +323,7 @@ export default function ClubesPlataforma() {
                 id="club-nombre"
                 value={form.nombre}
                 onChange={(e) => setForm({ ...form, nombre: e.target.value })}
-                placeholder="Ej. Club Atlético Antoniana"
+                placeholder="Ej. Club Social y Deportivo del Norte"
                 className="h-11 w-full rounded-xl border border-input bg-background px-3.5 text-sm outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
               />
             </div>
