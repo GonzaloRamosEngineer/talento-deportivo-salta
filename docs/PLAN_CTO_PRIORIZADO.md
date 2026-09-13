@@ -39,11 +39,13 @@ Las estimaciones suponen una persona senior que conoce el repositorio. No incluy
 
 ## Próxima tarea recomendada
 
-> **Cerradas: T-001 (en producción el 2026-08-30) y T-004 (2026-09-13, 0
-> vulnerabilidades). Sigue T-002B: imponer "una cuenta = un club".**  
-> Va antes de T-002 porque T-002 vincula usuarios existentes y necesita la
-> regla ya definida. El pre-flight sigue OK (nadie tiene dos membresías), así
-> que es media jornada y una migración sin migración de datos.
+> **Cerradas: T-001 (2026-08-30), T-004 y T-002B (ambas 2026-09-13, en
+> producción). Sigue T-002 + T-002C, que se hacen juntas.**  
+> T-002 elimina el recovery administrado y T-002C da el autoservicio que lo
+> reemplaza: separarlas dejaría gente sin poder recuperar la clave. T-002B ya
+> definió qué hacer cuando el email pertenece a otro club, que era lo que
+> bloqueaba a T-002. El correo ya no bloquea nada: Resend y la casilla
+> `info@talentodeportivo.com.ar` están operativos sobre el dominio propio.
 >
 > Orden acordado el 2026-09-13 para lo que queda del Gate A:
 > **T-002B → T-002 + T-002C → T-003 → T-007 (arnés de tests) → T-005 + T-006.**
@@ -275,7 +277,7 @@ Evidencia:
 - Prueba ejecutada:
 - Fecha de cierre:
 
-### [ ] T-002B · Definir e imponer "una cuenta = un club" para el MVP
+### [x] T-002B · Definir e imponer "una cuenta = un club" para el MVP
 
 - **Prioridad:** P0, bloquea T-002.
 - **Esfuerzo:** ½ día.
@@ -283,6 +285,7 @@ Evidencia:
 - **Impacto:** muy alto.
 - **Responsable:** por asignar.
 - **Dependencias:** ninguna. **Debe resolverse ANTES de vincular usuarios existentes.**
+- **Estado:** terminada y aplicada en producción el 2026-09-13.
 
 Problema verificado:
 
@@ -333,6 +336,39 @@ Criterios de aceptación:
 - La constraint está aplicada por migración versionada.
 - Invitar un email que ya es staff de otro club falla con mensaje genérico.
 - Los tres lookups siguen funcionando y ninguno puede recibir 2 filas.
+
+Cómo se resolvió (2026-09-13):
+
+- Migración `20260913120000_una_cuenta_un_club.sql`, aplicada con
+  `supabase db push`. Se deja la constraint vieja: es la que hay que
+  restaurar si se revierte. La **reversión está documentada dentro de la
+  propia migración** (`drop constraint`, instantáneo, no toca datos).
+- `scripts/preflight-una-cuenta-un-club.mjs`: corrido dos veces, la segunda
+  ya con el código en producción. 17 membresías, 17 usuarios distintos, 0 en
+  más de un club.
+- **Orden de despliegue: el código ANTES que la migración.** El código no
+  depende de la constraint, y una vez arriba ya no se pueden crear
+  membresías cruzadas — cierra la ventana entre el pre-flight y el push.
+- `invitarMiembro` rechaza a quien ya tiene membresía. Si es de ESTE club lo
+  dice; si es de otro, mensaje genérico con `SOPORTE_EMAIL` — nombrar el otro
+  club le confirmaría al admin que ese email trabaja en otra institución. La
+  consulta usa el cliente admin: el RLS del admin no ve membresías ajenas.
+  **No alcanzaba con dejar reventar la constraint**: las dos violaciones son
+  `23505` y distinguirlas por nombre obligaría a parsear el mensaje de error.
+- Los tres lookups dejan de fallar en silencio: capturan el error y lo
+  registran en vez de confundirlo con "no tiene membresía".
+
+Validación previa en el Supabase local, por comportamiento real con
+savepoints: mismo usuario en otro club RECHAZADO; mismo usuario en el mismo
+club rechazado por la constraint vieja; **otro usuario en el mismo club sigue
+funcionando** (un club puede tener todo el staff que quiera).
+
+Verificación en producción: ambas constraints presentes, migración
+registrada, y 17 membresías / 17 usuarios / 308 deportistas / 17.082
+mediciones — los cuatro idénticos al backup previo.
+
+Backup verificado antes de aplicar (no solo ejecutado: se contaron las filas
+dentro del dump). Es la primera evidencia concreta para T-011.
 
 ### [ ] T-002C · Recuperación de clave autoservicio con Resend
 
@@ -807,14 +843,14 @@ T-002C para no dejar a nadie sin recuperación):
 |---:|---|---:|---|
 | 1 | T-001 · Deshabilitar plataforma y admin demo privilegiados | 30–90 min | Crítico |
 | 2 | T-002 · Eliminar el recovery entregado a administradores | ½–1 día | Crítico |
-| 3 | T-002B · Imponer "una cuenta = un club" | ½ día | Muy alto |
+| 3 | ~~T-002B · Imponer "una cuenta = un club"~~ **HECHA** | ½ día | Muy alto |
 | 4 | T-002C · Recuperación autoservicio con Resend | ½–1 día | Muy alto |
 | 5 | ~~T-004 · Next.js y dependencias~~ **HECHA (16.3.5)** | ½ día | Muy alto |
 | 6 | T-003 · Separar demo y producción | 1–2 días | Crítico antes del piloto |
 
 - [x] T-001 · Contención demo. *(código 2026-08-02; en producción 2026-08-30)*
 - [ ] T-002 · Recuperación e invitaciones.
-- [ ] T-002B · Una cuenta = un club.
+- [x] T-002B · Una cuenta = un club. *(2026-09-13, en producción)*
 - [ ] T-002C · Autoservicio de clave (Resend).
 - [x] T-004 · Dependencias. *(2026-09-13, 0 vulnerabilidades)*
 - [ ] T-003 · Separación demo/producción.
@@ -894,3 +930,4 @@ Requiere evidencia de retención, calidad metodológica, costos operativos reale
 | 2026-09-13 | Atribución | `/privacidad` decía **"desarrollada e impulsada por la Fundación"** sin mencionar a DMG. Corregido: DMG desarrolla y provee (**encargado del tratamiento**); la Fundación y el club son **responsables del tratamiento**. Alineados `negocio/00_documento_madre.md` (decía "Impulsan: Fundación · DMG") y `negocio/11`. ⚠️ El Convenio Marco que instrumenta la IP sigue SIN FIRMAR y la entidad argentina sin constituir | Gastón + agente | commit `eb74883`, verificado en producción |
 | 2026-09-13 | T-002C | La dependencia externa de DNS **ya estaba cumplida hace un mes** y nadie lo registró. Remitente corregido a `no-reply@talentodeportivo.com.ar` para que coincida con el enlace del mail | Gastón + agente | Resend: `talentodeportivo.evolucionantoniana.com` Verified; DKIM confirmado por `dig` |
 | 2026-09-13 | T-004 | **CERRADA.** El objetivo `next@16.2.12` del diagnóstico había quedado viejo: al retomar, el audit marcaba `next` como **CRITICAL** hasta 16.3.2 con fix en **16.3.5**. Se subió a 16.3.5 (arrastra el fix de `postcss` y `sharp`), `npm audit fix` para el resto y `shadcn` movido a devDependencies. De 14 vulnerabilidades (9 altas, 1 crítica) a **0**. El aumento desde las 7 del baseline no fue por cambios de código sino por advisories nuevos. Queda pendiente Dependabot/Renovate | Gastón + agente | branch `fix/t004-dependencias`; `npm audit` 0; build + smoke de 9 rutas |
+| 2026-09-13 | T-002B | **CERRADA y en producción.** Constraint `unique (auth_user_id)` aplicada por `supabase db push`. Secuencia usada: backup verificado por conteo de filas → código desplegado ANTES que la migración (cierra la ventana de carrera) → pre-flight repetido → push → verificación. Datos intactos: 17/17/308/17.082, idénticos al backup. Habilita T-002: ya hay respuesta definida para "el email pertenece a otro club" sin emitir ningún token | Gastón + agente | migración `20260913120000`; `scripts/preflight-una-cuenta-un-club.mjs`; validación local con savepoints |
