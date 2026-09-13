@@ -245,7 +245,13 @@ function SelectorPerfil({ compacto = false }: { compacto?: boolean }) {
         aria-expanded={abierto}
         aria-label="Cambiar perfil (demo)"
       >
-        <span className="truncate">{actual.label}</span>
+        {/* En la píldora compacta del header mobile no entra el paréntesis
+            del personaje demo y quedaba cortado a la mitad ("PROFESOR/A
+            (MAR…"). En el selector ancho del sidebar sí se muestra: ahí
+            informa de qué demo se trata. */}
+        <span className="truncate">
+          {compacto ? actual.label.replace(/\s*\(.+\)$/, "") : actual.label}
+        </span>
         <ChevronDown className={cn("size-3 shrink-0", abierto && "rotate-180")} aria-hidden />
       </button>
 

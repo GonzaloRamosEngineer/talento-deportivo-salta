@@ -27,7 +27,15 @@ anotado en T-006 del plan CTO.
 
 ## Los 4 perfiles
 
+Nota de nombres: el cuarto perfil es técnicamente **plataforma / super admin**,
+y así se llama en el código (`super_admin`) y con sesión real en la UI. Pero en
+la **demo pública** se muestra como **"Liga / Secretaría"**, que es el texto con
+el que se entra desde `/login`: "super admin" le suena a rol de sistemas al
+funcionario que es, justamente, el visitante al que ese perfil le muestra el
+observatorio.
+
 | Capacidad | Profesor/a (`entrenador`) | Admin del club (`admin_club`) | Comisión directiva (`comision_directiva`) | Plataforma (super admin) |
+
 |---|---|---|---|---|
 | **Alcance de datos** | Solo SUS categorías asignadas | Todo el club | Todo el club | **Ningún dato individual** — solo agregados por club |
 | Ver fichas y evolución | ✅ sus categorías | ✅ | ✅ (lectura) | ❌ |

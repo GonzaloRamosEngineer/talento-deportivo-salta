@@ -15,7 +15,11 @@ export const PERFILES: { id: Perfil; label: string; descripcion: string }[] = [
   { id: "profesor", label: "Profesor/a (Marcela)", descripcion: "Solo sus categorías: 9ª División y Escuelita 2016 — carga y planifica" },
   { id: "admin_club", label: "Admin del club", descripcion: "Todo el club: opera y además gestiona categorías, staff y consentimientos" },
   { id: "comision", label: "Comisión directiva", descripcion: "Todo el club, solo consulta — no carga ni edita" },
-  { id: "super_admin", label: "Plataforma (super admin)", descripcion: "Observatorio interclubes: solo agregados, sin acceso a fichas" },
+  // "Liga / Secretaría" y no "Plataforma (super admin)": es el mismo texto
+  // con el que se entra desde /login, y "super admin" le suena a rol de
+  // sistemas a un funcionario, que es justamente el visitante que este
+  // perfil viene a mostrarle el observatorio.
+  { id: "super_admin", label: "Liga / Secretaría", descripcion: "Observatorio interclubes: solo agregados, sin acceso a fichas" },
 ];
 
 export interface Permisos {
