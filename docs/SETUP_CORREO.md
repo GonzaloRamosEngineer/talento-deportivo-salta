@@ -218,10 +218,15 @@ La propagación suele tardar entre minutos y unas pocas horas. Resend marca el d
 ### Cómo verificar desde una terminal
 
 ```bash
-dig +short TXT resend._domainkey.talento.evolucionantoniana.com
-dig +short TXT send.talento.evolucionantoniana.com
-dig +short MX  send.talento.evolucionantoniana.com
-dig +short TXT _dmarc.talento.evolucionantoniana.com
+# Resend (envío del producto) — VERIFICADOS el 2026-09-13
+dig +short TXT resend._domainkey.talentodeportivo.com.ar
+dig +short TXT send.talentodeportivo.com.ar
+dig +short MX  send.talentodeportivo.com.ar
+dig +short TXT _dmarc.talentodeportivo.com.ar
+
+# Spacemail (recepción de info@) — VERIFICADOS el 2026-09-13
+dig +short MX  talentodeportivo.com.ar
+dig +short TXT spacemail._domainkey.talentodeportivo.com.ar
 ```
 
 Cada uno tiene que devolver el valor cargado. Si devuelve vacío, el registro no está o el
@@ -247,9 +252,24 @@ Datos a cargar:
 | Username | `resend` (literal, esa palabra) |
 | Password | la API Key de Resend (`re_...`) |
 | Sender email | **`no-reply@talentodeportivo.com.ar`** |
-| Sender name | `Talento Deportivo Salta` |
+| Sender name | **`Talento Deportivo`** (sin "Salta" — ver nota abajo) |
+| Reply-To | **`info@talentodeportivo.com.ar`** |
 
 Si el puerto 465 da problemas, la alternativa es `587`.
+
+**Sobre el Sender name (decidido el 2026-09-13):** firma **`Talento Deportivo`**, sin
+"Salta". El dominio se compró sin la provincia a propósito —"Talento Deportivo Salta" no
+escala a otras provincias— así que el remitente arranca ya con el nombre definitivo. ⚠️ Eso
+deja una inconsistencia abierta: la app, el `<title>` del sitio, el repo y los documentos
+siguen diciendo "Talento Deportivo Salta". **Es una decisión de producto pendiente**, no un
+descuido: alinear todo es un trabajo aparte.
+
+**Sobre el Reply-To (decidido el 2026-09-13):** `info@talentodeportivo.com.ar`, no la
+casilla de la Fundación. Este mail va dirigido a **staff de club** —un profe que no puede
+entrar—, así que la respuesta tiene que caer en el soporte del producto.
+`contacto@evolucionantoniana.com` se queda donde sí corresponde: en `/privacidad`, para el
+ejercicio de derechos sobre los datos de los menores. Son dos canales distintos y no se
+pisan.
 
 Después, en la misma sección de Authentication, subir el **límite de mails por hora**
 (viene muy bajo por defecto, pensado para el SMTP compartido). Con 30 por hora sobra.
@@ -282,26 +302,31 @@ Eso resuelve la incoherencia que describía este apartado —mail institucional 
 dominio del proveedor— por la vía de darle dominio propio al producto, y de paso deja el
 DNS de envío bajo control de DMG, sin depender de terceros para los registros de Resend.
 
-## 8. Checklist para volver
+## 8. Checklist — estado al 2026-09-13
 
-Cuando esté todo hecho, hace falta confirmar estos siete puntos:
+- [–] **1.** ~~La Fundación autorizó figurar como remitente.~~ **Ya no aplica:** el
+      remitente es `no-reply@talentodeportivo.com.ar`, dominio propio de DMG.
+- [x] **2.** ~~El subdominio elegido es `talento.evolucionantoniana.com`.~~ Superado:
+      el envío va por `talentodeportivo.com.ar`.
+- [x] **3.** El dominio figura **Verified** en Resend. *(Confirmado: Domain verified,
+      Sep 13 13:04, provider Vercel, región São Paulo.)*
+- [x] **4.** Los registros DNS están cargados y responden a `dig`. *(Los 4 de Resend y
+      los 5 de Spacemail, verificados uno por uno.)*
+- [ ] **5.** Un mail de prueba **enviado desde Resend** llegó a bandeja de entrada de
+      Gmail (no a spam). ⚠️ **Pendiente.** La prueba que se hizo el 13-sep salió por
+      **Spacemail** desde `info@`, que es otro camino y otro selector DKIM. El envío de
+      Resend se prueba de verdad al conectar el SMTP.
+- [ ] **6.** El **SMTP personalizado está activado en Supabase** con esos datos, y el
+      límite de mails por hora subido. ⚠️ **Pendiente — es lo único que falta para
+      cerrar el frente de correo.**
+- [x] **7.** Remitente final y `Reply-To` confirmados: From `no-reply@talentodeportivo.com.ar`
+      con nombre `Talento Deportivo`, Reply-To `info@talentodeportivo.com.ar`.
 
-- [ ] **1.** La Fundación autorizó figurar como remitente.
-- [x] **2.** ~~El subdominio elegido es `talento.evolucionantoniana.com`.~~
-      **Se usó `talentodeportivo.evolucionantoniana.com` y quedó Verified. Superado: el
-      envío pasa a `talentodeportivo.com.ar` (ver ESTADO).**
-- [ ] **3.** El dominio figura **Verified** en Resend. *(Captura de pantalla o confirmación.)*
-- [ ] **4.** Los 3–4 registros DNS están cargados y responden a `dig`.
-      *(Pegar la salida de los comandos de la sección 5.)*
-- [ ] **5.** Un mail de prueba desde Resend llegó a **bandeja de entrada** de Gmail,
-      no a spam.
-- [ ] **6.** El SMTP personalizado está activado en Supabase con esos datos, y el límite
-      de mails por hora quedó en 30 o más.
-- [ ] **7.** Confirmación del remitente final tal como quedó configurado, y del `Reply-To`.
+### Pendientes anotados, que no bloquean
 
-**No hace falta que nos manden la API Key.** Si el SMTP ya quedó cargado en Supabase, la
-clave no tiene que salir de ahí. Si prefieren que la carguemos nosotros, que llegue por el
-gestor de contraseñas de la organización, nunca por chat ni por mail.
-
-Con esos siete puntos confirmados, la recuperación de contraseña autoservicio se
-implementa y se cierra la vulnerabilidad P0 del circuito de usuarios.
+- **La cuenta de Resend pertenece a la organización `evolucionantoniana`.** Decisión del
+  2026-09-13: se deja así por ahora. El dominio ya está verificado en esa cuenta y mover
+  todo implica re-verificarlo. Queda como deuda de coherencia: si el producto es de DMG,
+  su infraestructura de envío debería vivir en una cuenta de DMG.
+- **El nombre del producto.** Los mails van a firmar "Talento Deportivo", pero la app y
+  los documentos dicen "Talento Deportivo Salta". Decisión de producto pendiente.
