@@ -39,11 +39,17 @@ Las estimaciones suponen una persona senior que conoce el repositorio. No incluy
 
 ## Próxima tarea recomendada
 
-> **T-001 cerrada y desplegada (2026-08-30). Seguir por T-002B: imponer
-> "una cuenta = un club".**  
+> **Cerradas: T-001 (en producción el 2026-08-30) y T-004 (2026-09-13, 0
+> vulnerabilidades). Sigue T-002B: imponer "una cuenta = un club".**  
 > Va antes de T-002 porque T-002 vincula usuarios existentes y necesita la
-> regla ya definida. El pre-flight está OK (nadie tiene dos membresías), así
+> regla ya definida. El pre-flight sigue OK (nadie tiene dos membresías), así
 > que es media jornada y una migración sin migración de datos.
+>
+> Orden acordado el 2026-09-13 para lo que queda del Gate A:
+> **T-002B → T-002 + T-002C → T-003 → T-007 (arnés de tests) → T-005 + T-006.**
+> T-007 se adelanta a propósito: T-005 y T-006 son cambios de RLS y
+> constraints, y escribirlos sin pruebas negativas es verificar a mano lo que
+> debería verificar el CI.
 
 ---
 
@@ -451,14 +457,16 @@ Evidencia:
 - Documento operativo:
 - Fecha de cierre:
 
-### [ ] T-004 · Resolver vulnerabilidades de dependencias
+### [x] T-004 · Resolver vulnerabilidades de dependencias
 
 - **Prioridad:** P0.
 - **Esfuerzo:** ½–1 día.
 - **Complejidad:** baja–media.
 - **Impacto:** muy alto.
-- **Responsable:** por asignar.
+- **Responsable:** Gastón + agente.
 - **Dependencias:** ninguna.
+- **Estado:** terminada el 2026-09-13, branch `fix/t004-dependencias`.
+  **Real: ~1 hora.**
 
 Línea base del 1 de agosto de 2026:
 
@@ -479,6 +487,41 @@ Criterios de aceptación:
 - `npm run lint` sin errores.
 - `npm run build` exitoso.
 - Los circuitos de login, panel y medición funcionan.
+
+Cómo se resolvió (2026-09-13):
+
+- **El objetivo `next@16.2.12` de este documento estaba viejo.** El audit
+  marca el rango afectado `9.3.4-canary.0 - 16.3.2` como **CRITICAL** con
+  `fixAvailable: 16.3.5` (también `latest`). Se subió a **16.3.5**, pineada
+  sin caret como estaba la anterior. React no se tocó: 19.2.4 ya satisface el
+  peer `^19.0.0`.
+- Ese único salto tapó tres entradas del audit: `next` y sus transitivas
+  `postcss` y `sharp`.
+- `npm audit fix` resolvió las 10 restantes; todas transitivas con arreglo
+  no-breaking, solo cambió el lockfile.
+- **`shadcn` pasó a `devDependencies`**: no se importa en `app/`,
+  `components/` ni `lib/` — es solo el CLI, y arrastraba 6,5 MB a producción.
+
+Resultado: **0 vulnerabilidades**, con `--omit=dev` y con el audit completo.
+
+Alcance de la verificación, para no sobrevender: tsc y eslint sin errores
+(quedan los 2 warnings de `<img>` que ya existían), build OK, y smoke sobre
+el build de producción (`next start`) con `/`, `/login`, `/panel`,
+`/privacidad`, `/observatorio`, `/medicion`, `/deportistas`, `/sesiones` y
+`/entrenamiento` todos en 200, `/auth/confirmar` con token inválido
+redirigiendo a `/login?aviso=link-vencido`, y cero errores en el log del
+server. **Los circuitos autenticados NO se ejercitaron con una sesión real**:
+las pantallas se arman en cliente con `useDatos`, así que el 200 prueba que
+la ruta y el render funcionan, no que la carga de una medición end-to-end
+siga bien. Eso lo cubrirá T-007.
+
+**Queda pendiente de esta tarea:** configurar **Dependabot o Renovate**. Sin
+eso, esto se vuelve a acumular solo — de hecho pasó: entre el 1-ago y el
+13-sep el conteo fue de 7 a 14 sin que cambiara una línea de código, porque
+el ecosistema publicó advisories nuevos.
+
+Gotcha registrado: **`next lint` ya no existe** en esta versión. El lint del
+repo es `npm run lint` (eslint directo).
 
 ---
 
@@ -766,14 +809,14 @@ T-002C para no dejar a nadie sin recuperación):
 | 2 | T-002 · Eliminar el recovery entregado a administradores | ½–1 día | Crítico |
 | 3 | T-002B · Imponer "una cuenta = un club" | ½ día | Muy alto |
 | 4 | T-002C · Recuperación autoservicio con Resend | ½–1 día | Muy alto |
-| 5 | T-004 · Next.js 16.2.12 y dependencias | ½ día | Muy alto |
+| 5 | ~~T-004 · Next.js y dependencias~~ **HECHA (16.3.5)** | ½ día | Muy alto |
 | 6 | T-003 · Separar demo y producción | 1–2 días | Crítico antes del piloto |
 
 - [x] T-001 · Contención demo. *(código 2026-08-02; en producción 2026-08-30)*
 - [ ] T-002 · Recuperación e invitaciones.
 - [ ] T-002B · Una cuenta = un club.
 - [ ] T-002C · Autoservicio de clave (Resend).
-- [ ] T-004 · Dependencias.
+- [x] T-004 · Dependencias. *(2026-09-13, 0 vulnerabilidades)*
 - [ ] T-003 · Separación demo/producción.
 
 ### Semana 2
@@ -850,3 +893,4 @@ Requiere evidencia de retención, calidad metodológica, costos operativos reale
 | 2026-09-13 | Dominio | **Dominio propio en producción: `talentodeportivo.com.ar`**, registrado en NIC Argentina a nombre del titular de DMG (nunca de la Fundación: el activo queda del lado de quien retiene la IP). Delegado a `ns1/ns2.vercel-dns.com`, apex canónico, `www` con 308. Descartados `.online` y `.club` por renovación cara, deliverability y peso institucional; `talentodeportivo.com` estaba tomado desde 2011 | Gastón + agente | `dig NS/A`, HTTPS 200 en apex y 308 en www |
 | 2026-09-13 | Atribución | `/privacidad` decía **"desarrollada e impulsada por la Fundación"** sin mencionar a DMG. Corregido: DMG desarrolla y provee (**encargado del tratamiento**); la Fundación y el club son **responsables del tratamiento**. Alineados `negocio/00_documento_madre.md` (decía "Impulsan: Fundación · DMG") y `negocio/11`. ⚠️ El Convenio Marco que instrumenta la IP sigue SIN FIRMAR y la entidad argentina sin constituir | Gastón + agente | commit `eb74883`, verificado en producción |
 | 2026-09-13 | T-002C | La dependencia externa de DNS **ya estaba cumplida hace un mes** y nadie lo registró. Remitente corregido a `no-reply@talentodeportivo.com.ar` para que coincida con el enlace del mail | Gastón + agente | Resend: `talentodeportivo.evolucionantoniana.com` Verified; DKIM confirmado por `dig` |
+| 2026-09-13 | T-004 | **CERRADA.** El objetivo `next@16.2.12` del diagnóstico había quedado viejo: al retomar, el audit marcaba `next` como **CRITICAL** hasta 16.3.2 con fix en **16.3.5**. Se subió a 16.3.5 (arrastra el fix de `postcss` y `sharp`), `npm audit fix` para el resto y `shadcn` movido a devDependencies. De 14 vulnerabilidades (9 altas, 1 crítica) a **0**. El aumento desde las 7 del baseline no fue por cambios de código sino por advisories nuevos. Queda pendiente Dependabot/Renovate | Gastón + agente | branch `fix/t004-dependencias`; `npm audit` 0; build + smoke de 9 rutas |
