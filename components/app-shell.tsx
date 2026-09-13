@@ -54,7 +54,9 @@ function MarcaClub({
   // no pertenece a ninguno es afirmarle algo falso desde la marca.
   if (sinMembresia) return null;
   const nombre = club.club?.nombre ?? CLUB.nombre;
-  const escudo = club.club?.escudoUrl;
+  // En la demo anónima no hay club en la base: se usa el escudo del mock
+  // para que la vitrina se vea igual que con una sesión real.
+  const escudo = club.club?.escudoUrl ?? CLUB.escudoUrl;
   return (
     <p className={cn("flex min-w-0 items-center gap-1.5", className)}>
       {escudo && (
@@ -270,17 +272,24 @@ function SelectorPerfil({ compacto = false }: { compacto?: boolean }) {
             del personaje demo y quedaba cortado a la mitad ("PROFESOR/A
             (MAR…"). En el selector ancho del sidebar sí se muestra: ahí
             informa de qué demo se trata. */}
-        <span className="truncate">
-          {compacto ? actual.label.replace(/\s*\(.+\)$/, "") : actual.label}
-        </span>
+        {/* En el header mobile compite con el nombre del club por el ancho:
+            va la etiqueta corta ("Profe") y no la larga ("Profesor/a
+            (Marcela)"), que se cortaba a la mitad y encima le comía el
+            espacio al club. En el sidebar ancho va completa. */}
+        <span className="truncate">{compacto ? actual.corto : actual.label}</span>
         <ChevronDown className={cn("size-3 shrink-0", abierto && "rotate-180")} aria-hidden />
       </button>
 
       {abierto && (
         <div
           className={cn(
-            "absolute z-50 w-64 rounded-xl border border-border bg-popover p-1.5 shadow-lg",
-            compacto ? "right-0 top-9" : "bottom-12 left-0",
+            "z-50 rounded-xl border border-border bg-popover p-1.5 shadow-lg",
+            // Compacto: el trigger quedó inline y cerca del borde izquierdo,
+            // así que un panel de 16rem anclado a él se sale de pantalla por
+            // un lado o por el otro. Se ancla al viewport, debajo del header.
+            compacto
+              ? "fixed inset-x-4 top-16 w-auto"
+              : "absolute bottom-12 left-0 w-64",
           )}
         >
           <p className="px-2.5 pb-1 pt-1.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
@@ -427,32 +436,36 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       <div className="flex min-w-0 flex-1 flex-col md:pl-60">
         {/* Header mobile */}
         <header className="sticky top-0 z-30 flex items-center justify-between gap-2 border-b border-border bg-background/90 px-4 py-3 backdrop-blur md:hidden">
-          <Link href="/panel" className="flex min-w-0 flex-1 items-center gap-2.5">
-            <LogoTalento className="size-8 shrink-0" />
+          {/* El rol —badge fijo con sesión real, selector en la demo— va
+              SIEMPRE en la primera línea, nunca como pill a la derecha: ahí
+              le robaba ancho a todo el bloque y el nombre del club salía
+              cortado ("Club Fundación Evolución Antonia…"). Con esto la
+              segunda línea se queda con el ancho completo. */}
+          <div className="flex min-w-0 flex-1 items-center gap-2.5">
+            <Link href="/panel" className="shrink-0">
+              <LogoTalento className="size-8" />
+            </Link>
             <div className="min-w-0 flex-1 leading-tight">
-              <p className="flex items-baseline gap-1.5 text-sm font-extrabold tracking-tight">
-                <span className="shrink-0">Talento Deportivo</span>
-                {/* Con sesión real el rol va acá (texto informativo) y
-                    no como pill a la derecha: le deja todo el ancho al
-                    nombre del club. */}
-                {sesionReal && (
+              <div className="flex items-baseline gap-1.5 text-sm font-extrabold tracking-tight">
+                <Link href="/panel" className="shrink-0">
+                  Talento Deportivo
+                </Link>
+                {sesionReal ? (
                   <span className="truncate text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
                     · {ROL_CORTO[perfil]}
                   </span>
+                ) : (
+                  <SelectorPerfil compacto />
                 )}
-              </p>
+              </div>
               <MarcaClub
                 perfil={perfil}
                 unaLinea
                 className="text-[11px] text-muted-foreground"
               />
             </div>
-          </Link>
+          </div>
           <div className="flex shrink-0 items-center gap-1">
-            {/* En la demo anónima el selector de perfil es interactivo
-                y tiene que seguir a mano; con sesión real ya se muestra
-                arriba, inline. */}
-            {!sesionReal && <SelectorPerfil compacto />}
             <BotonSesion icono />
           </div>
         </header>

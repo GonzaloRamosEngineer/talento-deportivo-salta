@@ -295,7 +295,9 @@ export function useDatos(): Datos {
         categorias: mock.categorias,
         deportistas: mock.deportistas,
         clubNombre: CLUB.nombre,
-        clubEscudoUrl: null,
+        // Antes null: el panel de la demo quedaba sin escudo mientras la
+        // misma pantalla con sesión real sí lo mostraba.
+        clubEscudoUrl: CLUB.escudoUrl,
         membresiaId: null,
         membresiaNombre: null,
         clubId: null,

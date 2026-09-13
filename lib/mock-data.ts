@@ -143,7 +143,14 @@ export interface ClubResumen {
 // un club y, al tocar "entrar como profe" —que abre una sesión REAL sobre
 // la vitrina—, veía otro. Y además se parecía demasiado al nombre de un
 // club que existe en Salta, para colgarle ~300 deportistas inventados.
-export const CLUB = { nombre: "Club Fundación Evolución Antoniana", localidad: "Salta" };
+export const CLUB = {
+  nombre: "Club Fundación Evolución Antoniana",
+  localidad: "Salta",
+  // El escudo vive en public/. En la demo anónima no hay club en la base,
+  // y sin esto el header quedaba sin logo justo donde la sesión real sí lo
+  // muestra: la misma vitrina se veía peor por la puerta de entrada.
+  escudoUrl: "/fundea.png",
+};
 // CLUBES se define al final del archivo: las métricas de Antoniana se
 // calculan de los propios datos mock para que nunca queden desfasadas.
 

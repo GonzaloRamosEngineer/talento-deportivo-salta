@@ -130,6 +130,39 @@ La dirección tiene que servir a los dos sin traicionar a ninguno:
   ámbar + banner con motivo en el detalle (CloudRain). Nunca se borra:
   la agenda es registro, no solo plan.
 
+## Header mobile: la identidad no compite por el ancho (2026-09-13)
+
+El header de celular muestra cuatro cosas en muy poco lugar: logo, producto,
+**rol actual** y **club**. La regla que las hace convivir:
+
+> El rol va **inline en la primera línea**, al lado de "Talento Deportivo".
+> Nunca como pill a la derecha del header.
+
+Un elemento a la derecha no le roba ancho solo a su renglón: se lo roba al
+contenedor entero, así que la **segunda línea hereda el recorte** aunque a su
+lado no haya nada. Con el rol a la derecha, el club salía
+"Club Fundación Evolución Antonia…"; movido a la primera línea, entra completo.
+
+Vale para las dos variantes, que comparten esqueleto a propósito:
+
+| | Primera línea | Segunda línea |
+|---|---|---|
+| Sesión real | `Talento Deportivo · PROFE` (texto fijo) | escudo + club |
+| Demo | `Talento Deportivo · [PROFE ▾]` (selector) | escudo + club |
+
+Reglas que se desprenden:
+
+- **Etiquetas cortas en el header** (`PERFILES[].corto`: Profe · Admin ·
+  Comisión · Liga). La larga —"Profesor/a (Marcela)"— se cortaba a la mitad y
+  encima le comía espacio al club. En el sidebar, que es ancho, va completa.
+- **El desplegable del selector se ancla al viewport** (`inset-x-4`, debajo del
+  header), no al trigger: con el trigger cerca del borde izquierdo, un panel de
+  16rem anclado a él se sale de pantalla por un lado o por el otro.
+- **Nada de identidad se muestra mientras carga.** Ni club, ni rol, ni el botón
+  de sesión: `cargandoSesion` / `club.cargando` devuelven `null`. Mostrar el
+  club del mock o el selector de la demo por medio segundo, a alguien que está
+  entrando con su cuenta, es afirmarle algo falso.
+
 ## Qué NO es esta dirección
 
 - No es un dashboard denso de BI: una métrica por pantalla, aire generoso.
