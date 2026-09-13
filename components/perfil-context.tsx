@@ -69,12 +69,23 @@ const PerfilContext = createContext<{
    * club" que "no pudimos averiguarlo".
    */
   sinMembresia: boolean;
+  /**
+   * true hasta que se sabe si hay sesión real o no.
+   *
+   * Sin esto, el provider arranca en `sesionReal: false` y la UI muestra el
+   * selector de perfil de la DEMO —con el personaje "(Marcela)"— durante el
+   * instante que tarda `getUser()`. A un profe real le aparecía un rol que no
+   * es el suyo y desaparecía solo. Es el mismo error que mostrar el club del
+   * mock, pero en la ventana de carga.
+   */
+  cargandoSesion: boolean;
 }>({
   perfil: "profesor",
   setPerfil: () => {},
   permisos: permisosDe("profesor"),
   sesionReal: false,
   sinMembresia: false,
+  cargandoSesion: true,
 });
 
 export function PerfilProvider({ children }: { children: React.ReactNode }) {
@@ -86,6 +97,7 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
   );
   const [sesionReal, setSesionReal] = useState(false);
   const [sinMembresia, setSinMembresia] = useState(false);
+  const [cargandoSesion, setCargandoSesion] = useState(true);
 
   useEffect(() => {
     let cancelado = false;
@@ -180,7 +192,12 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
       setSinMembresia(false);
     }
 
-    cargarSesion();
+    // `finally` y no una llamada por rama: cada `return` temprano de
+    // cargarSesion() es una rama terminal, y olvidarse de una dejaría la UI
+    // colgada en estado de carga para siempre.
+    void cargarSesion().finally(() => {
+      if (!cancelado) setCargandoSesion(false);
+    });
     // Re-lee la sesión en cada login/logout: sin esto, el perfil queda
     // pegado al de la sesión anterior (el bug que este wiring arregla).
     const { data: sub } = supabase.auth.onAuthStateChange(() => {
@@ -206,7 +223,7 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
   }, [perfil, categoriasSesion]);
 
   return (
-    <PerfilContext.Provider value={{ perfil, setPerfil, permisos, sesionReal, sinMembresia }}>
+    <PerfilContext.Provider value={{ perfil, setPerfil, permisos, sesionReal, sinMembresia, cargandoSesion }}>
       {children}
     </PerfilContext.Provider>
   );
