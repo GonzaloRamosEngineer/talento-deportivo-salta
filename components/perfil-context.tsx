@@ -56,11 +56,25 @@ const PerfilContext = createContext<{
   permisos: Permisos;
   /** true si el perfil viene de una sesión real (no del selector demo) */
   sesionReal: boolean;
+  /**
+   * Sesión real válida que NO pertenece a ningún club ni a plataforma.
+   *
+   * Pasa, por ejemplo, con alguien a quien dieron de baja del staff y que
+   * ahora puede volver a entrar por su cuenta (T-002C). Sin esto, el
+   * fallback lo dejaba como "profesor" con el mock: una app que parece
+   * andar, con un club y deportistas que no son de nadie.
+   *
+   * Solo se marca cuando la consulta SALIÓ BIEN y no hay membresía. Si
+   * falló la lectura no se afirma nada: no es lo mismo "no estás en ningún
+   * club" que "no pudimos averiguarlo".
+   */
+  sinMembresia: boolean;
 }>({
   perfil: "profesor",
   setPerfil: () => {},
   permisos: permisosDe("profesor"),
   sesionReal: false,
+  sinMembresia: false,
 });
 
 export function PerfilProvider({ children }: { children: React.ReactNode }) {
@@ -71,6 +85,7 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
     undefined,
   );
   const [sesionReal, setSesionReal] = useState(false);
+  const [sinMembresia, setSinMembresia] = useState(false);
 
   useEffect(() => {
     let cancelado = false;
@@ -93,6 +108,7 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
       }
       setCategoriasSesion(undefined);
       setSesionReal(false);
+      setSinMembresia(false);
     }
 
     async function cargarSesion() {
@@ -112,6 +128,7 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
         setPerfilState("super_admin");
         setCategoriasSesion([]);
         setSesionReal(true);
+        setSinMembresia(false);
         return;
       }
 
@@ -131,11 +148,14 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
       }
 
       if (!m) {
-        // Usuario autenticado sin membresía ni plataforma: no debería
-        // pasar en el piloto, pero no se le asume ningún acceso.
+        // Usuario autenticado sin membresía ni plataforma: no se le asume
+        // ningún acceso. `sinMembresia` solo se afirma si la consulta
+        // funcionó — con `eM` no sabemos si no tiene club o si no pudimos
+        // leerlo, y decirle lo primero cuando pasa lo segundo es peor.
         setPerfilState("profesor");
         setCategoriasSesion([]);
         setSesionReal(true);
+        setSinMembresia(!eM);
         return;
       }
 
@@ -157,6 +177,7 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
       setPerfilState(perfilDeRolDB(m.rol));
       setCategoriasSesion(categorias);
       setSesionReal(true);
+      setSinMembresia(false);
     }
 
     cargarSesion();
@@ -185,7 +206,7 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
   }, [perfil, categoriasSesion]);
 
   return (
-    <PerfilContext.Provider value={{ perfil, setPerfil, permisos, sesionReal }}>
+    <PerfilContext.Provider value={{ perfil, setPerfil, permisos, sesionReal, sinMembresia }}>
       {children}
     </PerfilContext.Provider>
   );

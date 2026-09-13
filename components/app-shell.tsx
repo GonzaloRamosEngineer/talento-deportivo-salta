@@ -22,6 +22,7 @@ import {
 import { cn } from "@/lib/utils";
 import { LogoTalento } from "@/components/logo";
 import { EscudoClub } from "@/components/escudo-club";
+import { SOPORTE_EMAIL } from "@/lib/site";
 import { CLUB } from "@/lib/mock-data";
 import { crearClienteBrowser } from "@/lib/supabase/client";
 import { useClub } from "@/lib/use-club";
@@ -41,9 +42,13 @@ function MarcaClub({
   unaLinea?: boolean;
 }) {
   const club = useClub();
+  const { sinMembresia } = usePerfil();
   if (perfil === "super_admin") {
     return <p className={className}>Provincia de Salta</p>;
   }
+  // Sin club no se cae al mock: mostrar "Club Atlético Antoniana" a alguien
+  // que no pertenece a ningún club es afirmarle algo falso desde la marca.
+  if (sinMembresia) return null;
   const nombre = club.club?.nombre ?? CLUB.nombre;
   const escudo = club.club?.escudoUrl;
   return (
@@ -278,9 +283,46 @@ const ROL_CORTO: Record<Perfil, string> = {
   super_admin: "Plataforma",
 };
 
+/**
+ * Sesión real que no pertenece a ningún club. Antes caía en el fallback de
+ * "profesor" y veía el MOCK: un club y deportistas inventados, con toda la
+ * app aparentemente funcionando. En una plataforma sobre el desarrollo de
+ * chicos, alguien puede leer eso como que los datos del club se perdieron.
+ *
+ * El caso dejó de ser teórico con T-002C: quien fue dado de baja del staff
+ * ahora puede recuperar su clave y volver a entrar por su cuenta.
+ */
+function CuentaSinClub() {
+  return (
+    <div className="mx-auto max-w-md py-10 text-center">
+      <div className="mx-auto flex size-12 items-center justify-center rounded-2xl bg-secondary">
+        <Users className="size-6 text-muted-foreground" aria-hidden />
+      </div>
+      <h1 className="mt-5 text-xl font-extrabold tracking-tight">
+        Tu cuenta no está en ningún club
+      </h1>
+      <p className="mt-2.5 text-sm leading-relaxed text-muted-foreground">
+        Tu usuario existe y la contraseña funciona, pero no está asociado al
+        staff de ningún club, así que todavía no hay nada para ver acá.
+      </p>
+      <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+        Si tendrías que tener acceso, pedile al administrador de tu club que
+        te agregue al staff. Si creés que es un error, escribinos a{" "}
+        <a
+          href={`mailto:${SOPORTE_EMAIL}`}
+          className="font-semibold text-primary hover:underline"
+        >
+          {SOPORTE_EMAIL}
+        </a>
+        .
+      </p>
+    </div>
+  );
+}
+
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const { perfil, sesionReal } = usePerfil();
+  const { perfil, sesionReal, sinMembresia } = usePerfil();
   const nav = navPara(perfil);
 
   // La landing pública (/), el login y la página de privacidad viven
@@ -328,10 +370,16 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="flex flex-col gap-2 px-4 py-4">
           <SelectorPerfil />
           <BotonSesion />
-          <p className="text-[11px] leading-snug text-muted-foreground">
-            Demo · la gestión del club (Club) guarda en la base real; los
-            paneles siguen con datos de ejemplo
-          </p>
+          {/* Solo en la demo pública. Con sesión real los paneles traen
+              datos REALES (useDatos deja el mock cuando no hay membresía),
+              así que mostrarle esto a un profe con su plantel cargado le
+              dice que desconfíe de algo que sí es verdadero. */}
+          {!sesionReal && (
+            <p className="text-[11px] leading-snug text-muted-foreground">
+              Demo · la gestión del club (Club) guarda en la base real; los
+              paneles siguen con datos de ejemplo
+            </p>
+          )}
         </div>
       </aside>
 
@@ -370,7 +418,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         </header>
 
         <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-28 pt-5 md:px-8 md:pb-12 md:pt-8">
-          {children}
+          {sinMembresia ? <CuentaSinClub /> : children}
         </main>
       </div>
 
