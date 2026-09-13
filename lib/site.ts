@@ -13,3 +13,16 @@ export const SITE_URL =
 
 /** Host sin esquema, para imprimir en documentos legales. */
 export const SITE_HOST = SITE_URL.replace(/^https?:\/\//, "").replace(/\/$/, "");
+
+/**
+ * Casilla de soporte que se le muestra al staff de un club cuando algo se
+ * rechaza y la explicación no puede darse en pantalla (ver el rechazo por
+ * "una cuenta = un club" en app/club/staff/actions.ts).
+ *
+ * ⚠️ REQUIERE QUE LA CASILLA EXISTA Y RECIBA. El dominio se delegó a Vercel
+ * para servir el sitio y firmar el correo SALIENTE de Resend; el MX del
+ * dominio raíz está vacío, así que hasta que se configure un buzón
+ * (Workspace, Zoho, o un reenvío) cualquier mail a esta dirección rebota.
+ * Un contacto que rebota es peor que no dar contacto.
+ */
+export const SOPORTE_EMAIL = "info@talentodeportivo.com.ar";

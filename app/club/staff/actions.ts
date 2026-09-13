@@ -4,6 +4,7 @@ import { crearClienteServer } from "@/lib/supabase/server";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { esCuentaDemo, MOTIVO_DEMO } from "@/lib/demo";
 import type { RolMembresia } from "@/lib/tipos-db";
+import { SOPORTE_EMAIL } from "@/lib/site";
 
 /**
  * Server actions del circuito de staff (pasos 4-5 de docs/OPERACION.md).
@@ -159,7 +160,7 @@ export async function invitarMiembro(input: {
           : // Mensaje GENÉRICO: decir "ya pertenece a otro club" le confirmaría
             // al admin que ese email es staff de otra institución. No es asunto
             // suyo y es exactamente el tipo de filtración que cierra T-002.
-            "No se puede incorporar ese email. Si creés que es un error, escribinos.",
+            `No se puede incorporar ese email. Si creés que es un error, escribinos a ${SOPORTE_EMAIL}.`,
     };
   }
 
