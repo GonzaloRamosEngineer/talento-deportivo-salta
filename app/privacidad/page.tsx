@@ -54,11 +54,21 @@ export default function PaginaPrivacidad() {
         <section>
           <h2>Quiénes somos</h2>
           <p>
-            Talento Deportivo Salta es una plataforma desarrollada e impulsada
-            por la <strong>Fundación Evolución Antoniana</strong> para que los
-            clubes formadores lleven un registro serio del desarrollo de sus
-            deportistas. La Fundación y el club en el que está cargado cada
-            deportista son responsables del tratamiento de esos datos.
+            Talento Deportivo Salta es una plataforma desarrollada por{" "}
+            <strong>Digital Match Global</strong>, que la provee y mantiene, e
+            implementada en alianza con la{" "}
+            <strong>Fundación Evolución Antoniana</strong> para que los clubes
+            formadores lleven un registro serio del desarrollo de sus
+            deportistas.
+          </p>
+          <p>
+            La Fundación y el club en el que está cargado cada deportista son
+            los <strong>responsables del tratamiento</strong> de esos datos:
+            deciden qué se registra y para qué. Digital Match Global actúa como{" "}
+            <strong>encargado del tratamiento</strong>, es decir, provee la
+            infraestructura técnica y solo accede a los datos para operar y dar
+            soporte a la plataforma, siguiendo instrucciones de los
+            responsables.
           </p>
         </section>
 
