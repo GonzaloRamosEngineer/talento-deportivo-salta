@@ -377,7 +377,7 @@ export default function StaffPage() {
         bullets={[
           "No hay mails automáticos: al invitar se genera un LINK de acceso que le compartís por WhatsApp; con ese link la persona crea su clave y entra.",
           "El profe solo ve y carga sus categorías asignadas; la comisión directiva ve todo pero no edita.",
-          "Si alguien pierde el acceso, generale un link nuevo desde su fila (el anterior deja de servir).",
+          "Si todavía no entró y perdió el link, generale uno nuevo desde su fila. Si ya activó su cuenta, la clave la recupera esa persona sola desde la pantalla de ingreso: por seguridad, nadie más puede generarle un acceso.",
         ]}
       />
 
@@ -567,12 +567,18 @@ export default function StaffPage() {
                       {m.email ? ` · ${m.email}` : ""}
                     </p>
                   </div>
-                  {m.email && (
+                  {/* T-002: solo para cuentas que NUNCA se usaron. Con la
+                      cuenta ya activada el server se niega a emitir token, así
+                      que mostrar el botón sería ofrecer algo que va a fallar.
+                      Mientras `estadoStaff()` carga, `pendiente` es false y el
+                      botón no aparece: preferimos que llegue un instante tarde
+                      a prometer algo que no se puede cumplir. */}
+                  {m.email && pendiente && (
                     <button
                       onClick={() => void nuevoLink(m)}
                       disabled={ocupado === m.id}
                       className="flex size-9 items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground disabled:opacity-50"
-                      title="Nuevo link de acceso (si perdió el link o la contraseña)"
+                      title="Generar un link de acceso nuevo (el anterior deja de servir)"
                       aria-label={`Nuevo link de acceso para ${m.nombre}`}
                     >
                       {ocupado === m.id ? (

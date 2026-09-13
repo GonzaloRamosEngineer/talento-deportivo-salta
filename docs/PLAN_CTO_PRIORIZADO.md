@@ -39,20 +39,15 @@ Las estimaciones suponen una persona senior que conoce el repositorio. No incluy
 
 ## Próxima tarea recomendada
 
-> **Cerradas: T-001 (2026-08-30), y T-004 + T-002B + T-002C (2026-09-13).
-> Sigue T-002, la última P0, y ahora se puede cerrar sin dejar a nadie
-> afuera.**  
-> T-002 elimina el recovery administrado —el circuito por el que un admin
-> recibe un token capaz de entrar como otra persona—. No se podía tocar antes
-> por dos razones, y las dos están resueltas: T-002B definió qué hacer cuando
-> el email pertenece a otro club (rechazar, sin emitir token) y T-002C dio la
-> salida para quien pierde la clave (autoservicio por mail, verificado de
-> punta a punta).
+> **P0 COMPLETO salvo T-003. Cerradas: T-001 (2026-08-30) y T-002, T-002B,
+> T-002C y T-004 (2026-09-13). Sigue T-003: separar Supabase demo y
+> producción.**  
+> Ya no hay ninguna vía por la que un admin obtenga el token de otra persona,
+> y quien pierde la clave la recupera solo. Lo que queda de P0 es que la
+> vitrina pública y los datos reales compartan proyecto de Supabase.
 >
-> Después de T-002: **T-003 → T-007 (arnés de tests) → T-005 + T-006.**
->
-> Orden acordado el 2026-09-13 para lo que queda del Gate A:
-> **T-002B → T-002 + T-002C → T-003 → T-007 (arnés de tests) → T-005 + T-006.**
+> Orden para el resto del Gate A:
+> **T-003 → T-007 (arnés de tests) → T-005 + T-006.**
 > T-007 se adelanta a propósito: T-005 y T-006 son cambios de RLS y
 > constraints, y escribirlos sin pruebas negativas es verificar a mano lo que
 > debería verificar el CI.
@@ -198,7 +193,7 @@ incorrectos". Nadie se dio cuenta porque nada lo monitorea. Hasta T-003,
 **todo cambio de backend hay que desplegarlo el mismo día**, y conviene
 un smoke del acceso demo después de cada deploy.
 
-### [ ] T-002 · Corregir invitaciones y recuperación de cuentas
+### [x] T-002 · Corregir invitaciones y recuperación de cuentas
 
 - **Prioridad:** P0.
 - **Esfuerzo:** 1–2 días.
@@ -254,11 +249,25 @@ Distinción que hay que respetar en las tres:
 - **Cuenta ya activada**: nunca reemitir un token al admin; recuperación
   únicamente por email del titular.
 
-Gotcha de implementación: `generateLink({ type: 'invite' })` **rechaza emails
-existentes** — es exactamente por eso que el código actual cae en la rama
-recovery. Reemitir onboarding a una cuenta pendiente requiere
-`type: 'magiclink'` gateado por `last_sign_in_at === null`, o borrar y recrear el
-usuario de Auth. No sale del `invite` a secas.
+Gotcha de implementación — **CORREGIDO el 2026-09-13 contra el backend real**.
+El documento afirmaba que `generateLink({type:'invite'})` rechaza emails
+existentes. Es cierto **solo para cuentas ACTIVADAS**:
+
+| Tipo | Cuenta pendiente | Cuenta activada |
+|---|---|---|
+| `invite` | emite token | se niega |
+| `magiclink` | emite token | **emite token** ⚠️ |
+| `recovery` | emite token | **emite token** ⚠️ |
+
+Lo importante no es el matiz: es que **la API no protege nada**. `magiclink` y
+`recovery` entregan tokens usables de cuentas activadas sin error ni
+advertencia. Lo único que impide entregarle a un admin la llave de otra
+persona es el chequeo explícito de estado en `lib/acceso.ts`. Quien lo quite
+pensando que "magiclink es inofensivo" reabre este agujero.
+
+Verificable con `scripts/verificar-t002.mjs` (8 asserts, auto-limpia). Prueba
+el comportamiento del BACKEND, que es lo que puede cambiar sin avisar, no
+solo el código propio.
 
 Criterios de aceptación:
 
@@ -275,11 +284,27 @@ Criterios de aceptación:
   sin confirmar pertenencia.
 - Hay rate limiting y auditoría de quién intentó invitar a quién.
 
+Cómo se resolvió (2026-09-13):
+
+- **`lib/acceso.ts`** centraliza la emisión. La regla depende del ESTADO de
+  la cuenta, no de si el email existe: no existe → `invite`; existe y nunca
+  entró → `magiclink`; **existe y ya entró → nada**.
+- Las tres vías (`invitarMiembro`, `regenerarLink`, `generarLinkAcceso` de
+  plataforma) pasan por ahí. Antes cada una repetía la misma lógica, con el
+  riesgo de que se corrigiera en una y no en las otras.
+- `/auth/confirmar` acepta `magiclink` además de `invite` y `recovery`.
+- Se eliminaron los `buscarUsuarioPorEmail` y `linkDeAcceso` duplicados: su
+  única razón de existir era la rama recovery.
+- **UI**: `/club/staff` ofrece "nuevo link" solo en las filas de quien no
+  entró todavía. Mostrarlo para el resto sería ofrecer algo que el server va
+  a rechazar. El bullet de ayuda que decía "si alguien pierde el acceso,
+  generale un link nuevo" pasó a explicar la regla real.
+
 Evidencia:
 
-- PR/commit:
-- Prueba ejecutada:
-- Fecha de cierre:
+- Commits: `dd3eef1` (regla y tres vías) + el de pantallas y documentación.
+- Prueba ejecutada: `scripts/verificar-t002.mjs` → 8/8 contra el backend real.
+- Fecha de cierre: 2026-09-13.
 
 ### [x] T-002B · Definir e imponer "una cuenta = un club" para el MVP
 
@@ -475,9 +500,9 @@ orígenes sin cookie compartida, y el circuito cerró igual hasta
 `/cuenta/clave` con la sesión iniciada. El flujo es independiente del
 dispositivo. **No forzar `flowType: 'implicit'`: no hace falta.**
 
-El segundo criterio ("ningún admin obtiene tokens de otra persona") **no lo
-cierra esta tarea**: el recovery administrado sigue vivo hasta T-002. Lo que
-T-002C aporta es la salida que hacía falta para poder eliminarlo.
+El segundo criterio ("ningún admin obtiene tokens de otra persona") lo cerró
+**T-002**, el mismo día. Lo que T-002C aportó fue la salida que hacía falta
+para poder eliminar el recovery administrado sin dejar gente afuera.
 
 Pendiente relacionado **RESUELTO el 2026-09-13**: la app dejó de vivir en un
 dominio del proveedor. Está en `talentodeportivo.com.ar`, dominio propio del
@@ -895,14 +920,14 @@ T-002C para no dejar a nadie sin recuperación):
 | Orden | Tarea | Esfuerzo | Impacto |
 |---:|---|---:|---|
 | 1 | T-001 · Deshabilitar plataforma y admin demo privilegiados | 30–90 min | Crítico |
-| 2 | T-002 · Eliminar el recovery entregado a administradores | ½–1 día | Crítico |
+| 2 | ~~T-002 · Eliminar el recovery entregado a administradores~~ **HECHA** | ½–1 día | Crítico |
 | 3 | ~~T-002B · Imponer "una cuenta = un club"~~ **HECHA** | ½ día | Muy alto |
 | 4 | ~~T-002C · Recuperación autoservicio con Resend~~ **HECHA** | ½–1 día | Muy alto |
 | 5 | ~~T-004 · Next.js y dependencias~~ **HECHA (16.3.5)** | ½ día | Muy alto |
 | 6 | T-003 · Separar demo y producción | 1–2 días | Crítico antes del piloto |
 
 - [x] T-001 · Contención demo. *(código 2026-08-02; en producción 2026-08-30)*
-- [ ] T-002 · Recuperación e invitaciones.
+- [x] T-002 · Recuperación e invitaciones. *(2026-09-13)*
 - [x] T-002B · Una cuenta = un club. *(2026-09-13, en producción)*
 - [x] T-002C · Autoservicio de clave (Resend). *(2026-09-13)*
 - [x] T-004 · Dependencias. *(2026-09-13, 0 vulnerabilidades)*
@@ -986,3 +1011,5 @@ Requiere evidencia de retención, calidad metodológica, costos operativos reale
 | 2026-09-13 | T-002B | **CERRADA y en producción.** Constraint `unique (auth_user_id)` aplicada por `supabase db push`. Secuencia usada: backup verificado por conteo de filas → código desplegado ANTES que la migración (cierra la ventana de carrera) → pre-flight repetido → push → verificación. Datos intactos: 17/17/308/17.082, idénticos al backup. Habilita T-002: ya hay respuesta definida para "el email pertenece a otro club" sin emitir ningún token | Gastón + agente | migración `20260913120000`; `scripts/preflight-una-cuenta-un-club.mjs`; validación local con savepoints |
 | 2026-09-13 | T-002C | **CERRADA.** Autoservicio andando de punta a punta sobre el dominio propio: pantalla en /login, mail en español con el diseño del producto y enlace a /auth/confirmar en nuestro dominio. Verificado que `verifyOtp` resuelve el token `pkce_` SIN el code verifier, así que la recuperación no está atada al mismo navegador ni dispositivo. Frente de correo completo: Resend + SMTP propio + casilla info@ | Gastón + agente | prueba cruzada localhost→producción; mail a bandeja de entrada |
 | 2026-09-13 | UX/Auth | Una sesión real sin membresía caía en el fallback de "profesor" y veía el MOCK: club y deportistas inventados, con la app aparentemente funcional. No era fuga (datos ficticios, RLS intacto) pero en una plataforma sobre datos de chicos se lee como "se perdieron los datos del club". El caso dejó de ser teórico con T-002C: quien fue dado de baja ahora vuelve a entrar por su cuenta. Se agregó `sinMembresia` al contexto (solo se afirma si la consulta salió bien) con pantalla, sin rol y sin navegación. Aparte: el cartel "los paneles siguen con datos de ejemplo" NO estaba condicionado y se lo comían los usuarios reales — el error inverso y más caro. **Queda abierto en T-006**: el perfil por defecto sigue siendo un rol y debería ser un estado | Gastón + agente | commits `929775b`, `6e053ed` |
+| 2026-09-13 | T-002 | **CERRADA.** Ningún camino emite tokens de cuentas activadas. La regla se centralizó en `lib/acceso.ts` y depende del estado de la cuenta, no de la existencia del email. **El gotcha documentado era incorrecto**: `invite` solo rechaza cuentas ACTIVADAS, y —lo que importa— `magiclink` y `recovery` entregan tokens de cuentas activadas sin protestar. La API no protege nada; la seguridad la pone el chequeo explícito | Gastón + agente | `scripts/verificar-t002.mjs` 8/8 contra el backend real |
+| 2026-09-13 | Documentación | Auditoría completa. README decía "prototipo visual con datos mock, sin Supabase" con el MVP en producción, y atribuía el producto a la Fundación; CONTEXT.md igual; CLAUDE.md y OPERACION.md describían el recovery administrado como vigente; PERFILES.md no contemplaba la sesión sin club | Gastón + agente | este commit |

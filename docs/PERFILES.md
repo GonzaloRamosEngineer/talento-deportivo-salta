@@ -6,6 +6,25 @@ la refleja vía `permisosDe()` en `components/perfil-context.tsx`
 policies de RLS de `docs/01_ola1_mvp.sql` (ver propuesta v6 al final
 de ese archivo para el alcance por categoría del profesor).
 
+## El quinto estado: sin club (2026-09-13)
+
+Antes de la matriz, un estado que **no es un perfil**: una sesión de Auth
+válida que no tiene membresía en ningún club ni el flag de plataforma. Pasa,
+por ejemplo, con alguien a quien dieron de baja del staff y que ahora puede
+recuperar su clave y volver a entrar por su cuenta (T-002C).
+
+No ve **nada**: ni datos reales ni el mock. `sinMembresia` en
+`perfil-context` hace que la app muestre una pantalla que explica la
+situación, sin rol y sin navegación. Antes caía en el fallback de
+"profesor" y veía datos de ejemplo, lo que en una plataforma sobre chicos se
+lee como que el club perdió su información.
+
+⚠️ El contexto **sigue resolviendo `perfil = "profesor"` por debajo**: es un
+fallback, no algo que haya dicho la base. No da acceso a nada (el alcance lo
+gobierna el RLS), pero cualquier pantalla nueva que lea `perfil` sin mirar
+antes `sinMembresia` va a tratar esa sesión como profesora. Corregirlo está
+anotado en T-006 del plan CTO.
+
 ## Los 4 perfiles
 
 | Capacidad | Profesor/a (`entrenador`) | Admin del club (`admin_club`) | Comisión directiva (`comision_directiva`) | Plataforma (super admin) |

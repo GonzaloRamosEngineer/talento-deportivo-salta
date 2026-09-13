@@ -13,10 +13,21 @@ SERIE HISTÓRICA de mediciones de cada atributo, que permite graficar una
 curva de evolución por deportista a lo largo del tiempo. Todo el diseño de
 datos gira en torno a esto.
 
-## Impulsores del proyecto
-- Fundación Evolución Antoniana (ONG, Salta — deporte, educación, tecnología)
-- Digital Match Global (desarrollo, stack Next.js + Supabase + Vercel)
-- Referente: ingeniero en sistemas, gestor deportivo CONMEBOL
+## Quién es quién (actualizado 2026-09-13)
+- **Digital Match Global**: titular del producto y de su propiedad
+  intelectual; desarrollo y mantenimiento (Next.js + Supabase + Vercel).
+- **Fundación Evolución Antoniana** (ONG, Salta — deporte, educación,
+  tecnología): socio institucional y de impacto, con licencia de uso en
+  condiciones preferenciales para Salta. No es codesarrolladora.
+- Referente: ingeniero en sistemas, gestor deportivo CONMEBOL.
+
+Distinto y compatible con lo anterior: sobre los datos de los deportistas, la
+**Fundación y el club son responsables del tratamiento** y **DMG es
+encargado** (Ley 25.326). Ver `/privacidad` en la app.
+
+⚠️ El Convenio Marco que instrumenta esto sigue en BORRADOR, sin firmar y
+condicionado a constituir la entidad argentina de DMG. Hasta entonces, lo de
+arriba es la intención acordada, no un hecho oponible.
 
 ## Visión a escala (no construir todavía, pero tenerlo presente en el diseño)
 Cuando varios clubes de una provincia cargan datos, la información agregada

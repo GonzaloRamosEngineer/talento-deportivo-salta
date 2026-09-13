@@ -114,12 +114,24 @@ categorías (RLS v6, no es configurable por UI).
   entró" para los pendientes. La invitación es **por LINK, no por
   mail**: el server genera el link de acceso
   (`auth.admin.generateLink`, gateado a que quien pide sea admin de su
-  club) y el admin lo comparte por WhatsApp — evita el límite del SMTP
-  default de Supabase (~2 mails/hora) y calza con cómo se comunica un
-  club. El link (`/auth/confirmar?token_hash=…`, vence a las 24 h,
-  regenerable desde la lista) valida el token, deja la sesión y lleva
-  a `/cuenta/clave` a crear la contraseña. Cuando haya SMTP propio
-  (Resend), el envío por mail es un paso más, no un cambio de modelo.
+  club) y el admin lo comparte por WhatsApp — calza con cómo se comunica
+  un club de verdad. El link (`/auth/confirmar?token_hash=…`, vence a las
+  24 h) valida el token, deja la sesión y lleva a `/cuenta/clave`.
+
+  **Desde T-002 (2026-09-13), reemitir el link depende del estado de la
+  cuenta**, no de la voluntad del admin:
+
+  - **Nunca entró** → se puede regenerar desde su fila. El botón aparece
+    solo en esas filas.
+  - **Ya activó su cuenta** → no se emite nada. Esa persona entra con su
+    clave o la recupera sola con "¿Olvidaste tu contraseña?" en `/login`.
+    Antes, acá el server le devolvía al admin un link de recuperación con
+    el que podía entrar como esa persona.
+
+  El SMTP propio (Resend sobre `talentodeportivo.com.ar`) **ya está
+  activo**, con 30 mails/hora: es lo que hace funcionar la recuperación
+  autoservicio. La invitación sigue siendo por link a propósito, como
+  decisión de producto, no por falta de correo.
 
 ### 6 · Deportistas — LOS CARGA EL PROFE (de sus categorías) O EL ADMIN
 

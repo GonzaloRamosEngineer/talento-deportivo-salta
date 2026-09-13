@@ -35,7 +35,11 @@ const publico = createClient(
 const sello = Date.now();
 const creados = [];
 let ok = 0, fallo = 0;
-const assert = (cond, txt) => { console.log(`  ${cond ? "✅" : "❌"} ${txt}`); cond ? ok++ : fallo++; };
+const assert = (cond, txt) => {
+  console.log(`  ${cond ? "✅" : "❌"} ${txt}`);
+  if (cond) ok++;
+  else fallo++;
+};
 const token = (r) => Boolean(r.data?.properties?.hashed_token);
 
 try {

@@ -316,12 +316,35 @@ PISAN el plan de `negocio/10` donde difieran:
   con `location.assign`, no `router.push` — la cookie la escribió el
   server y `PerfilProvider` necesita remontarse o queda con el perfil
   anterior.
+- **T-002, T-002B, T-002C y T-004 cerradas el 2026-09-13.** Lo que cambió,
+  y que hay que respetar al tocar acceso:
+  - **`lib/acceso.ts` es la ÚNICA fuente de emisión de accesos.** La regla
+    depende del ESTADO de la cuenta, no de si el email existe: no existe →
+    `invite`; existe y nunca entró → `magiclink`; **existe y ya entró →
+    NADA**. Antes las tres vías caían en un `recovery` que se le devolvía al
+    admin, con el que podía tomar la cuenta de esa persona. Verificado contra
+    el backend: `magiclink` y `recovery` entregan tokens de cuentas activadas
+    sin error, o sea que **la API no protege nada** — lo único que lo impide
+    es ese chequeo. `scripts/verificar-t002.mjs` lo demuestra (8 asserts).
+  - **Recuperación de clave = autoservicio** (`pedirRecuperacion` en
+    `app/login/actions.ts`). Nunca revela si el email existe. Ningún admin
+    puede generar accesos de cuentas activadas: la UI de `/club/staff` solo
+    ofrece el botón para quien todavía no entró.
+  - **`unique (auth_user_id)` en `membresia`**: una cuenta = un club
+    (decisión de MVP, reversible; la reversión está en la migración).
+  - **`lib/site.ts` es la fuente de verdad del dominio** (`SITE_URL`,
+    `SITE_HOST`, `SOPORTE_EMAIL`). La app vive en `talentodeportivo.com.ar`.
+    No hardcodear el host en ningún lado.
+  - **Las plantillas de email están en `docs/PLANTILLAS_EMAIL.md`** (viven en
+    el panel de Supabase; ese doc es la copia de referencia). Deben apuntar a
+    `{{ .SiteURL }}/auth/confirmar`, NUNCA a `{{ .ConfirmationURL }}`: un
+    enlace al dominio de Supabase con un remitente propio es la firma de
+    phishing y lo manda a spam.
+  - **`sinMembresia`** en `perfil-context`: una sesión real sin club ya no
+    cae en el fallback de "profesor" con el mock; la UI lo dice.
 - Pendientes vivos: revisión del PF sobre el contenido del Módulo B y
   sobre umbrales/nota/presentación Moore del Módulo D. **Demo y
-  producción siguen en el MISMO proyecto Supabase (T-003) y el recovery
-  administrado sigue vivo para cuentas ya activadas (T-002): ver el plan
-  antes de tocar `app/club/staff/actions.ts` o
-  `app/plataforma/actions.ts`.**
+  producción siguen en el MISMO proyecto Supabase (T-003).**
 
 El observatorio también es real (2026-07-12, migración
 `20260712231049_observatorio_agregados.sql` APLICADA): la ÚNICA
