@@ -40,3 +40,20 @@ alter table membresia
 
 comment on constraint membresia_auth_user_id_key on membresia is
   'T-002B: una cuenta = un club (decisión de MVP, reversible). Los lookups de membresía de la app resuelven sin filtrar por club y con maybeSingle(); dos filas los rompen en silencio. Ver docs/PLAN_CTO_PRIORIZADO.md.';
+
+-- ------------------------------------------------------------
+-- REVERSIÓN
+--
+-- Esta decisión es de MVP y está pensada para levantarse. Si el piloto pide
+-- que una persona trabaje en dos clubes, o si algo sale mal al aplicarla:
+--
+--   alter table membresia drop constraint membresia_auth_user_id_key;
+--
+-- Es instantáneo y no toca datos: `unique (club_id, auth_user_id)` sigue
+-- ahí y vuelve a ser la única regla, o sea el estado exacto de antes.
+--
+-- Lo que NO se revierte solo es la aplicación: los tres lookups siguen
+-- resolviendo la membresía sin filtrar por club, así que con dos filas
+-- vuelven a romperse en silencio. Antes de levantar la constraint hay que
+-- implementar el selector de club + membresía activa.
+-- ------------------------------------------------------------
