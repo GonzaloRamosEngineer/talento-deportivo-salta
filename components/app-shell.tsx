@@ -201,6 +201,27 @@ function esActiva(pathname: string, href: string) {
 function SelectorPerfil({ compacto = false }: { compacto?: boolean }) {
   const { perfil, setPerfil, sesionReal, sinMembresia, cargandoSesion } = usePerfil();
   const [abierto, setAbierto] = useState(false);
+  const router = useRouter();
+  const pathname = usePathname();
+
+  /**
+   * Cambiar de perfil en la demo también tiene que MOVERTE si la pantalla
+   * donde estás no le pertenece al perfil nuevo.
+   *
+   * Antes solo cambiaba el estado: si estabas en /observatorio y elegías
+   * "Profesor/a", te quedabas ahí mirando "esta vista pertenece al perfil de
+   * plataforma", con un botón para volver. El selector prometía recorrer la
+   * demo y en la práctica era un callejón sin salida — y le pasa a cualquier
+   * ruta exclusiva (/plataforma/*, /club), no solo al observatorio.
+   */
+  const cambiarPerfil = (nuevo: Perfil) => {
+    setPerfil(nuevo);
+    setAbierto(false);
+    const alcanzable = navPara(nuevo).some((n) => esActiva(pathname, n.href));
+    // /panel existe para los cuatro perfiles y cada uno lo resuelve a su
+    // manera, así que es el aterrizaje seguro.
+    if (!alcanzable) router.push("/panel");
+  };
   const actual = PERFILES.find((p) => p.id === perfil)!;
 
   // Hasta saber si la sesión es real no se muestra nada. El provider arranca
@@ -268,10 +289,7 @@ function SelectorPerfil({ compacto = false }: { compacto?: boolean }) {
           {PERFILES.map((p) => (
             <button
               key={p.id}
-              onClick={() => {
-                setPerfil(p.id);
-                setAbierto(false);
-              }}
+              onClick={() => cambiarPerfil(p.id)}
               className={cn(
                 "flex w-full items-start gap-2 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-muted",
                 p.id === perfil && "bg-secondary/60",
