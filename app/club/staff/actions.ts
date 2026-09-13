@@ -4,6 +4,7 @@ import { crearClienteServer } from "@/lib/supabase/server";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { esCuentaDemo, MOTIVO_DEMO } from "@/lib/demo";
 import type { RolMembresia } from "@/lib/tipos-db";
+import { SOPORTE_EMAIL } from "@/lib/site";
 
 /**
  * Server actions del circuito de staff (pasos 4-5 de docs/OPERACION.md).
@@ -37,11 +38,18 @@ async function adminActual() {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) return null;
-  const { data: m } = await supabase
+  // Sin filtrar por club: desde T-002B la base impone
+  // `unique (auth_user_id)`, así que no puede haber dos filas.
+  const { data: m, error: eM } = await supabase
     .from("membresia")
     .select("id, club_id, rol")
     .eq("auth_user_id", user.id)
     .maybeSingle();
+  if (eM) {
+    // Devolver null acá bloquea TODAS las server actions del admin. Que
+    // quede en el log del server y no como un "no sos admin" inexplicable.
+    console.error("[adminActual] no se pudo leer la membresía:", eM.message);
+  }
   if (!m || m.rol !== "admin_club") return null;
   return {
     supabase,
@@ -122,6 +130,40 @@ export async function invitarMiembro(input: {
     tipoLink = "recovery";
   }
 
+  // 1.5) T-002B · una cuenta = un club.
+  //
+  // Se consulta con el cliente ADMIN a propósito: el RLS del admin de este
+  // club no ve membresías de otros clubes, así que desde la sesión esta
+  // pregunta es imposible de responder.
+  //
+  // Por qué no alcanza con dejar que reviente la constraint: las dos
+  // violaciones son `23505`, y el código de la fila 2) solo mira el código.
+  // Verificado en el Supabase local (2026-09-13): el mismo club reporta
+  // `membresia_club_id_auth_user_id_key` y otro club reporta
+  // `membresia_auth_user_id_key`, así que el NOMBRE sí los distingue — pero
+  // eso depende del orden en que Postgres evalúa los índices, que es un
+  // detalle de implementación, y obligaría a parsear el mensaje de error.
+  // El chequeo explícito no depende de nada de eso.
+  const { data: membresiasPrevias } = await admin
+    .from("membresia")
+    .select("club_id")
+    .eq("auth_user_id", authUserId);
+
+  const yaEnAlgunClub = membresiasPrevias?.[0];
+  if (yaEnAlgunClub) {
+    if (usuarioCreado) await admin.auth.admin.deleteUser(authUserId);
+    return {
+      ok: false,
+      error:
+        yaEnAlgunClub.club_id === ctx.clubId
+          ? "Esa persona ya es parte del staff del club."
+          : // Mensaje GENÉRICO: decir "ya pertenece a otro club" le confirmaría
+            // al admin que ese email es staff de otra institución. No es asunto
+            // suyo y es exactamente el tipo de filtración que cierra T-002.
+            `No se puede incorporar ese email. Si creés que es un error, escribinos a ${SOPORTE_EMAIL}.`,
+    };
+  }
+
   // 2) Membresía con el cliente de sesión: RLS (es_admin_de) manda.
   const { data: memb, error: eMemb } = await ctx.supabase
     .from("membresia")
@@ -141,8 +183,11 @@ export async function invitarMiembro(input: {
     return {
       ok: false,
       error:
+        // Backstop: con el chequeo de 1.5 esto solo se alcanza en una
+        // carrera entre dos invitaciones simultáneas. Genérico a propósito:
+        // acá ya no se puede saber cuál de las dos constraints falló.
         eMemb?.code === "23505"
-          ? "Esa persona ya es parte del staff del club."
+          ? "No se pudo incorporar a esa persona: ya tiene una membresía."
           : `No se pudo crear la membresía: ${eMemb?.message ?? "error desconocido"}`,
     };
   }

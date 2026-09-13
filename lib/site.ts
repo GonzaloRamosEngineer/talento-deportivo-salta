@@ -13,3 +13,15 @@ export const SITE_URL =
 
 /** Host sin esquema, para imprimir en documentos legales. */
 export const SITE_HOST = SITE_URL.replace(/^https?:\/\//, "").replace(/\/$/, "");
+
+/**
+ * Casilla de soporte que se le muestra al staff de un club cuando algo se
+ * rechaza y la explicación no puede darse en pantalla (ver el rechazo por
+ * "una cuenta = un club" en app/club/staff/actions.ts).
+ *
+ * Casilla REAL y verificada el 2026-09-13: Spacemail sobre el dominio, con
+ * MX `mx1/mx2.spacemail.com` en la raíz. Probada con un envío externo que
+ * llegó. Antes de cambiar esta dirección, confirmar que la nueva reciba: un
+ * contacto que rebota es peor que no dar contacto.
+ */
+export const SOPORTE_EMAIL = "info@talentodeportivo.com.ar";

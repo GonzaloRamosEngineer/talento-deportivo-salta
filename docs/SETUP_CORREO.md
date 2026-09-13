@@ -34,6 +34,39 @@ durante semanas se dio por bloqueada una tarea que no lo estaba.
 - **`talentodeportivo.evolucionantoniana.com` NO se borra de Resend**: puede estar en uso
   por el sitio de la Fundación, y su reputación ya está construida.
 
+### Correo ENTRANTE del producto — resuelto el 2026-09-13
+
+Este documento trataba solo el envío. El dominio ahora también **recibe**:
+
+| Qué | Valor |
+|---|---|
+| Proveedor | Spacemail (Spaceship), 1 casilla, 5 GB |
+| Casilla real | **`info@talentodeportivo.com.ar`** |
+| MX | `mx1.spacemail.com` / `mx2.spacemail.com`, prioridad 0 |
+| Alias | `soporte@`, `ayuda@`, `hola@`, `contacto@`, `no-reply@`, `postmaster@`, `abuse@` |
+
+Es la dirección que la app le muestra al staff cuando una acción se rechaza y
+la explicación no puede darse en pantalla (`SOPORTE_EMAIL` en `lib/site.ts`).
+**Verificada con un envío externo real que llegó a la bandeja.**
+
+El alias `no-reply@` existe a propósito: es el remitente de Resend, y la gente
+le responde a los mails automáticos. Sin el alias esas respuestas se perderían
+en un rebote; con él caen en `info@`.
+
+Los dos emisores conviven sin pisarse: **Spacemail firma desde la raíz**
+(SPF + DKIM `spacemail._domainkey`) y **Resend desde `send.`** (SPF + DKIM
+`resend._domainkey`), con un único `_dmarc` cubriendo a los dos. Al tocar la
+zona hay que respetar eso: **un solo TXT que empiece con `v=spf1` por nombre,
+y un solo `_dmarc` en todo el dominio.**
+
+Gotcha registrado: el DKIM de Spacemail mide **408 caracteres** y un string
+TXT de DNS admite 255, así que va partido en varios. Vercel lo hace solo si
+se pega entero; verificar siempre con
+`dig +short TXT spacemail._domainkey.talentodeportivo.com.ar` que vuelva
+íntegro.
+
+---
+
 Todo lo que sigue queda como registro de cómo se pidió y por qué. Las razones técnicas
 (subdominio aislado, no tocar el Workspace del dominio raíz) siguen siendo correctas para
 `evolucionantoniana.com`; no aplican a `talentodeportivo.com.ar`, que es un dominio nuevo
