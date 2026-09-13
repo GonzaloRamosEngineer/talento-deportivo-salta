@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SITE_HOST } from "@/lib/site";
 import Link from "next/link";
 import { ArrowLeft, Loader2, Printer, ShieldCheck } from "lucide-react";
 import { LogoTalento } from "@/components/logo";
@@ -231,7 +232,7 @@ function Consentimiento({
               los datos, y <strong className="text-foreground">revocar</strong>{" "}
               este consentimiento en cualquier momento, comunicándolo al club. El
               detalle está en la política de privacidad
-              (talentodeportivosalta.vercel.app/privacidad).
+              ({SITE_HOST}/privacidad).
             </p>
           </div>
         </section>

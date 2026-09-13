@@ -3,6 +3,7 @@ import { Caveat, Manrope } from "next/font/google";
 import "./globals.css";
 import { AppShell } from "@/components/app-shell";
 import { PerfilProvider } from "@/components/perfil-context";
+import { SITE_URL } from "@/lib/site";
 
 const manrope = Manrope({
   variable: "--font-sans",
@@ -17,10 +18,6 @@ const caveat = Caveat({
   weight: ["400", "700"],
 });
 
-// URL canónica para que og:image y demás metadata salgan absolutas
-// (WhatsApp y las redes lo exigen). Sobreescribible por entorno.
-const SITE_URL =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "https://talentodeportivosalta.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
