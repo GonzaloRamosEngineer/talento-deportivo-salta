@@ -19,7 +19,7 @@ import {
 import { crearClienteBrowser } from "@/lib/supabase/client";
 import { cn } from "@/lib/utils";
 import { LogoTalento } from "@/components/logo";
-import { entrarComoDemo } from "./actions";
+import { entrarComoDemo, pedirRecuperacion } from "./actions";
 
 /**
  * Login real (Supabase Auth) con el lenguaje visual del login de
@@ -73,6 +73,9 @@ export default function LoginPage() {
   const [estado, setEstado] = useState<Estado>("idle");
   const [error, setError] = useState("");
   const [demoActivo, setDemoActivo] = useState<string | null>(null);
+  // T-002C: recuperar la clave sin pasar por el admin del club.
+  const [modo, setModo] = useState<"login" | "recuperar" | "enviado">("login");
+  const [enviando, setEnviando] = useState(false);
 
   // Aviso de /auth/confirmar cuando un link de acceso venció
   // (diferido a un tick para no setear estado sincrónico en el effect)
@@ -105,6 +108,22 @@ export default function LoginPage() {
       setGlow({ x: px * 100, y: py * 100 });
       setTilt({ rx: (0.5 - py) * 8, ry: (px - 0.5) * 8 });
     });
+  };
+
+  const recuperar = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setEnviando(true);
+    setError("");
+    const r = await pedirRecuperacion(email);
+    setEnviando(false);
+    // Sólo se muestra error cuando NO depende de que la cuenta exista
+    // (ej. límite de envíos). En cualquier otro caso la respuesta es la
+    // misma exista o no el email: ver pedirRecuperacion().
+    if (!r.ok) {
+      setError(r.error);
+      return;
+    }
+    setModo("enviado");
   };
 
   const fallo = (mensaje: string) => {
@@ -227,6 +246,8 @@ export default function LoginPage() {
           />
 
           <div className="p-7 md:p-8">
+            {modo === "login" && (
+              <>
             {/* ---------- Acceso rápido por perfil (mobile-first) ---------- */}
             <p className="text-xs font-extrabold uppercase tracking-widest text-muted-foreground">
               Conocé la demo
@@ -385,6 +406,124 @@ export default function LoginPage() {
                 )}
               </button>
             </form>
+
+            <button
+              type="button"
+              onClick={() => {
+                setModo("recuperar");
+                setError("");
+              }}
+              className="mt-4 w-full text-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+              </>
+            )}
+
+            {/* ---------- Recuperar la clave (T-002C) ---------- */}
+            {modo === "recuperar" && (
+              <form onSubmit={recuperar} className="space-y-4">
+                <div>
+                  <h2 className="text-lg font-extrabold tracking-tight">
+                    Recuperar mi contraseña
+                  </h2>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                    Te mandamos un enlace a tu correo para que crees una contraseña
+                    nueva. Llega solo a tu casilla: nadie del club puede verlo.
+                  </p>
+                </div>
+
+                <div>
+                  <label
+                    htmlFor="email-recuperar"
+                    className="mb-2 block text-xs font-bold uppercase tracking-widest text-muted-foreground"
+                  >
+                    Email
+                  </label>
+                  <input
+                    id="email-recuperar"
+                    type="email"
+                    autoComplete="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    placeholder="tu@club.com"
+                    required
+                    autoFocus
+                    disabled={enviando}
+                    className="h-12 w-full rounded-xl border border-input bg-background px-4 text-base outline-none transition-colors focus:border-primary focus:ring-2 focus:ring-primary/20"
+                  />
+                </div>
+
+                {error && (
+                  <div className="flex items-start gap-2 rounded-xl border border-destructive/20 bg-destructive/5 p-3">
+                    <AlertCircle
+                      className="mt-0.5 size-4 shrink-0 text-destructive"
+                      aria-hidden
+                    />
+                    <p className="text-sm font-semibold text-destructive">{error}</p>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={enviando}
+                  className="flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary text-base font-bold text-primary-foreground transition-all hover:opacity-90 active:scale-[0.99] disabled:opacity-70"
+                >
+                  {enviando ? "Enviando…" : "Enviarme el enlace"}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModo("login");
+                    setError("");
+                  }}
+                  className="w-full text-center text-sm font-semibold text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Volver al ingreso
+                </button>
+              </form>
+            )}
+
+            {/* Mensaje DELIBERADAMENTE genérico: no confirma ni niega que
+                el email tenga cuenta. Ver pedirRecuperacion() en actions.ts. */}
+            {modo === "enviado" && (
+              <div className="space-y-4">
+                <div className="flex size-12 items-center justify-center rounded-2xl bg-secondary">
+                  <Check className="size-6 text-primary" aria-hidden />
+                </div>
+                <div>
+                  <h2 className="text-lg font-extrabold tracking-tight">
+                    Revisá tu correo
+                  </h2>
+                  <p className="mt-1.5 text-sm leading-relaxed text-muted-foreground">
+                    Si <span className="font-semibold text-foreground">{email}</span>{" "}
+                    tiene una cuenta, le va a llegar un enlace para crear una
+                    contraseña nueva. Vence en una hora y se usa una sola vez.
+                  </p>
+                  <p className="mt-3 text-sm leading-relaxed text-muted-foreground">
+                    Si no lo ves, mirá en spam. ¿Seguís sin poder entrar? Escribinos a{" "}
+                    <a
+                      href="mailto:info@talentodeportivo.com.ar"
+                      className="font-semibold text-primary hover:underline"
+                    >
+                      info@talentodeportivo.com.ar
+                    </a>
+                    .
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setModo("login");
+                    setError("");
+                  }}
+                  className="flex h-12 w-full items-center justify-center rounded-xl border border-input text-base font-bold transition-colors hover:bg-secondary"
+                >
+                  Volver al ingreso
+                </button>
+              </div>
+            )}
 
             <div className="mt-5 flex items-center justify-between">
               <Link
