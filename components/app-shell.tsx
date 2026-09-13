@@ -199,9 +199,14 @@ function esActiva(pathname: string, href: string) {
 }
 
 function SelectorPerfil({ compacto = false }: { compacto?: boolean }) {
-  const { perfil, setPerfil, sesionReal, sinMembresia } = usePerfil();
+  const { perfil, setPerfil, sesionReal, sinMembresia, cargandoSesion } = usePerfil();
   const [abierto, setAbierto] = useState(false);
   const actual = PERFILES.find((p) => p.id === perfil)!;
+
+  // Hasta saber si la sesión es real no se muestra nada. El provider arranca
+  // en sesionReal=false, así que acá salía el selector de la DEMO —con el
+  // personaje "(Marcela)"— a alguien que está entrando con su propia cuenta.
+  if (cargandoSesion) return null;
 
   // Sin club no hay rol: el "profesor" de esta sesión es el fallback del
   // contexto, no algo que la base haya dicho. Mostrarlo sería el mismo
