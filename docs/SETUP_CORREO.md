@@ -312,15 +312,28 @@ DNS de envío bajo control de DMG, sin depender de terceros para los registros d
       Sep 13 13:04, provider Vercel, región São Paulo.)*
 - [x] **4.** Los registros DNS están cargados y responden a `dig`. *(Los 4 de Resend y
       los 5 de Spacemail, verificados uno por uno.)*
-- [ ] **5.** Un mail de prueba **enviado desde Resend** llegó a bandeja de entrada de
-      Gmail (no a spam). ⚠️ **Pendiente.** La prueba que se hizo el 13-sep salió por
-      **Spacemail** desde `info@`, que es otro camino y otro selector DKIM. El envío de
-      Resend se prueba de verdad al conectar el SMTP.
-- [ ] **6.** El **SMTP personalizado está activado en Supabase** con esos datos, y el
-      límite de mails por hora subido. ⚠️ **Pendiente — es lo único que falta para
-      cerrar el frente de correo.**
+- [x] **5.** Un mail de prueba **enviado desde Resend** llegó a **bandeja de entrada** de
+      Gmail. *(2026-09-13, al segundo intento: el primero cayó en spam con SPF/DKIM/DMARC
+      los tres en PASS. Lo que lo sacó de spam fue cambiar la plantilla — ver
+      `docs/PLANTILLAS_EMAIL.md`.)*
+- [x] **6.** El **SMTP personalizado está activado en Supabase** (Resend, `smtp.resend.com`
+      puerto 465, usuario `resend`, API Key acotada a *Sending access* + solo el dominio
+      `talentodeportivo.com.ar`). El límite subió solo a 30 mails/hora al activarlo.
 - [x] **7.** Remitente final y `Reply-To` confirmados: From `no-reply@talentodeportivo.com.ar`
       con nombre `Talento Deportivo`, Reply-To `info@talentodeportivo.com.ar`.
+
+### Lección registrada: el spam no era el dominio
+
+El primer envío cayó en spam **con SPF, DKIM y DMARC los tres en PASS**. Es fácil
+concluir "el dominio es nuevo, hay que esperar" y quedarse esperando. No era eso:
+
+1. El enlace apuntaba a `hjaeihdrrictmgilzaic.supabase.co` mientras el remitente era
+   `talentodeportivo.com.ar`. Remitente de marca + destino opaco de un tercero + token en
+   la query = firma de phishing.
+2. La plantilla era la default de Supabase: tres líneas en inglés a un hispanohablante.
+
+Corregidas las dos, el mismo dominio —con menos de un día de vida— entró directo a la
+bandeja de entrada. **Antes de culpar a la reputación, mirar el mensaje.**
 
 ### Pendientes anotados, que no bloquean
 
