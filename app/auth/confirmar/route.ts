@@ -2,11 +2,19 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 /**
- * Destino del link de acceso que genera el admin en /club/staff:
- * valida el token (invite para gente nueva, recovery para quien ya
- * tenía cuenta), deja la sesión en cookies y manda a crear la
- * contraseña. El link vive en NUESTRO dominio — no depende del
- * allowlist de redirects de Supabase.
+ * Destino de TODOS los links de acceso del producto. Valida el token,
+ * deja la sesión en cookies y manda a crear la contraseña. El link vive
+ * en NUESTRO dominio — no depende del allowlist de redirects de Supabase,
+ * y además evita que el mail apunte a un host de terceros, que es lo que
+ * lo mandaba a spam.
+ *
+ * Tres tipos, y la diferencia entre ellos es de seguridad, no de forma:
+ *
+ *   invite     · cuenta nueva, la crea el admin al invitar.
+ *   magiclink  · cuenta que existe pero NUNCA se usó: reemitir su
+ *                onboarding no le saca el acceso a nadie (T-002).
+ *   recovery   · lo pide el titular desde /login y le llega SOLO a su
+ *                correo (T-002C). Un admin no puede emitirlo.
  *
  * Las cookies de sesión se atan EXPLÍCITAMENTE a la respuesta de
  * redirect (patrón de proxy.ts): con el helper de cookies() del
@@ -25,7 +33,12 @@ export async function GET(request: NextRequest) {
   const tokenHash = searchParams.get("token_hash");
   const tipo = searchParams.get("type");
 
-  if (tokenHash && (tipo === "invite" || tipo === "recovery")) {
+  const tiposValidos = ["invite", "magiclink", "recovery"] as const;
+  type TipoValido = (typeof tiposValidos)[number];
+  const esTipoValido = (t: string | null): t is TipoValido =>
+    tiposValidos.includes(t as TipoValido);
+
+  if (tokenHash && esTipoValido(tipo)) {
     const respuesta = NextResponse.redirect(`${origin}/cuenta/clave`);
     const supabase = createServerClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,

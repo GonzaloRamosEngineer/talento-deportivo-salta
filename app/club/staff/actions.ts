@@ -5,6 +5,7 @@ import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { esCuentaDemo, MOTIVO_DEMO } from "@/lib/demo";
 import type { RolMembresia } from "@/lib/tipos-db";
 import { SOPORTE_EMAIL } from "@/lib/site";
+import { generarAccesoOnboarding, linkDeAcceso } from "@/lib/acceso";
 
 /**
  * Server actions del circuito de staff (pasos 4-5 de docs/OPERACION.md).
@@ -59,20 +60,11 @@ async function adminActual() {
   };
 }
 
-function linkDeAcceso(origen: string, tokenHash: string, tipo: "invite" | "recovery") {
-  return `${origen}/auth/confirmar?token_hash=${encodeURIComponent(tokenHash)}&type=${tipo}`;
-}
 
 function origenValido(origen: string) {
   return /^https?:\/\/[^\s/]+$/.test(origen);
 }
 
-async function buscarUsuarioPorEmail(email: string) {
-  const admin = crearClienteAdmin();
-  const { data, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  if (error) return null;
-  return data.users.find((u) => u.email?.toLowerCase() === email) ?? null;
-}
 
 export async function invitarMiembro(input: {
   nombre: string;
@@ -102,33 +94,12 @@ export async function invitarMiembro(input: {
 
   // 1) Usuario en Auth: invitación nueva, o link de acceso si ya existe
   //    (ej. lo quitaron del staff y vuelve).
-  let authUserId: string;
-  let tipoLink: "invite" | "recovery" = "invite";
-  let tokenHash: string;
-  let usuarioCreado = false;
-
-  const invite = await admin.auth.admin.generateLink({
-    type: "invite",
-    email,
-    options: { data: { nombre } },
-  });
-  if (!invite.error) {
-    authUserId = invite.data.user.id;
-    tokenHash = invite.data.properties.hashed_token;
-    usuarioCreado = true;
-  } else {
-    const existente = await buscarUsuarioPorEmail(email);
-    if (!existente) {
-      return { ok: false, error: `No se pudo invitar: ${invite.error.message}` };
-    }
-    const recovery = await admin.auth.admin.generateLink({ type: "recovery", email });
-    if (recovery.error) {
-      return { ok: false, error: `No se pudo generar el link: ${recovery.error.message}` };
-    }
-    authUserId = existente.id;
-    tokenHash = recovery.data.properties.hashed_token;
-    tipoLink = "recovery";
-  }
+  // T-002: si la cuenta ya fue activada, acá no se emite ningún token —
+  // ni siquiera para incorporarla al club. Esa persona entra con su clave
+  // o la recupera sola. Ver lib/acceso.ts.
+  const acceso = await generarAccesoOnboarding(email, nombre);
+  if (!acceso.ok) return { ok: false, error: acceso.error };
+  const { authUserId, tokenHash, tipo: tipoLink, usuarioCreado } = acceso.data;
 
   // 1.5) T-002B · una cuenta = un club.
   //
@@ -228,21 +199,14 @@ export async function regenerarLink(input: {
     .maybeSingle();
   if (!memb) return { ok: false, error: "Ese email no es del staff de tu club." };
 
-  const admin = crearClienteAdmin();
-  const invite = await admin.auth.admin.generateLink({ type: "invite", email });
-  if (!invite.error) {
-    return {
-      ok: true,
-      data: { link: linkDeAcceso(input.origen, invite.data.properties.hashed_token, "invite") },
-    };
-  }
-  const recovery = await admin.auth.admin.generateLink({ type: "recovery", email });
-  if (recovery.error) {
-    return { ok: false, error: `No se pudo generar el link: ${recovery.error.message}` };
-  }
+  // T-002: reemitir el acceso solo tiene sentido para una cuenta que nunca
+  // se usó. Si ya la activaron, generar un link acá sería entregarle al
+  // admin la llave de esa persona — el agujero que esta tarea cierra.
+  const acceso = await generarAccesoOnboarding(email);
+  if (!acceso.ok) return { ok: false, error: acceso.error };
   return {
     ok: true,
-    data: { link: linkDeAcceso(input.origen, recovery.data.properties.hashed_token, "recovery") },
+    data: { link: linkDeAcceso(input.origen, acceso.data.tokenHash, acceso.data.tipo) },
   };
 }
 

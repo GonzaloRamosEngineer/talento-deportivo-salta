@@ -3,6 +3,7 @@
 import { crearClienteServer } from "@/lib/supabase/server";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
 import { esCuentaDemo } from "@/lib/demo";
+import { generarAccesoOnboarding, linkDeAcceso } from "@/lib/acceso";
 
 /**
  * Server actions de la PLATAFORMA (pasos 1-2 de docs/OPERACION.md,
@@ -54,57 +55,34 @@ async function esPlataforma(): Promise<boolean> {
   return Boolean(user.app_metadata?.plataforma);
 }
 
-function linkDeAcceso(origen: string, tokenHash: string, tipo: "invite" | "recovery") {
-  return `${origen}/auth/confirmar?token_hash=${encodeURIComponent(tokenHash)}&type=${tipo}`;
-}
 
 function origenValido(origen: string) {
   return /^https?:\/\/[^\s/]+$/.test(origen);
 }
 
-async function buscarUsuarioPorEmail(email: string) {
-  const admin = crearClienteAdmin();
-  const { data, error } = await admin.auth.admin.listUsers({ page: 1, perPage: 1000 });
-  if (error) return null;
-  return data.users.find((u) => u.email?.toLowerCase() === email) ?? null;
-}
 
-/** Link de acceso para un email: invite si es nuevo, recovery si ya existe. */
+/**
+ * Link de acceso de onboarding para un email.
+ *
+ * T-002: antes esto caía en `recovery` cuando el email ya existía, y le
+ * devolvía ese token a la plataforma — con él se podía fijar la contraseña
+ * del admin de cualquier club y entrar como él. La regla vive ahora en
+ * `lib/acceso.ts` y es única para las tres vías de emisión: si la cuenta ya
+ * fue activada, no se emite nada.
+ */
 async function generarLinkAcceso(
   email: string,
   nombre: string | undefined,
   origen: string,
 ): Promise<Resultado<{ authUserId: string; link: string; usuarioCreado: boolean }>> {
-  const admin = crearClienteAdmin();
-  const invite = await admin.auth.admin.generateLink({
-    type: "invite",
-    email,
-    options: nombre ? { data: { nombre } } : undefined,
-  });
-  if (!invite.error) {
-    return {
-      ok: true,
-      data: {
-        authUserId: invite.data.user.id,
-        link: linkDeAcceso(origen, invite.data.properties.hashed_token, "invite"),
-        usuarioCreado: true,
-      },
-    };
-  }
-  const existente = await buscarUsuarioPorEmail(email);
-  if (!existente) {
-    return { ok: false, error: `No se pudo generar el acceso: ${invite.error.message}` };
-  }
-  const recovery = await admin.auth.admin.generateLink({ type: "recovery", email });
-  if (recovery.error) {
-    return { ok: false, error: `No se pudo generar el link: ${recovery.error.message}` };
-  }
+  const acceso = await generarAccesoOnboarding(email, nombre);
+  if (!acceso.ok) return { ok: false, error: acceso.error };
   return {
     ok: true,
     data: {
-      authUserId: existente.id,
-      link: linkDeAcceso(origen, recovery.data.properties.hashed_token, "recovery"),
-      usuarioCreado: false,
+      authUserId: acceso.data.authUserId,
+      link: linkDeAcceso(origen, acceso.data.tokenHash, acceso.data.tipo),
+      usuarioCreado: acceso.data.usuarioCreado,
     },
   };
 }
