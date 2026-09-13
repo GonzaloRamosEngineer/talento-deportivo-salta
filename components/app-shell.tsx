@@ -195,9 +195,14 @@ function esActiva(pathname: string, href: string) {
 }
 
 function SelectorPerfil({ compacto = false }: { compacto?: boolean }) {
-  const { perfil, setPerfil, sesionReal } = usePerfil();
+  const { perfil, setPerfil, sesionReal, sinMembresia } = usePerfil();
   const [abierto, setAbierto] = useState(false);
   const actual = PERFILES.find((p) => p.id === perfil)!;
+
+  // Sin club no hay rol: el "profesor" de esta sesión es el fallback del
+  // contexto, no algo que la base haya dicho. Mostrarlo sería el mismo
+  // error que mostrar el club del mock.
+  if (sinMembresia) return null;
 
   // Con sesión real el rol lo decide la base (membresía/RLS), no un
   // selector de UI: se muestra como badge de solo lectura.
@@ -323,7 +328,9 @@ function CuentaSinClub() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { perfil, sesionReal, sinMembresia } = usePerfil();
-  const nav = navPara(perfil);
+  // Sin club, cada pantalla muestra el mismo cartel: ofrecer la navegación
+  // es invitar a recorrer cinco veces el mismo callejón sin salida.
+  const nav = sinMembresia ? [] : navPara(perfil);
 
   // La landing pública (/), el login y la página de privacidad viven
   // fuera del shell de la app.
