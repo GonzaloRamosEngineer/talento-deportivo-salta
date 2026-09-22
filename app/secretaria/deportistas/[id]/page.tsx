@@ -13,7 +13,7 @@ import type { Atributo, Medicion } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 
 interface FichaSecretaria {
-  deportista: { id: string; nombre: string; apellido: string; fechaNacimiento: string | null; sexo: string | null; lateralidad: string | null; grupoId: string; grupo: string; institucion: string; disciplina: string };
+  deportista: { id: string; nombre: string; apellido: string | null; fechaNacimiento: string | null; sexo: string | null; lateralidad: string | null; grupoId: string; grupo: string; institucion: string; disciplina: string };
   mediciones: Array<{ id: string; fecha: string; valor: number; intento: number; nota: string | null; evaluadoPor: string; atributo: { id: string; codigo: string; nombre: string; unidad: string; sentido: Atributo["sentido"] } | null; protocolo: { id: string; codigo: string; nombre: string } | null }>;
 }
 
@@ -77,7 +77,7 @@ export default function FichaDeportistaSecretaria() {
     <GuardiaSecretaria>
       <div className="flex flex-col gap-5">
         <Link href="/secretaria/deportistas" className="inline-flex w-fit items-center gap-1.5 text-xs font-extrabold text-primary"><ArrowLeft className="size-3.5" />Deportistas</Link>
-        <div className="flex items-center gap-3"><AvatarIniciales nombre={deportista.nombre} apellido={deportista.apellido} className="size-14 text-lg" /><div className="min-w-0 flex-1"><h1 className="text-xl font-extrabold">{deportista.nombre} {deportista.apellido}</h1><p className="text-sm text-muted-foreground">{deportista.institucion} · {deportista.disciplina} · {deportista.grupo}</p></div><Link href="/secretaria/medir" className="flex h-10 items-center gap-2 rounded-xl bg-primary px-3 text-xs font-extrabold text-primary-foreground"><ClipboardPlus className="size-4" />Medir</Link></div>
+        <div className="flex items-center gap-3"><AvatarIniciales nombre={deportista.nombre} apellido={deportista.apellido} className="size-14 text-lg" /><div className="min-w-0 flex-1"><h1 className="text-xl font-extrabold">{deportista.apellido?.trim() ? `${deportista.nombre} ${deportista.apellido}` : deportista.nombre}</h1><p className="text-sm text-muted-foreground">{deportista.institucion} · {deportista.disciplina} · {deportista.grupo}</p></div><Link href="/secretaria/medir" className="flex h-10 items-center gap-2 rounded-xl bg-primary px-3 text-xs font-extrabold text-primary-foreground"><ClipboardPlus className="size-4" />Medir</Link></div>
 
         <div className="grid grid-cols-3 gap-3"><div className="rounded-2xl border border-border bg-card p-4"><Gauge className="size-4 text-primary" /><p className="mt-2 text-2xl font-extrabold">{ficha.mediciones.length}</p><p className="text-[11px] text-muted-foreground">mediciones</p></div><div className="rounded-2xl border border-border bg-card p-4"><CalendarDays className="size-4 text-primary" /><p className="mt-2 text-lg font-extrabold">{ficha.mediciones.length ? fecha(ficha.mediciones[ficha.mediciones.length - 1].fecha) : "—"}</p><p className="text-[11px] text-muted-foreground">última evaluación</p></div><div className="rounded-2xl border border-border bg-card p-4"><UserRound className="size-4 text-primary" /><p className="mt-2 text-lg font-extrabold">{series.length}</p><p className="text-[11px] text-muted-foreground">series comparables</p></div></div>
 

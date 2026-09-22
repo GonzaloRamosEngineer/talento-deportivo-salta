@@ -12,13 +12,19 @@ import { cn } from "@/lib/utils";
 interface DeportistaSecretaria {
   id: string;
   nombre: string;
-  apellido: string;
+  apellido: string | null;
   fechaNacimiento: string | null;
   grupoId: string;
   grupo: string;
   institucion: string;
   disciplina: string;
   mediciones: number;
+}
+
+function nombreVisible(deportista: Pick<DeportistaSecretaria, "nombre" | "apellido">) {
+  return deportista.apellido?.trim()
+    ? `${deportista.apellido}, ${deportista.nombre}`
+    : deportista.nombre;
 }
 
 export default function DeportistasSecretaria() {
@@ -47,7 +53,7 @@ export default function DeportistasSecretaria() {
   const instituciones = useMemo(() => [...new Set((deportistas ?? []).map((item) => item.institucion))].sort((a, b) => a.localeCompare(b, "es")), [deportistas]);
   const disciplinas = useMemo(() => [...new Set((deportistas ?? []).filter((item) => !institucion || item.institucion === institucion).map((item) => item.disciplina))].sort((a, b) => a.localeCompare(b, "es")), [deportistas, institucion]);
   const visibles = (deportistas ?? []).filter((item) => {
-    const texto = `${item.nombre} ${item.apellido} ${item.grupo} ${item.institucion} ${item.disciplina}`.toLocaleLowerCase("es");
+    const texto = `${item.nombre} ${item.apellido ?? ""} ${item.grupo} ${item.institucion} ${item.disciplina}`.toLocaleLowerCase("es");
     return (!institucion || item.institucion === institucion)
       && (!disciplina || item.disciplina === disciplina)
       && texto.includes(busqueda.trim().toLocaleLowerCase("es"));
@@ -68,7 +74,7 @@ export default function DeportistasSecretaria() {
         <section><p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Institución</p><div className="flex gap-2 overflow-x-auto pb-1"><button onClick={() => { setInstitucion(""); setDisciplina(""); }} className={cn("shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold", !institucion ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card")}>Todas</button>{instituciones.map((item) => <button key={item} onClick={() => { setInstitucion(item); setDisciplina(""); }} className={cn("shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold", institucion === item ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card")}>{item}</button>)}</div></section>
         <section><p className="mb-2 text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Disciplina</p><div className="flex gap-2 overflow-x-auto pb-1"><button onClick={() => setDisciplina("")} className={cn("shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold", !disciplina ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card")}>Todas</button>{disciplinas.map((item) => <button key={item} onClick={() => setDisciplina(item)} className={cn("shrink-0 rounded-full border px-3 py-1.5 text-xs font-bold", disciplina === item ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card")}>{item}</button>)}</div></section>
 
-        <section className="overflow-hidden rounded-3xl border border-border bg-card"><div className="border-b border-border px-5 py-4"><h2 className="text-sm font-extrabold">{visibles.length} deportistas</h2></div><div className="divide-y divide-border">{visibles.map((deportista) => <Link key={deportista.id} href={`/secretaria/deportistas/${deportista.id}`} className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-muted/35"><AvatarIniciales nombre={deportista.nombre} apellido={deportista.apellido} /><span className="min-w-0 flex-1"><span className="block truncate text-sm font-extrabold">{deportista.apellido}, {deportista.nombre}</span><span className="block truncate text-xs text-muted-foreground">{deportista.institucion} · {deportista.disciplina} · {deportista.grupo}</span></span><span className="text-right"><span className="block text-sm font-extrabold text-primary">{deportista.mediciones}</span><span className="text-[10px] text-muted-foreground">mediciones</span></span><ChevronRight className="size-4 shrink-0 text-muted-foreground" /></Link>)}{visibles.length === 0 && <p className="px-5 py-10 text-center text-sm text-muted-foreground">No encontramos deportistas con esos filtros.</p>}</div></section>
+        <section className="overflow-hidden rounded-3xl border border-border bg-card"><div className="border-b border-border px-5 py-4"><h2 className="text-sm font-extrabold">{visibles.length} deportistas</h2></div><div className="divide-y divide-border">{visibles.map((deportista) => <Link key={deportista.id} href={`/secretaria/deportistas/${deportista.id}`} className="flex items-center gap-3 px-5 py-4 transition-colors hover:bg-muted/35"><AvatarIniciales nombre={deportista.nombre} apellido={deportista.apellido} /><span className="min-w-0 flex-1"><span className="block truncate text-sm font-extrabold">{nombreVisible(deportista)}</span><span className="block truncate text-xs text-muted-foreground">{deportista.institucion} · {deportista.disciplina} · {deportista.grupo}</span></span><span className="text-right"><span className="block text-sm font-extrabold text-primary">{deportista.mediciones}</span><span className="text-[10px] text-muted-foreground">mediciones</span></span><ChevronRight className="size-4 shrink-0 text-muted-foreground" /></Link>)}{visibles.length === 0 && <p className="px-5 py-10 text-center text-sm text-muted-foreground">No encontramos deportistas con esos filtros.</p>}</div></section>
       </div>
     </GuardiaSecretaria>
   );

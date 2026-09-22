@@ -1,5 +1,7 @@
 import { respuestaError, sesionSecretaria } from "@/lib/evaluaciones/backend";
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu;
+
 function uno<T>(valor: T | T[] | null): T | null {
   return Array.isArray(valor) ? (valor[0] ?? null) : valor;
 }
@@ -10,6 +12,9 @@ export async function GET(
 ) {
   try {
     const { id } = await params;
+    if (!UUID.test(id)) {
+      return Response.json({ error: "El identificador del deportista no es válido.", codigo: "ID_INVALIDO" }, { status: 400 });
+    }
     const { supabase, membresia } = await sesionSecretaria();
     const [ficha, mediciones] = await Promise.all([
       supabase

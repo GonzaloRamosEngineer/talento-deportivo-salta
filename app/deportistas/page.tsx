@@ -534,7 +534,7 @@ function Deportistas() {
                     <td className="sticky left-0 z-10 max-w-40 bg-card px-3 py-2.5">
                       <span className="flex items-center gap-1.5 font-bold">
                         <span className="truncate">
-                          {d.apellido}, {d.nombre[0]}.
+                          {d.apellido ? `${d.apellido}, ${d.nombre[0]}.` : d.nombre}
                         </span>
                         {!d.consentimientoOk && (
                           <ShieldAlert
