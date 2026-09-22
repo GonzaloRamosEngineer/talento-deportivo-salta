@@ -21,7 +21,7 @@ interface DetalleLote {
   deportistas: number;
   mediciones: number;
   protocolos: string[];
-  metricas: Array<string | { codigo: string; nombre: string; unidad: string; cantidad: number }>;
+  metricas: Array<{ codigo: string; nombre: string; unidad: string | null; cantidad: number | null }>;
   hallazgos: Array<{ id: string; titulo?: string; detalle?: string; severidad?: string }>;
   correcciones: Array<{ campo: string; antes: unknown; despues: unknown; motivo: string; por: string; cuando: string }>;
   jornadas: Array<{ id: string; fecha: string; grupo: string; evaluadoPor: string; mediciones: number }>;
@@ -56,10 +56,6 @@ export default function DetallePlanillaSecretaria() {
   if (error) return <AvisoAcceso titulo="No pudimos abrir la planilla" detalle={error} accionHref="/secretaria/jornadas" accionLabel="Volver a planillas" />;
   if (!detalle) return <CargandoPelota texto="Reconstruyendo la planilla…" />;
 
-  const metricas = detalle.metricas.map((metrica) => typeof metrica === "string"
-    ? { codigo: metrica, nombre: metrica.replaceAll("_", " "), unidad: "", cantidad: null }
-    : metrica);
-
   return (
     <GuardiaSecretaria>
       <div className="flex flex-col gap-5">
@@ -86,7 +82,7 @@ export default function DetallePlanillaSecretaria() {
           <div className="flex items-center justify-between gap-3"><h2 className="text-sm font-extrabold">Qué se midió</h2><span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-extrabold text-primary">{detalle.estado}</span></div>
           <div className="mt-4 flex flex-wrap gap-2">{detalle.protocolos.length ? detalle.protocolos.map((protocolo) => <span key={protocolo} className="rounded-full bg-primary px-3 py-1 text-xs font-extrabold text-primary-foreground">{protocolo}</span>) : <span className="text-xs text-muted-foreground">Sin protocolo confirmado</span>}</div>
           <div className="mt-4 divide-y divide-border rounded-2xl border border-border">
-            {metricas.map((metrica) => <div key={metrica.codigo} className="flex items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-bold capitalize">{metrica.nombre}</p><p className="text-xs text-muted-foreground">{metrica.unidad || "Unidad por validar"}</p></div>{metrica.cantidad !== null && <span className="text-xs font-extrabold text-primary">{metrica.cantidad}</span>}</div>)}
+            {detalle.metricas.map((metrica) => <div key={metrica.codigo} className="flex items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-bold capitalize">{metrica.nombre}</p><p className="text-xs text-muted-foreground">{metrica.unidad || "Unidad por validar"}</p></div>{metrica.cantidad !== null && <span className="text-xs font-extrabold text-primary">{metrica.cantidad}</span>}</div>)}
           </div>
         </section>
 
