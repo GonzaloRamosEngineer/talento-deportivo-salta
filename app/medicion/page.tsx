@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   Info,
   Loader2,
+  FileSpreadsheet,
   Smartphone,
   WifiOff,
 } from "lucide-react";
@@ -265,12 +266,23 @@ function JornadaDeMedicion() {
   return (
     <div className="flex flex-col gap-4">
       <div>
-        <h1 className="text-2xl font-extrabold tracking-tight">
-          Jornada de medición
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Elegí qué medir y cargá a toda la categoría de corrido
-        </p>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <div>
+            <h1 className="text-2xl font-extrabold tracking-tight">
+              Jornada de medición
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Elegí qué medir y cargá a toda la categoría de corrido
+            </p>
+          </div>
+          <Link
+            href="/evaluaciones/importar"
+            className="flex h-10 items-center gap-2 rounded-xl border border-primary/20 bg-secondary px-3.5 text-xs font-extrabold text-secondary-foreground transition-colors hover:bg-secondary/70"
+          >
+            <FileSpreadsheet className="size-4 text-primary" aria-hidden />
+            Importar evaluación
+          </Link>
+        </div>
       </div>
 
       <Ayuda
