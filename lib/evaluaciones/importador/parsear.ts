@@ -154,15 +154,18 @@ function deduplicarTransversales(mediciones: MedicionNormalizada[]) {
   return salida;
 }
 
+const FECHA_AUSENTE_ID = "fecha-ausente";
+
 function parsearSaltosTabular(hojas: HojaTabular[], contexto: ContextoEvaluacion): ImportacionNormalizada {
   const hoja = hojas[0];
   const titulo = hoja.filas.slice(0, 4).flat().map(texto).find((valor) => /\d{1,2}[\/-]\d{1,2}[\/-]\d{4}/u.test(valor))
     ?? texto(hoja.filas[0]?.[0]);
   const fechaTitulo = fechaEnTitulo(titulo);
   const fecha = contexto.fechaDeclarada || fechaTitulo;
-  if (!fecha) {
-    throw new Error("La planilla no informa una fecha. Completá la fecha oficial de la jornada antes de revisarla.");
-  }
+  // Sin fecha NO se rechaza la planilla: se recibe y se bloquea. La jornada
+  // queda pendiente de la fecha oficial de la Secretaría, y mientras tanto
+  // la planilla figura entre las recibidas en vez de desaparecer.
+  const faltaFecha = !fecha;
   const indiceCabecera = hoja.filas.findIndex((fila) => normalizarTexto(fila[0]) === "nombre" && normalizarTexto(fila[3]) === "test");
   if (indiceCabecera < 0) throw new Error("No reconocimos la cabecera de la matriz de saltos.");
   const mediciones: MedicionNormalizada[] = [];
@@ -186,7 +189,8 @@ function parsearSaltosTabular(hojas: HojaTabular[], contexto: ContextoEvaluacion
       nombre,
       apellido,
       edad: numero(fila[2]),
-      fecha,
+      fecha: faltaFecha ? null : fecha,
+      ...(faltaFecha ? { fechaResolucionId: FECHA_AUSENTE_ID } : {}),
       protocoloCodigo: protocolo,
     };
     agregar(mediciones, { ...base, protocoloCodigo: null }, "peso_corporal", fila[4]);
@@ -198,7 +202,19 @@ function parsearSaltosTabular(hojas: HojaTabular[], contexto: ContextoEvaluacion
     agregar(mediciones, base, "asimetria_concentrica", fila[10], { lado: ladoAsimetria(fila[10]) });
     agregar(mediciones, { ...base, protocoloCodigo: null }, "handgrip", fila[11]);
   }
-  const hallazgos: HallazgoImportacion[] = protocolosDesconocidos.size
+  const hallazgos: HallazgoImportacion[] = [];
+  if (faltaFecha) {
+    hallazgos.push({
+      id: FECHA_AUSENTE_ID,
+      codigo: "fecha_inconsistente",
+      severidad: "bloqueo",
+      titulo: "La planilla no informa la fecha de la jornada",
+      detalle:
+        "Ni el archivo ni su título traen una fecha. No se propone ninguna: hay que pedirle la fecha oficial a la Secretaría antes de confirmar.",
+      requiereResolucion: true,
+    });
+  }
+  const hallazgosProtocolo: HallazgoImportacion[] = protocolosDesconocidos.size
     ? [{
         id: "protocolos-desconocidos",
         codigo: "protocolo_desconocido" as const,
@@ -207,6 +223,7 @@ function parsearSaltosTabular(hojas: HojaTabular[], contexto: ContextoEvaluacion
         detalle: [...protocolosDesconocidos].join(", "),
       }]
     : [];
+  hallazgos.push(...hallazgosProtocolo);
   const depuradas = deduplicarTransversales(mediciones);
   const duplicados = mediciones.length - depuradas.length;
   if (duplicados > 0) {
