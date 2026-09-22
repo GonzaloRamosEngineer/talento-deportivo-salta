@@ -81,7 +81,7 @@ export function InicioSecretaria() {
         <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
       </Link>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-3">
         <Link
           href="/evaluaciones/importar"
           className="group flex items-center gap-4 rounded-2xl bg-primary p-5 text-primary-foreground shadow-sm transition-transform active:scale-[0.99]"
@@ -110,6 +110,11 @@ export function InicioSecretaria() {
               Institución, disciplina y categoría
             </span>
           </span>
+          <ArrowUpRight className="size-4 text-muted-foreground" aria-hidden />
+        </Link>
+        <Link href="/secretaria/deportistas" className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:bg-muted/40">
+          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary"><Users className="size-5" aria-hidden /></span>
+          <span className="min-w-0 flex-1"><span className="block text-sm font-extrabold">Ver deportistas</span><span className="mt-0.5 block text-xs text-muted-foreground">Ficha, mediciones y evolución</span></span>
           <ArrowUpRight className="size-4 text-muted-foreground" aria-hidden />
         </Link>
       </div>

@@ -196,6 +196,7 @@ function navPara(perfil: Perfil): NavItem[] {
       { href: "/secretaria/jornadas", label: "Planillas", icon: FileStack },
       { href: "/secretaria/medir", label: "Medir", icon: ClipboardPlus },
       { href: "/secretaria/grupos", label: "Grupos", icon: Users },
+      { href: "/secretaria/deportistas", label: "Deportistas", icon: ContactRound },
       { href: "/secretaria/disciplinas", label: "Disciplinas", icon: Shapes },
       { href: "/secretaria/equipo", label: "Equipo", icon: ContactRound },
       { href: "/secretaria/reportes", label: "Reportes", icon: ChartNoAxesCombined, mobile: false },

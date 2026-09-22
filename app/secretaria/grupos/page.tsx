@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { Building2, Filter, Users } from "lucide-react";
 import { GuardiaSecretaria } from "@/components/secretaria/guardia-secretaria";
 import { EstadoJornada } from "@/components/secretaria/estado-jornada";
@@ -51,9 +52,10 @@ export default function GruposSecretaria() {
               <h2 className="mt-4 text-base font-extrabold">{grupo.grupo}</h2>
               <p className="mt-0.5 text-xs text-muted-foreground">{grupo.institucion}</p>
               {grupo.evaluados ? (
-                <div className="mt-4 flex gap-4 border-t border-border pt-3 text-xs">
+                <div className="mt-4 flex items-center gap-4 border-t border-border pt-3 text-xs">
                   <span><strong className="text-foreground">{grupo.evaluados}</strong> <span className="text-muted-foreground">evaluados</span></span>
                   <span><strong className="text-foreground">{grupo.resultados}</strong> <span className="text-muted-foreground">resultados</span></span>
+                  <Link href="/secretaria/deportistas" className="ml-auto font-extrabold text-primary">Ver fichas</Link>
                 </div>
               ) : (
                 <p className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground">Los conteos aparecerán al mapear la planilla.</p>
