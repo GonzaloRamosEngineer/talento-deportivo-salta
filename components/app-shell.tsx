@@ -22,6 +22,8 @@ import {
   LogOut,
   Check,
   ChevronDown,
+  MoreHorizontal,
+  X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { LogoTalento } from "@/components/logo";
@@ -391,9 +393,17 @@ function CuentaSinClub() {
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const { perfil, sesionReal, sinMembresia } = usePerfil();
+  const [masAbierto, setMasAbierto] = useState(false);
   // Sin club, cada pantalla muestra el mismo cartel: ofrecer la navegación
   // es invitar a recorrer cinco veces el mismo callejón sin salida.
   const nav = sinMembresia ? [] : navPara(perfil);
+  const navMobilePrincipal = perfil === "secretaria"
+    ? nav.filter((item) => ["/panel", "/secretaria/jornadas", "/secretaria/medir", "/secretaria/grupos"].includes(item.href))
+    : nav.filter((item) => item.mobile !== false);
+  const navMobileMas = perfil === "secretaria"
+    ? nav.filter((item) => ["/secretaria/deportistas", "/secretaria/disciplinas", "/secretaria/equipo", "/secretaria/reportes"].includes(item.href))
+    : [];
+  const masActivo = navMobileMas.some((item) => esActiva(pathname, item.href));
 
   // La landing pública (/), el login y la página de privacidad viven
   // fuera del shell de la app.
@@ -498,9 +508,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       </div>
 
       {/* ---------- Barra inferior (mobile) ---------- */}
+      {masAbierto && navMobileMas.length > 0 && (
+        <div className="fixed inset-0 z-40 bg-black/25 md:hidden" onClick={() => setMasAbierto(false)}>
+          <div className="absolute inset-x-3 bottom-[calc(4.75rem+env(safe-area-inset-bottom))] rounded-2xl border border-border bg-card p-2 shadow-xl" onClick={(evento) => evento.stopPropagation()}>
+            <div className="flex items-center justify-between px-2 pb-1 pt-1"><p className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Más herramientas</p><button onClick={() => setMasAbierto(false)} className="grid size-8 place-items-center rounded-full bg-muted" aria-label="Cerrar menú"><X className="size-4" /></button></div>
+            <div className="grid grid-cols-2 gap-1">
+              {navMobileMas.map(({ href, label, icon: Icon }) => <Link key={href} href={href} onClick={() => setMasAbierto(false)} className={cn("flex items-center gap-2 rounded-xl px-3 py-3 text-sm font-bold", esActiva(pathname, href) ? "bg-secondary text-primary" : "hover:bg-muted")}><Icon className="size-4" />{label}</Link>)}
+            </div>
+          </div>
+        </div>
+      )}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
-        <div className="mx-auto flex max-w-md items-stretch justify-around">
-          {nav.filter((item) => item.mobile !== false).map(({ href, label, icon: Icon }) => {
+        <div className={cn("mx-auto max-w-md items-stretch", perfil === "secretaria" ? "grid grid-cols-5" : "flex justify-around")}>
+          {navMobilePrincipal.map(({ href, label, icon: Icon }) => {
             const activa = esActiva(pathname, href);
             // La sección ACTIVA es la que lleva el círculo verde
             // elevado; el resto queda como ícono plano. El círculo
@@ -510,7 +530,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 <Link
                   key={href}
                   href={href}
-                  className="flex flex-col items-center gap-0.5 px-2 pb-1.5 pt-2"
+                  className="flex min-w-0 flex-col items-center gap-0.5 px-1 pb-1.5 pt-2"
                 >
                   <span className="-mt-5 flex size-12 items-center justify-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow-md">
                     <Icon className="size-5" aria-hidden />
@@ -525,13 +545,19 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={href}
                 href={href}
-                className="flex min-w-14 flex-col items-center gap-0.5 px-2 pb-1.5 pt-2.5 text-[10px] font-bold text-muted-foreground transition-colors hover:text-foreground"
+                className="flex min-w-0 flex-col items-center gap-0.5 px-1 pb-1.5 pt-2.5 text-[10px] font-bold text-muted-foreground transition-colors hover:text-foreground"
               >
                 <Icon className="size-5" aria-hidden />
                 {label}
               </Link>
             );
           })}
+          {navMobileMas.length > 0 && (
+            <button onClick={() => setMasAbierto((actual) => !actual)} className={cn("flex min-w-0 flex-col items-center gap-0.5 px-1 pb-1.5 text-[10px] font-bold", masActivo || masAbierto ? "text-primary" : "text-muted-foreground", masActivo ? "pt-2" : "pt-2.5")}>
+              {masActivo ? <span className="-mt-5 flex size-12 items-center justify-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow-md"><MoreHorizontal className="size-5" /></span> : <MoreHorizontal className="size-5" />}
+              Más
+            </button>
+          )}
         </div>
       </nav>
     </div>

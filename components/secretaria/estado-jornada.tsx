@@ -7,7 +7,7 @@ const TEXTO: Record<EstadoJornadaSecretaria, string> = {
   lista: "Lista",
 };
 
-export function EstadoJornada({ estado }: { estado: EstadoJornadaSecretaria }) {
+export function EstadoJornada({ estado, compacto = false }: { estado: EstadoJornadaSecretaria; compacto?: boolean }) {
   return (
     <span
       className={cn(
@@ -17,7 +17,7 @@ export function EstadoJornada({ estado }: { estado: EstadoJornadaSecretaria }) {
         estado === "lista" && "bg-secondary text-primary",
       )}
     >
-      {TEXTO[estado]}
+      {compacto ? (estado === "revisar" ? "Revisar" : estado === "recibida" ? "Pendiente" : "Lista") : TEXTO[estado]}
     </span>
   );
 }

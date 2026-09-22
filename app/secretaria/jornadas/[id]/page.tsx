@@ -60,7 +60,7 @@ export default function DetallePlanillaSecretaria() {
 
   return (
     <GuardiaSecretaria>
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4 sm:gap-5">
         <div>
           <Link href="/secretaria/jornadas" className="inline-flex items-center gap-1.5 text-xs font-extrabold text-primary"><ArrowLeft className="size-3.5" />Planillas</Link>
           <p className="mt-4 text-xs font-extrabold uppercase tracking-[0.16em] text-primary">{detalle.contexto.disciplina ?? "Evaluación"}</p>
@@ -68,23 +68,24 @@ export default function DetallePlanillaSecretaria() {
           <p className="mt-1 text-sm text-muted-foreground">{detalle.contexto.institucionOrigen} · {detalle.contexto.grupo}</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        <div className="grid grid-cols-4 divide-x divide-border overflow-hidden rounded-2xl border border-border bg-card">
           {[
             [Users, detalle.deportistas, "deportistas"],
             [Gauge, detalle.mediciones, "mediciones"],
             [CalendarDays, detalle.jornadas.length, "jornadas"],
-            [FileSpreadsheet, detalle.duplicados, "duplicados detectados"],
+            [FileSpreadsheet, detalle.duplicados, "duplicados"],
           ].map(([Icon, valor, etiqueta]) => {
             const Icono = Icon as typeof Users;
-            return <div key={String(etiqueta)} className="rounded-2xl border border-border bg-card p-3.5"><Icono className="size-4 text-primary" /><p className="mt-3 text-2xl font-extrabold">{String(valor)}</p><p className="text-[11px] font-semibold text-muted-foreground">{String(etiqueta)}</p></div>;
+            return <div key={String(etiqueta)} className="min-w-0 px-2 py-3 text-center sm:p-4 sm:text-left"><Icono className="mx-auto hidden size-4 text-primary sm:block sm:mx-0" /><p className="text-xl font-extrabold sm:mt-2 sm:text-2xl">{String(valor)}</p><p className="truncate text-[9px] font-semibold text-muted-foreground sm:text-[11px]">{String(etiqueta)}</p></div>;
           })}
         </div>
 
-        <section className="rounded-3xl border border-border bg-card p-5">
+        <section className="rounded-2xl border border-border bg-card p-4 sm:rounded-3xl sm:p-5">
           <div className="flex items-center justify-between gap-3"><h2 className="text-sm font-extrabold">Qué se midió</h2><span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-extrabold text-primary">{detalle.estado}</span></div>
-          <div className="mt-4 flex flex-wrap gap-2">{detalle.protocolos.length ? detalle.protocolos.map((protocolo) => <span key={protocolo} className="rounded-full bg-primary px-3 py-1 text-xs font-extrabold text-primary-foreground">{protocolo}</span>) : <span className="text-xs text-muted-foreground">Sin protocolo confirmado</span>}</div>
-          <div className="mt-4 divide-y divide-border rounded-2xl border border-border">
-            {detalle.metricas.map((metrica) => <div key={metrica.codigo} className="flex items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-bold capitalize">{metrica.nombre}</p><p className="text-xs text-muted-foreground">{metrica.unidad || "Unidad por validar"}</p></div>{metrica.cantidad !== null && <span className="text-xs font-extrabold text-primary">{metrica.cantidad}</span>}</div>)}
+          <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Los protocolos se mantienen separados y los números muestran cuántos registros válidos quedaron de cada métrica.</p>
+          <div className="mt-3 flex flex-wrap gap-1.5">{detalle.protocolos.length ? detalle.protocolos.map((protocolo) => <span key={protocolo} className="rounded-full bg-primary px-2.5 py-1 text-[11px] font-extrabold text-primary-foreground">{protocolo}</span>) : <span className="text-xs text-muted-foreground">Sin protocolo confirmado</span>}</div>
+          <div className="mt-3 flex flex-wrap gap-1.5">
+            {detalle.metricas.map((metrica) => <span key={metrica.codigo} className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/35 px-2.5 py-2 text-[11px]"><span className="font-bold capitalize">{metrica.nombre}</span><span className="text-muted-foreground">{metrica.unidad || "s/u"}</span>{metrica.cantidad !== null && <strong className="text-primary">{metrica.cantidad}</strong>}</span>)}
           </div>
         </section>
 
@@ -95,7 +96,7 @@ export default function DetallePlanillaSecretaria() {
           <div className="mt-3 divide-y divide-border">{detalle.jornadas.length ? detalle.jornadas.map((jornada) => <div key={jornada.id} className="flex items-center justify-between gap-3 py-3"><div><p className="text-sm font-bold">{fecha(jornada.fecha)} · {jornada.grupo}</p><p className="text-xs text-muted-foreground">Evaluó {jornada.evaluadoPor}</p></div><span className="text-xs font-extrabold text-primary">{jornada.mediciones} mediciones</span></div>) : <p className="py-3 text-xs text-muted-foreground">La planilla todavía no fue confirmada.</p>}</div>
         </section>
 
-        {(detalle.hallazgos.length > 0 || detalle.correcciones.length > 0) && <section className="rounded-3xl border border-border bg-card p-5"><div className="flex items-center gap-2"><ShieldCheck className="size-4 text-primary" /><h2 className="text-sm font-extrabold">Trazabilidad</h2></div><div className="mt-3 space-y-3">{detalle.hallazgos.map((hallazgo) => <div key={hallazgo.id} className="rounded-2xl bg-muted/50 p-3"><p className="text-xs font-extrabold">{hallazgo.titulo ?? hallazgo.id}</p><p className="mt-1 text-xs text-muted-foreground">{hallazgo.detalle}</p></div>)}{detalle.correcciones.map((correccion, indice) => <div key={`${correccion.campo}-${indice}`} className="flex gap-3 rounded-2xl border border-border p-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" /><div><p className="text-xs font-extrabold">{correccion.campo} corregido por {correccion.por}</p><p className="mt-1 text-xs text-muted-foreground">{correccion.motivo} · {fecha(correccion.cuando)}</p></div></div>)}</div></section>}
+        {(detalle.hallazgos.length > 0 || detalle.correcciones.length > 0) && <details className="group rounded-2xl border border-border bg-card p-4 sm:rounded-3xl sm:p-5"><summary className="flex cursor-pointer list-none items-center gap-2"><ShieldCheck className="size-4 text-primary" /><span className="flex-1 text-sm font-extrabold">Trazabilidad</span><span className="text-[10px] font-bold text-muted-foreground">{detalle.hallazgos.length + detalle.correcciones.length} registros · ver</span></summary><div className="mt-3 space-y-3">{detalle.hallazgos.map((hallazgo) => <div key={hallazgo.id} className="rounded-2xl bg-muted/50 p-3"><p className="text-xs font-extrabold">{hallazgo.titulo ?? hallazgo.id}</p><p className="mt-1 text-xs text-muted-foreground">{hallazgo.detalle}</p></div>)}{detalle.correcciones.map((correccion, indice) => <div key={`${correccion.campo}-${indice}`} className="flex gap-3 rounded-2xl border border-border p-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" /><div><p className="text-xs font-extrabold">{correccion.campo} corregido por {correccion.por}</p><p className="mt-1 text-xs text-muted-foreground">{correccion.motivo} · {fecha(correccion.cuando)}</p></div></div>)}</div></details>}
       </div>
     </GuardiaSecretaria>
   );

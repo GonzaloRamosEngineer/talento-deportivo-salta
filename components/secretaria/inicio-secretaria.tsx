@@ -46,9 +46,9 @@ export function InicioSecretaria() {
   const progreso = totalLotes > 0 ? Math.round((importados / totalLotes) * 100) : 0;
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="flex flex-col gap-4 sm:gap-5">
       <SelectorContextoSecretaria activo="evaluaciones" />
-      <div className="flex flex-wrap items-start justify-between gap-3">
+      <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">
             Espacio Secretaría
@@ -60,63 +60,47 @@ export function InicioSecretaria() {
             Jornadas, grupos y seguimiento producidos por la Secretaría.
           </p>
         </div>
-        <span className="rounded-full border border-primary/20 bg-secondary px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-primary">Datos del espacio</span>
+        <span className="hidden rounded-full border border-primary/20 bg-secondary px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-primary sm:inline-flex">Datos del espacio</span>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+      <div className="grid grid-cols-4 divide-x divide-border overflow-hidden rounded-2xl border border-border bg-card">
         {indicadores.map(({ valor, etiqueta, icon: Icon }) => (
-          <div key={etiqueta} className="rounded-2xl border border-border bg-card p-3.5">
-            <Icon className="size-4 text-primary" aria-hidden />
-            <p className="mt-3 text-2xl font-extrabold">{valor}</p>
-            <p className="mt-0.5 text-[11px] font-semibold leading-tight text-muted-foreground">
-              {etiqueta}
+          <div key={etiqueta} className="min-w-0 px-2 py-3 text-center sm:p-4 sm:text-left">
+            <Icon className="mx-auto hidden size-4 text-primary sm:block sm:mx-0" aria-hidden />
+            <p className="text-xl font-extrabold tabular-nums sm:mt-2 sm:text-2xl">{Number(valor).toLocaleString("es-AR")}</p>
+            <p className="mt-0.5 truncate text-[9px] font-bold leading-tight text-muted-foreground sm:text-[11px]">
+              {etiqueta === "planillas recibidas" ? "planillas" : etiqueta === "deportistas evaluados" ? "deportistas" : etiqueta}
             </p>
           </div>
         ))}
       </div>
 
-      <Link href="/secretaria/medir" className="group flex items-center gap-4 rounded-2xl bg-primary p-5 text-primary-foreground shadow-sm transition-transform active:scale-[0.99]">
-        <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/15"><Gauge className="size-5" aria-hidden /></span>
-        <span className="min-w-0 flex-1"><span className="block text-sm font-extrabold">Nueva jornada de medición</span><span className="mt-0.5 block text-xs text-primary-foreground/75">Elegí un grupo y cargá sus mediciones de corrido</span></span>
-        <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
-      </Link>
-
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div>
+        <h2 className="mb-2 text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Acciones rápidas</h2>
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
+        <Link href="/secretaria/medir" className="group flex min-h-24 flex-col justify-between rounded-2xl bg-primary p-4 text-primary-foreground shadow-sm transition-transform active:scale-[0.99]">
+          <span className="flex items-start justify-between"><span className="flex size-9 items-center justify-center rounded-xl bg-white/15"><Gauge className="size-4" aria-hidden /></span><ArrowUpRight className="size-3.5" /></span>
+          <span><span className="block text-sm font-extrabold">Nueva medición</span><span className="mt-0.5 hidden text-xs text-primary-foreground/75 sm:block">Cargá al plantel de corrido</span></span>
+        </Link>
         <Link
           href="/evaluaciones/importar"
-          className="group flex items-center gap-4 rounded-2xl bg-primary p-5 text-primary-foreground shadow-sm transition-transform active:scale-[0.99]"
+          className="group flex min-h-24 flex-col justify-between rounded-2xl bg-primary p-4 text-primary-foreground shadow-sm transition-transform active:scale-[0.99]"
         >
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-white/15">
-            <FileSpreadsheet className="size-5" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-extrabold">Importar una jornada</span>
-            <span className="mt-0.5 block text-xs text-primary-foreground/75">
-              Excel o CSV, con revisión previa
-            </span>
-          </span>
-          <ArrowUpRight className="size-4 transition-transform group-hover:-translate-y-0.5 group-hover:translate-x-0.5" aria-hidden />
+          <span className="flex items-start justify-between"><span className="flex size-9 items-center justify-center rounded-xl bg-white/15"><FileSpreadsheet className="size-4" aria-hidden /></span><ArrowUpRight className="size-3.5" /></span>
+          <span><span className="block text-sm font-extrabold">Importar planilla</span><span className="mt-0.5 hidden text-xs text-primary-foreground/75 sm:block">Excel o CSV con revisión</span></span>
         </Link>
         <Link
           href="/secretaria/grupos"
-          className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:bg-muted/40"
+          className="group flex min-h-24 flex-col justify-between rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-muted/40"
         >
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary">
-            <Building2 className="size-5" aria-hidden />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-extrabold">Organizar los grupos</span>
-            <span className="mt-0.5 block text-xs text-muted-foreground">
-              Institución, disciplina y categoría
-            </span>
-          </span>
-          <ArrowUpRight className="size-4 text-muted-foreground" aria-hidden />
+          <span className="flex items-start justify-between"><span className="flex size-9 items-center justify-center rounded-xl bg-secondary text-primary"><Building2 className="size-4" aria-hidden /></span><ArrowUpRight className="size-3.5 text-muted-foreground" /></span>
+          <span><span className="block text-sm font-extrabold">Organizar</span><span className="mt-0.5 hidden text-xs text-muted-foreground sm:block">Instituciones y planteles</span></span>
         </Link>
-        <Link href="/secretaria/deportistas" className="group flex items-center gap-4 rounded-2xl border border-border bg-card p-5 transition-colors hover:bg-muted/40">
-          <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-secondary text-primary"><Users className="size-5" aria-hidden /></span>
-          <span className="min-w-0 flex-1"><span className="block text-sm font-extrabold">Ver deportistas</span><span className="mt-0.5 block text-xs text-muted-foreground">Ficha, mediciones y evolución</span></span>
-          <ArrowUpRight className="size-4 text-muted-foreground" aria-hidden />
+        <Link href="/secretaria/deportistas" className="group flex min-h-24 flex-col justify-between rounded-2xl border border-border bg-card p-4 transition-colors hover:bg-muted/40">
+          <span className="flex items-start justify-between"><span className="flex size-9 items-center justify-center rounded-xl bg-secondary text-primary"><Users className="size-4" aria-hidden /></span><ArrowUpRight className="size-3.5 text-muted-foreground" /></span>
+          <span><span className="block text-sm font-extrabold">Deportistas</span><span className="mt-0.5 hidden text-xs text-muted-foreground sm:block">Ficha y evolución</span></span>
         </Link>
+        </div>
       </div>
 
       <section className={`rounded-3xl border bg-card p-5 ${loteConBloqueo ? "border-destructive/20" : "border-primary/20"}`}>

@@ -32,8 +32,8 @@ export function SelectorContextoSecretaria({
   }
 
   return (
-    <section className="rounded-2xl border border-primary/20 bg-secondary/35 p-2.5">
-      <div className="flex items-center gap-2 px-2 pb-2">
+    <section className="rounded-2xl border border-primary/20 bg-secondary/35 p-2">
+      <div className="flex items-center gap-2 px-1.5 pb-1.5">
         <Landmark className="size-4 text-primary" aria-hidden />
         <p className="text-xs font-extrabold">Secretaría de Deportes</p>
       </div>
@@ -43,7 +43,7 @@ export function SelectorContextoSecretaria({
           onClick={() => cambiar("observatorio")}
           disabled={sesionReal && !contextosDisponibles.observatorio}
           className={cn(
-            "flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-2 text-[11px] font-extrabold transition-colors",
+            "flex min-h-9 items-center justify-center gap-1.5 rounded-lg px-2 text-[11px] font-extrabold transition-colors",
             activo === "observatorio"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "text-muted-foreground hover:bg-muted",
@@ -57,7 +57,7 @@ export function SelectorContextoSecretaria({
           onClick={() => cambiar("evaluaciones")}
           disabled={sesionReal && !contextosDisponibles.secretaria}
           className={cn(
-            "flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-2 text-[11px] font-extrabold transition-colors",
+            "flex min-h-9 items-center justify-center gap-1.5 rounded-lg px-2 text-[11px] font-extrabold transition-colors",
             activo === "evaluaciones"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "text-muted-foreground hover:bg-muted",
