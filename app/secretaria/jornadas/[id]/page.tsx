@@ -7,6 +7,7 @@ import { ArrowLeft, CalendarDays, CheckCircle2, FileSpreadsheet, Gauge, ShieldCh
 import { GuardiaSecretaria } from "@/components/secretaria/guardia-secretaria";
 import { CargandoPelota } from "@/components/cargando-pelota";
 import { AvisoAcceso } from "@/components/aviso-acceso";
+import { ResultadosPlanilla, type ResultadoPlanilla } from "@/components/secretaria/resultados-planilla";
 
 interface DetalleLote {
   loteId: string;
@@ -25,6 +26,7 @@ interface DetalleLote {
   hallazgos: Array<{ id: string; titulo?: string; detalle?: string; severidad?: string }>;
   correcciones: Array<{ campo: string; antes: unknown; despues: unknown; motivo: string; por: string; cuando: string }>;
   jornadas: Array<{ id: string; fecha: string; grupo: string; evaluadoPor: string; mediciones: number }>;
+  resultados: ResultadoPlanilla[];
 }
 
 function fecha(valor?: string | null) {
@@ -85,6 +87,8 @@ export default function DetallePlanillaSecretaria() {
             {detalle.metricas.map((metrica) => <div key={metrica.codigo} className="flex items-center justify-between gap-3 px-4 py-3"><div><p className="text-sm font-bold capitalize">{metrica.nombre}</p><p className="text-xs text-muted-foreground">{metrica.unidad || "Unidad por validar"}</p></div>{metrica.cantidad !== null && <span className="text-xs font-extrabold text-primary">{metrica.cantidad}</span>}</div>)}
           </div>
         </section>
+
+        <ResultadosPlanilla resultados={detalle.resultados ?? []} />
 
         <section className="rounded-3xl border border-border bg-card p-5">
           <h2 className="text-sm font-extrabold">Jornadas producidas</h2>

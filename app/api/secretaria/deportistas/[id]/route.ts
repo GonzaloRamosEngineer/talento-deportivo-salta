@@ -25,7 +25,7 @@ export async function GET(
         .maybeSingle(),
       supabase
         .from("medicion")
-        .select("id, fecha, valor, intento, nota, atributo:atributo_id(id, codigo, nombre, unidad, sentido), protocolo:protocolo_id(id, codigo, nombre), jornada:jornada_id(id, evaluado_por)")
+        .select("id, fecha, valor, intento, nota, lote_importacion_id, atributo:atributo_id(id, codigo, nombre, unidad, sentido), protocolo:protocolo_id(id, codigo, nombre), jornada:jornada_id(id, evaluado_por)")
         .eq("deportista_id", id)
         .eq("club_id", membresia.club_id)
         .order("fecha")
@@ -54,6 +54,8 @@ export async function GET(
         valor: Number(medicion.valor),
         intento: medicion.intento,
         nota: medicion.nota,
+        loteId: medicion.lote_importacion_id,
+        jornadaId: uno(medicion.jornada)?.id ?? null,
         atributo: uno(medicion.atributo),
         protocolo: uno(medicion.protocolo),
         evaluadoPor: uno(medicion.jornada)?.evaluado_por ?? "Equipo Secretaría",
