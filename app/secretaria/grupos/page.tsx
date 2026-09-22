@@ -1,68 +1,78 @@
 "use client";
 
-import Link from "next/link";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Building2, Filter, Users } from "lucide-react";
 import { GuardiaSecretaria } from "@/components/secretaria/guardia-secretaria";
-import { EstadoJornada } from "@/components/secretaria/estado-jornada";
-import { GRUPOS_SECRETARIA } from "@/lib/secretaria-demo";
-import { useSecretaria } from "@/lib/use-secretaria";
 import { CargandoPelota } from "@/components/cargando-pelota";
 import { AvisoAcceso } from "@/components/aviso-acceso";
+import { ConfiguradorSecretaria, type ConfiguracionSecretaria } from "@/components/secretaria/configurador-secretaria";
 
 export default function GruposSecretaria() {
-  const { resumen, cargando, error, real } = useSecretaria();
-  if (cargando) return <CargandoPelota texto="Cargando grupos…" />;
-  if (error) return <AvisoAcceso titulo="No pudimos cargar los grupos" detalle={error} accionHref="/secretaria/grupos" accionLabel="Reintentar" />;
-  const grupos = real && resumen
-    ? resumen.grupos.map((grupo) => ({
-        id: grupo.id,
-        institucion: grupo.institucion,
-        disciplina: grupo.disciplina,
-        grupo: grupo.nombre,
-        estado: "lista" as const,
-        evaluados: grupo.deportistas,
-        resultados: resumen.jornadas.filter((jornada) => jornada.grupo === grupo.nombre && jornada.institucion === grupo.institucion).reduce((total, jornada) => total + jornada.mediciones, 0),
-      }))
-    : GRUPOS_SECRETARIA;
-  const instituciones = new Set(grupos.map((grupo) => grupo.institucion)).size;
-  const disciplinas = new Set(grupos.map((grupo) => grupo.disciplina)).size;
+  const [configuracion, setConfiguracion] = useState<ConfiguracionSecretaria | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const cargar = useCallback(async () => {
+    const respuesta = await fetch("/api/secretaria/configuracion", { cache: "no-store" });
+    const cuerpo = await respuesta.json();
+    if (!respuesta.ok) throw new Error(cuerpo.error ?? "No pudimos cargar las instituciones y planteles.");
+    setConfiguracion(cuerpo as ConfiguracionSecretaria);
+    setError(null);
+  }, []);
+
+  useEffect(() => {
+    const controlador = new AbortController();
+    fetch("/api/secretaria/configuracion", { cache: "no-store", signal: controlador.signal })
+      .then(async (respuesta) => {
+        const cuerpo = await respuesta.json();
+        if (!respuesta.ok) throw new Error(cuerpo.error ?? "No pudimos cargar las instituciones y planteles.");
+        return cuerpo as ConfiguracionSecretaria;
+      })
+      .then(setConfiguracion)
+      .catch((causa: unknown) => {
+        if (causa instanceof DOMException && causa.name === "AbortError") return;
+        setError(causa instanceof Error ? causa.message : "No pudimos cargar la configuración.");
+      });
+    return () => controlador.abort();
+  }, []);
+
+  const totales = useMemo(() => {
+    const disciplinas = new Set<string>();
+    let grupos = 0;
+    let deportistas = 0;
+    for (const institucion of configuracion?.arbol ?? []) for (const disciplina of institucion.disciplinas) {
+      disciplinas.add(disciplina.id);
+      grupos += disciplina.grupos.length;
+      deportistas += disciplina.grupos.reduce((total, grupo) => total + grupo.deportistas, 0);
+    }
+    return { disciplinas: disciplinas.size, grupos, deportistas };
+  }, [configuracion]);
+
+  if (error && !configuracion) return <AvisoAcceso titulo="No pudimos cargar la organización" detalle={error} accionHref="/secretaria/grupos" accionLabel="Reintentar" />;
+  if (!configuracion) return <CargandoPelota texto="Cargando instituciones y planteles…" />;
 
   return (
     <GuardiaSecretaria>
       <div className="flex flex-col gap-5">
         <div>
-          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Espacio Secretaría</p>
-          <h1 className="mt-1 text-2xl font-extrabold tracking-tight">Grupos evaluados</h1>
-          <p className="mt-1 text-sm text-muted-foreground">La institución es procedencia; el grupo vive dentro del espacio de Secretaría.</p>
+          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Organización operativa</p>
+          <h1 className="mt-1 text-2xl font-extrabold tracking-tight">Instituciones y planteles</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Prepará dónde, qué disciplina y a quiénes van a medir. Todo lo que agregues queda disponible en la nueva jornada.</p>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
-          <div className="rounded-2xl border border-border bg-card p-3.5"><Building2 className="size-4 text-primary" aria-hidden /><p className="mt-3 text-2xl font-extrabold">{instituciones}</p><p className="text-[11px] font-semibold text-muted-foreground">instituciones</p></div>
-          <div className="rounded-2xl border border-border bg-card p-3.5"><Users className="size-4 text-primary" aria-hidden /><p className="mt-3 text-2xl font-extrabold">{grupos.length}</p><p className="text-[11px] font-semibold text-muted-foreground">grupos</p></div>
-          <div className="rounded-2xl border border-border bg-card p-3.5"><Filter className="size-4 text-primary" aria-hidden /><p className="mt-3 text-2xl font-extrabold">{disciplinas}</p><p className="text-[11px] font-semibold text-muted-foreground">disciplinas</p></div>
+        <div className="grid grid-cols-4 gap-2 sm:gap-3">
+          {[
+            [Building2, configuracion.arbol.length, "instituciones"],
+            [Users, totales.grupos, "grupos"],
+            [Filter, totales.disciplinas, "disciplinas"],
+            [Users, totales.deportistas, "deportistas"],
+          ].map(([Icono, valor, etiqueta]) => {
+            const Icon = Icono as typeof Users;
+            return <div key={String(etiqueta)} className="rounded-2xl border border-border bg-card p-3 sm:p-4"><Icon className="size-4 text-primary" /><p className="mt-2 text-xl font-extrabold sm:text-2xl">{String(valor)}</p><p className="truncate text-[10px] text-muted-foreground sm:text-xs">{String(etiqueta)}</p></div>;
+          })}
         </div>
 
-        <div className="grid gap-3 sm:grid-cols-2">
-          {grupos.map((grupo) => (
-            <article key={grupo.id} className="rounded-2xl border border-border bg-card p-4">
-              <div className="flex items-start justify-between gap-3">
-                <span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-extrabold text-primary">{grupo.disciplina}</span>
-                <EstadoJornada estado={grupo.estado} />
-              </div>
-              <h2 className="mt-4 text-base font-extrabold">{grupo.grupo}</h2>
-              <p className="mt-0.5 text-xs text-muted-foreground">{grupo.institucion}</p>
-              {grupo.evaluados ? (
-                <div className="mt-4 flex items-center gap-4 border-t border-border pt-3 text-xs">
-                  <span><strong className="text-foreground">{grupo.evaluados}</strong> <span className="text-muted-foreground">evaluados</span></span>
-                  <span><strong className="text-foreground">{grupo.resultados}</strong> <span className="text-muted-foreground">resultados</span></span>
-                  <Link href="/secretaria/deportistas" className="ml-auto font-extrabold text-primary">Ver fichas</Link>
-                </div>
-              ) : (
-                <p className="mt-4 border-t border-border pt-3 text-xs text-muted-foreground">Los conteos aparecerán al mapear la planilla.</p>
-              )}
-            </article>
-          ))}
-        </div>
+        {error && <p className="rounded-xl bg-destructive/10 p-3 text-sm font-semibold text-destructive">{error}</p>}
+        <ConfiguradorSecretaria inicial={configuracion} recargar={cargar} />
       </div>
     </GuardiaSecretaria>
   );

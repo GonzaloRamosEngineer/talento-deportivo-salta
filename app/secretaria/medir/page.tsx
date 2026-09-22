@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { Building2, Check, CheckCircle2, ClipboardPlus, Loader2, RotateCcw, Settings2 } from "lucide-react";
 import { GuardiaSecretaria } from "@/components/secretaria/guardia-secretaria";
@@ -42,6 +42,29 @@ export default function MedirSecretaria() {
   const [guardando, setGuardando] = useState(false);
   const [resultado, setResultado] = useState<{ jornadaId: string; deportistas: number; medicionesGuardadas: number } | null>(null);
 
+  const seleccionarGrupo = useCallback((item: GrupoCatalogo, fuente: CatalogoMedicion) => {
+    const institucionElegida = uno(item.institucion);
+    const disciplinaElegida = uno(item.disciplina);
+    if (!institucionElegida || !disciplinaElegida) return;
+    const primerProtocolo = fuente.protocolos
+      .filter((enlace) => enlace.disciplina_id === disciplinaElegida.id)
+      .sort((a, b) => a.orden - b.orden)
+      .map((enlace) => uno(enlace.protocolo))
+      .find((protocolo): protocolo is ProtocoloCatalogo => Boolean(protocolo));
+    const primeraMetrica = primerProtocolo?.protocolo_atributo
+      .map((metrica) => ({ ...metrica, atributo: uno(metrica.atributo) }))
+      .find((metrica) => metrica.requerido && metrica.atributo)
+      ?? primerProtocolo?.protocolo_atributo
+        .map((metrica) => ({ ...metrica, atributo: uno(metrica.atributo) }))
+        .find((metrica) => metrica.atributo);
+    setInstitucionId(institucionElegida.id);
+    setDisciplinaId(disciplinaElegida.id);
+    setGrupoId(item.id);
+    setProtocoloCodigo(primerProtocolo?.codigo ?? "");
+    setMetricaCodigo(primeraMetrica?.atributo?.codigo ?? "");
+    setValores({});
+  }, []);
+
   useEffect(() => {
     if (!sesionReal) return;
     const controlador = new AbortController();
@@ -51,13 +74,19 @@ export default function MedirSecretaria() {
         if (!respuesta.ok) throw new Error(cuerpo.error ?? "No pudimos preparar la jornada.");
         return cuerpo as CatalogoMedicion;
       })
-      .then((datos) => { setCatalogo(datos); setEvaluadoPor(datos.responsable); })
+      .then((datos) => {
+        setCatalogo(datos);
+        setEvaluadoPor(datos.responsable);
+        const grupoSolicitado = new URLSearchParams(window.location.search).get("grupo");
+        const preseleccion = datos.grupos.find((item) => item.id === grupoSolicitado);
+        if (preseleccion) seleccionarGrupo(preseleccion, datos);
+      })
       .catch((causa: unknown) => {
         if (causa instanceof DOMException && causa.name === "AbortError") return;
         setError(causa instanceof Error ? causa.message : "No pudimos preparar la jornada.");
       });
     return () => controlador.abort();
-  }, [sesionReal]);
+  }, [sesionReal, seleccionarGrupo]);
 
   const catalogoActivo = catalogo ?? CATALOGO_VACIO;
 
@@ -80,29 +109,6 @@ export default function MedirSecretaria() {
   const grupo = catalogoActivo.grupos.find((item) => item.id === grupoId) ?? null;
   const plantel = catalogoActivo.deportistas.filter((item) => item.categoria_id === grupoId);
   const cargados = plantel.filter((item) => valores[item.id]?.trim() && numero(valores[item.id]) !== null).length;
-
-  function seleccionarGrupo(item: GrupoCatalogo) {
-    const institucionElegida = uno(item.institucion);
-    const disciplinaElegida = uno(item.disciplina);
-    if (!institucionElegida || !disciplinaElegida) return;
-    const primerProtocolo = catalogoActivo.protocolos
-      .filter((enlace) => enlace.disciplina_id === disciplinaElegida.id)
-      .sort((a, b) => a.orden - b.orden)
-      .map((enlace) => uno(enlace.protocolo))
-      .find((protocolo): protocolo is ProtocoloCatalogo => Boolean(protocolo));
-    const primeraMetrica = primerProtocolo?.protocolo_atributo
-      .map((metrica) => ({ ...metrica, atributo: uno(metrica.atributo) }))
-      .find((metrica) => metrica.requerido && metrica.atributo)
-      ?? primerProtocolo?.protocolo_atributo
-        .map((metrica) => ({ ...metrica, atributo: uno(metrica.atributo) }))
-        .find((metrica) => metrica.atributo);
-    setInstitucionId(institucionElegida.id);
-    setDisciplinaId(disciplinaElegida.id);
-    setGrupoId(item.id);
-    setProtocoloCodigo(primerProtocolo?.codigo ?? "");
-    setMetricaCodigo(primeraMetrica?.atributo?.codigo ?? "");
-    setValores({});
-  }
 
   async function guardar() {
     if (!grupo || !protocolo || !metrica || cargados === 0 || !fecha || !evaluadoPor.trim()) return;
@@ -154,7 +160,7 @@ export default function MedirSecretaria() {
 
         {institucionId && <section><h2 className="mb-2 text-sm font-extrabold">2 · ¿Qué disciplina van a medir?</h2><div className="flex flex-wrap gap-2">{disciplinasInstitucion.map((disciplina) => <button key={disciplina.id} onClick={() => { setDisciplinaId(disciplina.id); setGrupoId(""); setProtocoloCodigo(""); setMetricaCodigo(""); setValores({}); }} className={cn("rounded-full border px-4 py-2 text-sm font-bold", disciplinaId === disciplina.id ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card")}>{disciplina.nombre}</button>)}</div></section>}
 
-        {disciplinaId && <section><h2 className="mb-2 text-sm font-extrabold">3 · ¿Qué grupo o plantel?</h2><div className="grid gap-2 sm:grid-cols-2">{gruposDisponibles.map((item) => { const cantidad = catalogoActivo.deportistas.filter((deportista) => deportista.categoria_id === item.id).length; return <button key={item.id} onClick={() => seleccionarGrupo(item)} className={cn("rounded-2xl border p-4 text-left transition-colors", grupoId === item.id ? "border-primary bg-secondary" : "border-border bg-card hover:border-primary/35")}><span className="text-sm font-extrabold">{item.nombre}</span><span className="mt-1 block text-xs text-muted-foreground">{cantidad} deportistas</span></button>; })}</div></section>}
+        {disciplinaId && <section><h2 className="mb-2 text-sm font-extrabold">3 · ¿Qué grupo o plantel?</h2><div className="grid gap-2 sm:grid-cols-2">{gruposDisponibles.map((item) => { const cantidad = catalogoActivo.deportistas.filter((deportista) => deportista.categoria_id === item.id).length; return <button key={item.id} onClick={() => seleccionarGrupo(item, catalogoActivo)} className={cn("rounded-2xl border p-4 text-left transition-colors", grupoId === item.id ? "border-primary bg-secondary" : "border-border bg-card hover:border-primary/35")}><span className="text-sm font-extrabold">{item.nombre}</span><span className="mt-1 block text-xs text-muted-foreground">{cantidad} deportistas</span></button>; })}</div></section>}
 
         {grupoId && <section className="space-y-3"><h2 className="text-sm font-extrabold">4 · ¿Qué van a medir?</h2><div className="flex flex-wrap gap-2">{protocolos.map((item) => <button key={item.codigo} onClick={() => { const primera = item.protocolo_atributo.map((x) => ({ ...x, atributo: uno(x.atributo) })).find((x) => x.requerido && x.atributo) ?? item.protocolo_atributo.map((x) => ({ ...x, atributo: uno(x.atributo) })).find((x) => x.atributo); setProtocoloCodigo(item.codigo); setMetricaCodigo(primera?.atributo?.codigo ?? ""); setValores({}); }} className={cn("rounded-full border px-4 py-2 text-sm font-bold", protocoloCodigo === item.codigo ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card")}>{item.nombre}</button>)}</div>{protocolo && <div className="grid grid-cols-2 gap-2">{metricas.map((item) => <button key={item.atributo.codigo} onClick={() => { setMetricaCodigo(item.atributo.codigo); setValores({}); }} className={cn("flex items-center justify-between rounded-xl border p-3 text-left", metricaCodigo === item.atributo.codigo ? "border-primary bg-secondary" : "border-border bg-card")}><span><span className="block text-sm font-bold">{item.atributo.nombre}</span><span className="text-xs text-muted-foreground">{item.unidad}</span></span>{metricaCodigo === item.atributo.codigo && <Check className="size-4 text-primary" />}</button>)}</div>}</section>}
 
