@@ -194,6 +194,7 @@ function navPara(perfil: Perfil): NavItem[] {
     return [
       { href: "/panel", label: "Inicio", icon: Home },
       { href: "/secretaria/jornadas", label: "Planillas", icon: FileStack },
+      { href: "/secretaria/medir", label: "Medir", icon: ClipboardPlus },
       { href: "/secretaria/grupos", label: "Grupos", icon: Users },
       { href: "/secretaria/disciplinas", label: "Disciplinas", icon: Shapes },
       { href: "/secretaria/equipo", label: "Equipo", icon: ContactRound },

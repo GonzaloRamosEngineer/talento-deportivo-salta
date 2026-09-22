@@ -76,7 +76,7 @@ export default function JornadasSecretaria() {
                   <p className="truncate text-xs text-muted-foreground">{jornada.disciplina} · {jornada.archivo}</p>
                   <div className="mt-2"><EstadoJornada estado={jornada.estado} /></div>
                 </div>
-                {jornada.estado !== "lista" ? <Link href="/evaluaciones/importar" aria-label={`Revisar ${jornada.grupo}`} className="flex size-8 shrink-0 items-center justify-center rounded-lg text-primary hover:bg-secondary"><ChevronRight className="size-4" aria-hidden /></Link> : <ChevronRight className="size-4 shrink-0 text-muted-foreground/40" aria-hidden />}
+                <Link href={real ? `/secretaria/jornadas/${jornada.id}` : "/evaluaciones/importar"} aria-label={`Abrir ${jornada.archivo}`} className="flex size-8 shrink-0 items-center justify-center rounded-lg text-primary hover:bg-secondary"><ChevronRight className="size-4" aria-hidden /></Link>
               </div>
             ))}
             {jornadasVisibles.length === 0 && (
