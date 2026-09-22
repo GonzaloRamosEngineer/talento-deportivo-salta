@@ -193,7 +193,7 @@ function navPara(perfil: Perfil): NavItem[] {
   if (perfil === "secretaria") {
     return [
       { href: "/panel", label: "Inicio", icon: Home },
-      { href: "/secretaria/jornadas", label: "Jornadas", icon: FileStack },
+      { href: "/secretaria/jornadas", label: "Planillas", icon: FileStack },
       { href: "/secretaria/grupos", label: "Grupos", icon: Users },
       { href: "/secretaria/disciplinas", label: "Disciplinas", icon: Shapes },
       { href: "/secretaria/equipo", label: "Equipo", icon: ContactRound },
