@@ -10,7 +10,7 @@ export interface SesionClub {
   usuario: { id: string; email: string | null } | null;
   /** null = sin membresía (visitante o perfil plataforma) */
   membresia: { id: string; rol: RolMembresia; clubId: string; nombre: string } | null;
-  club: { id: string; nombre: string; escudoUrl: string | null } | null;
+  club: { id: string; nombre: string; escudoUrl: string | null; tipoOrganizacion: string } | null;
   /** ids REALES de las categorías asignadas; null = alcance de todo el club */
   categoriasAsignadas: string[] | null;
 }
@@ -45,19 +45,41 @@ export function useClub(): SesionClub {
         return;
       }
 
-      // Sin filtrar por club: desde T-002B la base impone
-      // `unique (auth_user_id)`, así que no puede haber dos filas.
-      const { data: m, error: eM } = await supabase
+      let { data: membresias, error: eM } = await supabase
         .from("membresia")
-        .select("id, rol, club_id, nombre")
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
+        .select("id, rol, club_id, nombre, club:club_id(id, nombre, escudo_url, tipo_organizacion)")
+        .eq("auth_user_id", user.id);
+      // Transición segura: producción no recibe esta funcionalidad hasta
+      // Gate A. Mientras tanto, las sesiones actuales siguen leyendo el
+      // esquema anterior sin quedar rotas por la nueva columna de staging.
+      if (eM?.message.includes("tipo_organizacion")) {
+        const anterior = await supabase
+          .from("membresia")
+          .select("id, rol, club_id, nombre, club:club_id(id, nombre, escudo_url)")
+          .eq("auth_user_id", user.id);
+        membresias = (anterior.data ?? []).map((fila) => {
+          const club = Array.isArray(fila.club) ? fila.club[0] : fila.club;
+          return { ...fila, club: club ? [{ ...club, tipo_organizacion: "club" }] : [] };
+        });
+        eM = anterior.error;
+      }
       if (cancelado) return;
       if (eM) {
         // Antes esto caía en la misma rama que "no tiene membresía" y el
         // problema quedaba invisible. No son lo mismo: acá hubo un fallo.
         console.error("[use-club] no se pudo leer la membresía:", eM.message);
       }
+      const preferida = window.localStorage.getItem("tds-membresia-activa");
+      const rutaSecretaria = window.location.pathname.startsWith("/secretaria")
+        || window.location.pathname.startsWith("/evaluaciones");
+      const m = (membresias ?? []).find((fila) => fila.id === preferida)
+        ?? (rutaSecretaria
+          ? (membresias ?? []).find((fila) => {
+              const organizacion = Array.isArray(fila.club) ? fila.club[0] : fila.club;
+              return organizacion?.tipo_organizacion === "secretaria";
+            })
+          : null)
+        ?? (membresias ?? [])[0];
       if (!m) {
         setEstado({
           ...VACIA,
@@ -67,28 +89,26 @@ export function useClub(): SesionClub {
         return;
       }
 
-      const [{ data: club }, categorias] = await Promise.all([
-        supabase
-          .from("club")
-          .select("id, nombre, escudo_url")
-          .eq("id", m.club_id)
-          .maybeSingle(),
-        m.rol === "entrenador"
+      window.localStorage.setItem("tds-membresia-activa", m.id);
+      const categorias = await (
+        m.rol === "entrenador" || m.rol === "evaluador"
           ? supabase
               .from("membresia_categoria")
               .select("categoria_id")
               .eq("membresia_id", m.id)
               .then(({ data }) => (data ?? []).map((f) => f.categoria_id as string))
-          : Promise.resolve(null),
-      ]);
+          : Promise.resolve(null)
+      );
       if (cancelado) return;
+
+      const club = Array.isArray(m.club) ? m.club[0] : m.club;
 
       setEstado({
         cargando: false,
         usuario: { id: user.id, email: user.email ?? null },
         membresia: { id: m.id, rol: m.rol, clubId: m.club_id, nombre: m.nombre },
         club: club
-          ? { id: club.id, nombre: club.nombre, escudoUrl: club.escudo_url ?? null }
+          ? { id: club.id, nombre: club.nombre, escudoUrl: club.escudo_url ?? null, tipoOrganizacion: club.tipo_organizacion }
           : null,
         categoriasAsignadas: categorias,
       });

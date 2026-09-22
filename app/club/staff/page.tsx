@@ -38,6 +38,10 @@ const ORDEN_ROL: Record<RolMembresia, number> = {
   admin_club: 0,
   entrenador: 1,
   comision_directiva: 2,
+  admin_secretaria: 3,
+  coordinador_secretaria: 4,
+  evaluador: 5,
+  analista_secretaria: 6,
 };
 
 interface FormInvitacion {

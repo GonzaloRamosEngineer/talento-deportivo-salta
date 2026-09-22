@@ -10,6 +10,7 @@ import { MapaSalta } from "@/components/mapa-salta";
 import { EnElRadar, Proximamente } from "@/components/proximamente";
 
 import { CargandoPelota } from "@/components/cargando-pelota";
+import { SelectorContextoSecretaria } from "@/components/secretaria/selector-contexto-secretaria";
 
 export default function Observatorio() {
   const { perfil, setPerfil, sesionReal } = usePerfil();
@@ -63,6 +64,7 @@ export default function Observatorio() {
 
   return (
     <div className="flex flex-col gap-5">
+      <SelectorContextoSecretaria activo="observatorio" />
       <div>
         <h1 className="text-2xl font-extrabold tracking-tight">
           Observatorio provincial

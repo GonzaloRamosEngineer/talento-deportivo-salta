@@ -7,12 +7,16 @@ import {
   Home,
   Users,
   CalendarDays,
+  ChartNoAxesCombined,
   ClipboardPlus,
+  ContactRound,
   Dumbbell,
+  FileStack,
   Landmark,
   MessageSquareText,
   Settings,
   Shield,
+  Shapes,
   Sprout,
   LogIn,
   LogOut,
@@ -45,6 +49,9 @@ function MarcaClub({
   const { sinMembresia, cargandoSesion } = usePerfil();
   if (perfil === "super_admin") {
     return <p className={className}>Provincia de Salta</p>;
+  }
+  if (perfil === "secretaria") {
+    return <p className={className}>Secretaría de Deportes · Salta</p>;
   }
   // Mientras no se sabe qué club es, no se dice ninguno. El fallback a
   // CLUB.nombre del mock hacía que un profe viera el club de la demo por un
@@ -161,6 +168,7 @@ interface NavItem {
   href: string;
   label: string;
   icon: React.ElementType;
+  mobile?: boolean;
 }
 
 function navPara(perfil: Perfil): NavItem[] {
@@ -180,6 +188,16 @@ function navPara(perfil: Perfil): NavItem[] {
       { href: "/plataforma/clubes", label: "Clubes", icon: Shield },
       { href: "/plataforma/parametros", label: "Parámetros", icon: Sprout },
       { href: "/plataforma/sugerencias", label: "Sugerencias", icon: MessageSquareText },
+    ];
+  }
+  if (perfil === "secretaria") {
+    return [
+      { href: "/panel", label: "Inicio", icon: Home },
+      { href: "/secretaria/jornadas", label: "Jornadas", icon: FileStack },
+      { href: "/secretaria/grupos", label: "Grupos", icon: Users },
+      { href: "/secretaria/disciplinas", label: "Disciplinas", icon: Shapes },
+      { href: "/secretaria/equipo", label: "Equipo", icon: ContactRound },
+      { href: "/secretaria/reportes", label: "Reportes", icon: ChartNoAxesCombined, mobile: false },
     ];
   }
   const base: NavItem[] = [
@@ -327,7 +345,8 @@ const ROL_CORTO: Record<Perfil, string> = {
   profesor: "Profe",
   admin_club: "Admin",
   comision: "Comisión",
-  super_admin: "Plataforma",
+  secretaria: "Evaluaciones",
+  super_admin: "Observatorio",
 };
 
 /**
@@ -425,8 +444,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               dice que desconfíe de algo que sí es verdadero. */}
           {!sesionReal && (
             <p className="text-[11px] leading-snug text-muted-foreground">
-              Demo · la gestión del club (Club) guarda en la base real; los
-              paneles siguen con datos de ejemplo
+              {perfil === "secretaria"
+                ? "Demo · Espacio Secretaría con datos anonimizados; no guarda en producción"
+                : "Demo · la gestión del club (Club) guarda en la base real; los paneles siguen con datos de ejemplo"}
             </p>
           )}
         </div>
@@ -478,7 +498,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
       {/* ---------- Barra inferior (mobile) ---------- */}
       <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border bg-card/95 pb-[env(safe-area-inset-bottom)] backdrop-blur md:hidden">
         <div className="mx-auto flex max-w-md items-stretch justify-around">
-          {nav.map(({ href, label, icon: Icon }) => {
+          {nav.filter((item) => item.mobile !== false).map(({ href, label, icon: Icon }) => {
             const activa = esActiva(pathname, href);
             // La sección ACTIVA es la que lleva el círculo verde
             // elevado; el resto queda como ícono plano. El círculo

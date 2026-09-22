@@ -286,22 +286,22 @@ export default function LoginPage() {
               {/* Liga / Secretaría: el observatorio son agregados, así que
                   se recorre SIN sesión (mock anónimo). Ya no hay cuenta
                   demo con privilegios de plataforma. */}
-              <Link
+              <a
                 href="/observatorio?perfil=super_admin"
-                className="flex w-full items-center gap-3 rounded-2xl border border-border bg-background px-4 py-3.5 text-left transition-all hover:border-primary/50 hover:bg-secondary/50 active:scale-[0.99]"
+                className="flex w-full items-center gap-3 rounded-2xl border border-primary/25 bg-secondary/35 px-4 py-3.5 text-left transition-all hover:border-primary/50 hover:bg-secondary/60 active:scale-[0.99]"
               >
-                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-secondary text-secondary-foreground">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
                   <Landmark className="size-5" aria-hidden />
                 </span>
                 <span className="min-w-0">
                   <span className="block text-sm font-extrabold leading-tight">
-                    Liga / Secretaría de Deportes
+                    Secretaría de Deportes
                   </span>
                   <span className="block truncate text-xs text-muted-foreground">
-                    Observatorio provincial, solo agregados
+                    Observatorio provincial y evaluaciones propias
                   </span>
                 </span>
-              </Link>
+              </a>
             </div>
 
             {/* ---------- Separador ---------- */}

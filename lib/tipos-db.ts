@@ -12,7 +12,14 @@ export interface CategoriaDB {
   disciplina_id: string;
 }
 
-export type RolMembresia = "admin_club" | "entrenador" | "comision_directiva";
+export type RolMembresia =
+  | "admin_club"
+  | "entrenador"
+  | "comision_directiva"
+  | "admin_secretaria"
+  | "coordinador_secretaria"
+  | "evaluador"
+  | "analista_secretaria";
 
 export interface MembresiaDB {
   id: string;
@@ -28,6 +35,10 @@ export const ROL_LABEL: Record<RolMembresia, string> = {
   admin_club: "Admin del club",
   entrenador: "Profe",
   comision_directiva: "Comisión directiva",
+  admin_secretaria: "Admin de Secretaría",
+  coordinador_secretaria: "Coordinación",
+  evaluador: "Evaluador/a",
+  analista_secretaria: "Analista",
 };
 
 // Funciones profesionales sugeridas (el campo es libre: la formación

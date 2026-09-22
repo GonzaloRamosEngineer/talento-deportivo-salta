@@ -1,6 +1,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { usePathname } from "next/navigation";
 import { CATEGORIAS, PROFE_DEMO } from "@/lib/mock-data";
 import { crearClienteBrowser } from "@/lib/supabase/client";
 
@@ -9,7 +10,12 @@ import { crearClienteBrowser } from "@/lib/supabase/client";
 // Con SESIÓN REAL el rol manda siempre a la matriz de acceso de
 // docs/PERFILES.md — se lee de `membresia`/`membresia_categoria` vía
 // RLS, nunca de localStorage (ver cargarSesion() más abajo).
-export type Perfil = "profesor" | "admin_club" | "comision" | "super_admin";
+export type Perfil =
+  | "profesor"
+  | "admin_club"
+  | "comision"
+  | "secretaria"
+  | "super_admin";
 
 /**
  * `corto` es para la píldora del header mobile, donde no entra el label
@@ -21,11 +27,12 @@ export const PERFILES: { id: Perfil; label: string; corto: string; descripcion: 
   { id: "profesor", label: "Profesor/a (Marcela)", corto: "Profe", descripcion: "Solo sus categorías: 9ª División y Escuelita 2016 — carga y planifica" },
   { id: "admin_club", label: "Admin del club", corto: "Admin", descripcion: "Todo el club: opera y además gestiona categorías, staff y consentimientos" },
   { id: "comision", label: "Comisión directiva", corto: "Comisión", descripcion: "Todo el club, solo consulta — no carga ni edita" },
+  { id: "secretaria", label: "Secretaría · evaluaciones", corto: "Evaluaciones", descripcion: "Sus evaluadores, grupos, jornadas y mediciones multidisciplina" },
   // "Liga / Secretaría" y no "Plataforma (super admin)": es el mismo texto
   // con el que se entra desde /login, y "super admin" le suena a rol de
   // sistemas a un funcionario, que es justamente el visitante que este
   // perfil viene a mostrarle el observatorio.
-  { id: "super_admin", label: "Liga / Secretaría", corto: "Liga", descripcion: "Observatorio interclubes: solo agregados, sin acceso a fichas" },
+  { id: "super_admin", label: "Secretaría · observatorio", corto: "Observatorio", descripcion: "Vista provincial agregada, sin acceso a fichas de clubes" },
 ];
 
 export interface Permisos {
@@ -47,6 +54,8 @@ export function permisosDe(perfil: Perfil): Permisos {
       return { opera: true, gestiona: true, veClub: true, categorias: null };
     case "comision":
       return { opera: false, gestiona: false, veClub: true, categorias: null };
+    case "secretaria":
+      return { opera: true, gestiona: true, veClub: true, categorias: null };
     case "super_admin":
       return { opera: false, gestiona: false, veClub: false, categorias: [] };
   }
@@ -55,6 +64,7 @@ export function permisosDe(perfil: Perfil): Permisos {
 // Mapeo del rol REAL de `membresia.rol` (docs/PERFILES.md) al Perfil
 // que ya consume toda la UI.
 function perfilDeRolDB(rol: string): Perfil {
+  if (["admin_secretaria", "coordinador_secretaria", "evaluador", "analista_secretaria"].includes(rol)) return "secretaria";
   if (rol === "admin_club") return "admin_club";
   if (rol === "comision_directiva") return "comision";
   return "profesor"; // 'entrenador'
@@ -89,6 +99,7 @@ const PerfilContext = createContext<{
    * mock, pero en la ventana de carga.
    */
   cargandoSesion: boolean;
+  contextosDisponibles: { secretaria: boolean; observatorio: boolean };
 }>({
   perfil: "profesor",
   setPerfil: () => {},
@@ -96,9 +107,11 @@ const PerfilContext = createContext<{
   sesionReal: false,
   sinMembresia: false,
   cargandoSesion: true,
+  contextosDisponibles: { secretaria: false, observatorio: false },
 });
 
 export function PerfilProvider({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
   const [perfil, setPerfilState] = useState<Perfil>("profesor");
   // undefined = sin sesión real (permisos.categorias sale de permisosDe);
   // definido = pisa permisos.categorias con el alcance real del entrenador.
@@ -108,6 +121,8 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
   const [sesionReal, setSesionReal] = useState(false);
   const [sinMembresia, setSinMembresia] = useState(false);
   const [cargandoSesion, setCargandoSesion] = useState(true);
+  const [rolSesion, setRolSesion] = useState<string | null>(null);
+  const [contextosDisponibles, setContextosDisponibles] = useState({ secretaria: false, observatorio: false });
 
   useEffect(() => {
     let cancelado = false;
@@ -131,6 +146,8 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
       setCategoriasSesion(undefined);
       setSesionReal(false);
       setSinMembresia(false);
+      setRolSesion(null);
+      setContextosDisponibles({ secretaria: true, observatorio: true });
     }
 
     async function cargarSesion() {
@@ -144,32 +161,60 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
         return;
       }
 
-      // Plataforma (Liga/Secretaría): sin fila en `membresia` a propósito
-      // (regla #4 de CLAUDE.md) — se identifica por app_metadata.
-      if (user.app_metadata?.plataforma) {
-        setPerfilState("super_admin");
-        setCategoriasSesion([]);
-        setSesionReal(true);
-        setSinMembresia(false);
-        return;
-      }
-
-      // Sin filtrar por club: desde T-002B la base impone
-      // `unique (auth_user_id)`, así que no puede haber dos filas. Antes sí
-      // podía, y el resultado era este fallback degradando a "profesor" con
-      // sesión real — el modo de falla silencioso que documenta T-002B.
-      const { data: m, error: eM } = await supabase
+      let { data: membresias, error: eM } = await supabase
         .from("membresia")
-        .select("id, rol")
-        .eq("auth_user_id", user.id)
-        .maybeSingle();
+        .select("id, rol, club:club_id(tipo_organizacion)")
+        .eq("auth_user_id", user.id);
+      if (eM?.message.includes("tipo_organizacion")) {
+        const anterior = await supabase
+          .from("membresia")
+          .select("id, rol")
+          .eq("auth_user_id", user.id);
+        membresias = (anterior.data ?? []).map((fila) => ({
+          ...fila,
+          club: [{ tipo_organizacion: "club" }],
+        }));
+        eM = anterior.error;
+      }
       if (cancelado) return;
 
       if (eM) {
         console.error("[perfil-context] no se pudo leer la membresía:", eM.message);
       }
 
+      const membresiaSecretaria = (membresias ?? []).find((fila) => {
+        const organizacion = Array.isArray(fila.club) ? fila.club[0] : fila.club;
+        return organizacion?.tipo_organizacion === "secretaria";
+      });
+      const puedeObservatorio = Boolean(user.app_metadata?.plataforma);
+      setContextosDisponibles({ secretaria: Boolean(membresiaSecretaria), observatorio: puedeObservatorio });
+      const preferencia = window.localStorage.getItem("tds-contexto-activo");
+      const quiereObservatorio = pathname.startsWith("/observatorio") || preferencia === "observatorio" && pathname === "/panel";
+      if (puedeObservatorio && quiereObservatorio) {
+        setPerfilState("super_admin");
+        setCategoriasSesion([]);
+        setRolSesion("plataforma");
+        setSesionReal(true);
+        setSinMembresia(false);
+        return;
+      }
+
+      const preferida = window.localStorage.getItem("tds-membresia-activa");
+      const m = (membresias ?? []).find((fila) => fila.id === preferida)
+        ?? (pathname.startsWith("/secretaria") || pathname.startsWith("/evaluaciones") || preferencia === "secretaria"
+          ? membresiaSecretaria
+          : null)
+        ?? (membresias ?? [])[0];
+
       if (!m) {
+        if (puedeObservatorio) {
+          setPerfilState("super_admin");
+          setCategoriasSesion([]);
+          setRolSesion("plataforma");
+          setSesionReal(true);
+          setSinMembresia(false);
+          return;
+        }
         // Usuario autenticado sin membresía ni plataforma: no se le asume
         // ningún acceso. `sinMembresia` solo se afirma si la consulta
         // funcionó — con `eM` no sabemos si no tiene club o si no pudimos
@@ -178,11 +223,14 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
         setCategoriasSesion([]);
         setSesionReal(true);
         setSinMembresia(!eM);
+        setRolSesion(null);
         return;
       }
 
+      window.localStorage.setItem("tds-membresia-activa", m.id);
+
       let categorias: string[] | null = null;
-      if (m.rol === "entrenador") {
+      if (m.rol === "entrenador" || m.rol === "evaluador") {
         const { data: mc } = await supabase
           .from("membresia_categoria")
           .select("categoria:categoria_id(nombre)")
@@ -198,6 +246,7 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
 
       setPerfilState(perfilDeRolDB(m.rol));
       setCategoriasSesion(categorias);
+      setRolSesion(m.rol);
       setSesionReal(true);
       setSinMembresia(false);
     }
@@ -218,7 +267,7 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
       cancelado = true;
       sub.subscription.unsubscribe();
     };
-  }, []);
+  }, [pathname]);
 
   const setPerfil = (p: Perfil) => {
     // Con sesión real el rol lo decide la base, no el selector demo.
@@ -229,11 +278,19 @@ export function PerfilProvider({ children }: { children: React.ReactNode }) {
 
   const permisos = useMemo(() => {
     const base = permisosDe(perfil);
-    return categoriasSesion === undefined ? base : { ...base, categorias: categoriasSesion };
-  }, [perfil, categoriasSesion]);
+    const porRol = rolSesion === "analista_secretaria"
+      ? { opera: false, gestiona: false, veClub: true }
+      : rolSesion === "evaluador"
+        ? { opera: true, gestiona: false, veClub: true }
+        : rolSesion === "coordinador_secretaria" || rolSesion === "admin_secretaria"
+          ? { opera: true, gestiona: true, veClub: true }
+          : null;
+    const combinado = porRol ? { ...base, ...porRol } : base;
+    return categoriasSesion === undefined ? combinado : { ...combinado, categorias: categoriasSesion };
+  }, [perfil, categoriasSesion, rolSesion]);
 
   return (
-    <PerfilContext.Provider value={{ perfil, setPerfil, permisos, sesionReal, sinMembresia, cargandoSesion }}>
+    <PerfilContext.Provider value={{ perfil, setPerfil, permisos, sesionReal, sinMembresia, cargandoSesion, contextosDisponibles }}>
       {children}
     </PerfilContext.Provider>
   );
@@ -245,5 +302,5 @@ export function usePerfil() {
 
 /** ¿El perfil actual puede cargar/editar datos? */
 export function puedeCargar(perfil: Perfil) {
-  return perfil === "profesor" || perfil === "admin_club";
+  return perfil === "profesor" || perfil === "admin_club" || perfil === "secretaria";
 }

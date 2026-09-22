@@ -28,6 +28,7 @@ import { EstadoBadge } from "@/components/estado-badge";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { Sparkline } from "@/components/sparkline";
 import { usePerfil } from "@/components/perfil-context";
+import { InicioSecretaria } from "@/components/secretaria/inicio-secretaria";
 
 import { CargandoPelota } from "@/components/cargando-pelota";
 
@@ -118,6 +119,7 @@ export default function Inicio() {
   const agenda = useAgenda(datos);
 
   if (perfil === "super_admin") return <InicioPlataforma />;
+  if (perfil === "secretaria") return <InicioSecretaria />;
 
   if (agenda.cargando) {
     return (
