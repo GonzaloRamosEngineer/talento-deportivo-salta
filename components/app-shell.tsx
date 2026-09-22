@@ -446,7 +446,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           {!sesionReal && (
             <p className="text-[11px] leading-snug text-muted-foreground">
               {perfil === "secretaria"
-                ? "Demo · Espacio Secretaría con datos anonimizados; no guarda en producción"
+                ? "Ingresá con la cuenta de Secretaría para trabajar con sus datos reales"
                 : "Demo · la gestión del club (Club) guarda en la base real; los paneles siguen con datos de ejemplo"}
             </p>
           )}

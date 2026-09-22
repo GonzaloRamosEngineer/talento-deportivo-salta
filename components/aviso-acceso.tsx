@@ -29,8 +29,8 @@ export function AvisoAcceso({
         </Link>
       )}
       <p className="max-w-sm text-[11px] text-muted-foreground">
-        En producción este límite lo aplica la base de datos (RLS), no la
-        interfaz. Podés cambiar de perfil desde el selector para probar.
+        El acceso se valida también en el servidor y en las políticas de datos;
+        la interfaz no puede ampliar los permisos de tu cuenta.
       </p>
     </div>
   );
