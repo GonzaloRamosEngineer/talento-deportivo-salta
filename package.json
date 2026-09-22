@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "test:importadores": "tsx scripts/verificar-importadores.ts",
+    "setup:secretaria-staging": "node scripts/configurar-secretaria-staging.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.6.0",
@@ -14,6 +16,7 @@
     "@supabase/supabase-js": "^2.110.2",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
+    "exceljs": "^4.4.0",
     "lucide-react": "^1.23.0",
     "next": "16.3.5",
     "react": "19.2.4",
@@ -32,6 +35,12 @@
     "eslint-config-next": "16.2.10",
     "shadcn": "^4.13.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
+  },
+  "overrides": {
+    "exceljs": {
+      "uuid": "^11.1.1"
+    }
   }
 }
