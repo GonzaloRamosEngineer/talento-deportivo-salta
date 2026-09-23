@@ -43,8 +43,10 @@ function escalones(resumen: ResumenSecretaria): Escalon[] {
       ? ` · de ${mesAnio(fechas[0])} a ${mesAnio(fechas.at(-1)!)}`
       : "";
 
-  // Un plantel "se puede seguir" cuando tiene jornadas en 2+ fechas
-  // distintas de la misma disciplina: recién ahí hay una curva.
+  // Un plantel con jornadas en 2+ fechas es la CONDICIÓN para que haya curva,
+  // no la curva: si en cada fecha se midió a chicos distintos (pasó en
+  // Gimnasia: 8 jornadas, nadie repetido), nadie tiene evolución todavía.
+  // El texto no promete más de lo que este dato permite afirmar.
   const fechasPorPlantel = new Map<string, Set<string>>();
   for (const j of jornadas) {
     const clave = `${j.institucion}|${j.disciplina}|${j.grupo}`;
@@ -76,15 +78,11 @@ function escalones(resumen: ResumenSecretaria): Escalon[] {
     },
     {
       titulo: "Seguir la evolución",
-      estado: !ordenado ? "proximo" : sinCurva === 0 && conCurva > 0 ? "hecho" : "en-curso",
+      estado: !ordenado ? "proximo" : "en-curso",
       detalle:
         conCurva === 0
-          ? "Con una segunda jornada del mismo plantel empieza a verse la curva de cada deportista."
-          : `${conCurva} de ${planteles} ${planteles === 1 ? "plantel" : "planteles"} ${conCurva === 1 ? "ya tiene" : "ya tienen"} 2 o más jornadas: su evolución se puede leer.${
-              sinCurva > 0
-                ? ` A ${sinCurva} ${sinCurva === 1 ? "le falta" : "les falta"} una segunda jornada.`
-                : ""
-            }`,
+          ? "La curva de cada deportista aparece cuando se lo vuelve a medir con el mismo protocolo."
+          : `${conCurva} de ${planteles} ${planteles === 1 ? "plantel" : "planteles"} ${conCurva === 1 ? "tiene" : "tienen"} jornadas en 2 o más fechas. La curva de cada deportista aparece cuando se lo vuelve a medir con el mismo protocolo.`,
       accion: ordenado && sinCurva > 0 ? { href: "/secretaria/medir", label: "Medir otra vez" } : undefined,
     },
     {
