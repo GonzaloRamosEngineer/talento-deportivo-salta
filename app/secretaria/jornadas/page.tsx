@@ -99,6 +99,30 @@ export default function JornadasSecretaria() {
     recibidaEn: string | null;
   }>>([]);
   const [errorRecepciones, setErrorRecepciones] = useState<string | null>(null);
+  // Planillas importadas que dejaron filas para carga manual (de la bandeja
+  // única `pendientes_de_carga()`): loteId → "3 filas para carga manual".
+  const [filasManuales, setFilasManuales] = useState<Map<string, string>>(new Map());
+
+  // Deep-link desde el panel: /secretaria/jornadas?filtro=manual
+  useEffect(() => {
+    const pedido = new URLSearchParams(window.location.search).get("filtro");
+    if (pedido === "manual" || pedido === "revisar" || pedido === "lista") {
+      const temporizador = window.setTimeout(() => setFiltro(pedido), 0);
+      return () => window.clearTimeout(temporizador);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!real) return;
+    const controlador = new AbortController();
+    fetch("/api/secretaria/pendientes", { signal: controlador.signal, cache: "no-store" })
+      .then((respuesta) => respuesta.ok ? respuesta.json() : { pendientes: [] })
+      .then((cuerpo: { pendientes?: Array<{ tipo: string; loteId: string | null; etiquetaEstado: string }> }) => {
+        setFilasManuales(new Map((cuerpo.pendientes ?? []).filter((p) => p.tipo === "filas" && p.loteId).map((p) => [p.loteId!, p.etiquetaEstado])));
+      })
+      .catch(() => undefined);
+    return () => controlador.abort();
+  }, [real]);
 
   useEffect(() => {
     if (!real) return;
@@ -148,14 +172,15 @@ export default function JornadasSecretaria() {
           fecha = propias[0] ?? lote.contexto.fechaDeclarada;
           fechaTexto = `Jornada del ${fechaCorta(fecha)}`;
         }
+        const filasParaCargar = filasManuales.get(lote.id);
         return {
           id: lote.id,
           institucion: lote.contexto.institucionOrigen,
           disciplina: lote.contexto.disciplina,
           grupo: lote.contexto.grupo,
           archivo: lote.nombre_archivo,
-          estado: importada ? "lista" : lote.estado === "vencido" || lote.estado === "fallido" ? "vencida" : lote.bloqueos_pendientes > 0 ? "revisar" : "recibida",
-          etiqueta: lote.estado === "vencido" ? "Vencida" : lote.estado === "fallido" ? "Falló al importar" : undefined,
+          estado: filasParaCargar ? "manual" : importada ? "lista" : lote.estado === "vencido" || lote.estado === "fallido" ? "vencida" : lote.bloqueos_pendientes > 0 ? "revisar" : "recibida",
+          etiqueta: filasParaCargar ?? (lote.estado === "vencido" ? "Vencida" : lote.estado === "fallido" ? "Falló al importar" : undefined),
           href: `/secretaria/jornadas/${lote.id}`,
           decisiones: lote.bloqueos_pendientes,
           fecha,
@@ -268,7 +293,7 @@ export default function JornadasSecretaria() {
         {filtro === "manual" && (
           <p className="flex items-start gap-2 rounded-xl bg-warning-soft/60 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
             <Inbox className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
-            <span>Planillas que el lector no pudo interpretar solo. El archivo original quedó guardado: abrila para descargarlo, cargar los datos y marcarla como procesada.</span>
+            <span>Lo que falta cargar a mano: planillas que el lector no pudo interpretar solo (abrila, descargá el original y marcala como procesada) y planillas ya importadas que dejaron algunas filas pendientes.</span>
           </p>
         )}
 

@@ -3,12 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, CheckCircle2, Info, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Download, Info, ShieldCheck } from "lucide-react";
 import { GuardiaSecretaria } from "@/components/secretaria/guardia-secretaria";
 import { CargandoPelota } from "@/components/cargando-pelota";
 import { AvisoAcceso } from "@/components/aviso-acceso";
 import { ResultadosPlanilla, type ResultadoPlanilla } from "@/components/secretaria/resultados-planilla";
 import { RevisionPlanilla } from "@/components/secretaria/revision-planilla";
+import { FilasCargaManual } from "@/components/secretaria/filas-carga-manual";
+import { useSecretaria } from "@/lib/use-secretaria";
 
 interface DetalleLote {
   loteId: string;
@@ -40,6 +42,32 @@ export default function DetallePlanillaSecretaria() {
   const [detalle, setDetalle] = useState<DetalleLote | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [confirmada, setConfirmada] = useState(false);
+  const { resumen: resumenSecretaria } = useSecretaria();
+  const [original, setOriginal] = useState<{ guardado: boolean; descargando: boolean; error: string | null }>({ guardado: false, descargando: false, error: null });
+
+  // Solo se ofrece la descarga si el original está guardado (las planillas
+  // anteriores a que se guardaran no lo tienen, o ya se purgó).
+  useEffect(() => {
+    const controlador = new AbortController();
+    fetch(`/api/secretaria/planillas/${id}/revision`, { signal: controlador.signal, cache: "no-store" })
+      .then((respuesta) => respuesta.ok ? respuesta.json() : null)
+      .then((cuerpo: { archivoGuardado?: boolean } | null) => setOriginal((actual) => ({ ...actual, guardado: Boolean(cuerpo?.archivoGuardado) })))
+      .catch(() => undefined);
+    return () => controlador.abort();
+  }, [id]);
+
+  async function descargarOriginal() {
+    setOriginal((actual) => ({ ...actual, descargando: true, error: null }));
+    try {
+      const respuesta = await fetch(`/api/secretaria/planillas/${id}/original`, { cache: "no-store" });
+      const cuerpo = await respuesta.json() as { urlDescarga?: string; error?: string };
+      if (!respuesta.ok || !cuerpo.urlDescarga) throw new Error(cuerpo.error ?? "No pudimos preparar la descarga.");
+      window.location.assign(cuerpo.urlDescarga);
+      setOriginal((actual) => ({ ...actual, descargando: false }));
+    } catch (causa) {
+      setOriginal((actual) => ({ ...actual, descargando: false, error: causa instanceof Error ? causa.message : "No pudimos descargar el archivo." }));
+    }
+  }
 
   const recargarDetalle = () => {
     fetch(`/api/secretaria/planillas/${id}`, { cache: "no-store" })
@@ -165,7 +193,15 @@ export default function DetallePlanillaSecretaria() {
             <h1 className="min-w-0 text-2xl font-extrabold tracking-tight">{titulo}</h1>
             <span className={`mt-1 shrink-0 rounded-full px-2.5 py-1 text-[11px] font-extrabold ${estado.clase}`}>{estado.texto}</span>
           </div>
-          <p className="mt-1 break-words text-sm text-muted-foreground">{`${detalle.archivo} · ${cuando}`}</p>
+          <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
+            <p className="min-w-0 break-words text-sm text-muted-foreground">{`${detalle.archivo} · ${cuando}`}</p>
+            {original.guardado && (
+              <button type="button" onClick={() => void descargarOriginal()} disabled={original.descargando} className="-ml-1 inline-flex min-h-11 items-center gap-1.5 px-1 text-xs font-extrabold text-primary disabled:opacity-50 sm:min-h-8">
+                <Download className="size-3.5" aria-hidden />{original.descargando ? "Preparando…" : "Descargar original"}
+              </button>
+            )}
+          </div>
+          {original.error && <p role="alert" className="mt-2 text-xs font-semibold text-destructive">{original.error}</p>}
         </div>
 
         {confirmada && <p role="status" className="rounded-xl bg-secondary px-4 py-3 text-sm font-bold text-primary">Planilla confirmada e importada correctamente.</p>}
@@ -190,6 +226,23 @@ export default function DetallePlanillaSecretaria() {
             {resumen(true)}
             {queSeMidio(true)}
           </div>
+        )}
+
+        {importada && (
+          <FilasCargaManual
+            loteId={id}
+            // La fila se pudo haber cargado en una jornada de esta planilla o
+            // en una nueva del mismo plantel (por ejemplo, desde Medir).
+            jornadas={[
+              ...detalle.jornadas.map((j) => ({ id: j.id, fecha: j.fecha, grupo: j.grupo })),
+              ...(resumenSecretaria?.jornadas ?? [])
+                .filter((j) => j.institucion === detalle.contexto.institucionOrigen && j.grupo === detalle.contexto.grupo && j.disciplina === detalle.contexto.disciplina)
+                .map((j) => ({ id: j.id, fecha: j.fecha, grupo: j.grupo })),
+            ]
+              .filter((j, i, todas) => todas.findIndex((o) => o.id === j.id) === i)
+              .sort((a, b) => b.fecha.localeCompare(a.fecha))
+              .map((j) => ({ id: j.id, etiqueta: `${fecha(j.fecha)} · ${j.grupo}` }))}
+          />
         )}
 
         <ResultadosPlanilla resultados={detalle.resultados ?? []} />

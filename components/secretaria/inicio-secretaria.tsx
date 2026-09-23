@@ -9,6 +9,7 @@ import {
   ChevronRight,
   FileSpreadsheet,
   Gauge,
+  Inbox,
   Users,
 } from "lucide-react";
 import { EstadoJornada } from "@/components/secretaria/estado-jornada";
@@ -40,6 +41,7 @@ export function InicioSecretaria() {
   const progreso = totalLotes > 0 ? Math.round((importados / totalLotes) * 100) : 0;
   const instituciones = new Set(resumen?.lotes.map((lote) => lote.contexto.institucionOrigen)).size;
   const porRevisar = resumen?.indicadores.lotesPendientes ?? 0;
+  const pendientesCarga = resumen?.indicadores.pendientesCarga ?? 0;
   const plural = (n: number, uno: string, varios: string) => `${n.toLocaleString("es-AR")} ${n === 1 ? uno : varios}`;
   // Número y etiqueta se leen juntos ("9 planillas"): van en la misma línea.
   // El detalle es siempre un dato, nunca una invitación, y lo que
@@ -205,6 +207,17 @@ export function InicioSecretaria() {
           </Link>
         )}
       </section>
+
+      {pendientesCarga > 0 && (
+        <Link href="/secretaria/jornadas?filtro=manual" className={`order-first flex items-center gap-3 rounded-3xl border border-warning/40 bg-card p-4 hover:bg-muted/40 sm:order-none sm:p-5 ${PRESIONABLE}`}>
+          <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-warning-soft text-warning"><Inbox className="size-4" aria-hidden /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-sm font-extrabold">{`${pendientesCarga} ${pendientesCarga === 1 ? "planilla espera" : "planillas esperan"} carga manual`}</span>
+            <span className="mt-0.5 block text-xs text-muted-foreground">Lo que el lector no pudo cargar solo. Nada se descartó: quedó guardado para cargarlo a mano.</span>
+          </span>
+          <ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden />
+        </Link>
+      )}
 
       <section className="rounded-3xl border border-border bg-card p-5">
         <div className="flex items-center gap-3">
