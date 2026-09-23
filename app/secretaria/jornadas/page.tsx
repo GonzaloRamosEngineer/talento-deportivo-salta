@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, CheckCircle2, ChevronRight, Clock, FileSpreadsheet, Search } from "lucide-react";
+import { AlertTriangle, Archive, CheckCircle2, ChevronRight, Clock, FileSpreadsheet, Inbox, Search, TimerOff } from "lucide-react";
 import { GuardiaSecretaria } from "@/components/secretaria/guardia-secretaria";
 import { PRESIONABLE } from "@/components/secretaria/presionable";
 import { GRUPOS_SECRETARIA, type EstadoJornadaSecretaria } from "@/lib/secretaria-demo";
@@ -13,7 +13,17 @@ import { Ayuda } from "@/components/ayuda";
 import { EstadoVacio } from "@/components/estado-vacio";
 import { cn } from "@/lib/utils";
 
-type Filtro = "todas" | "revisar" | "lista";
+type Filtro = "todas" | "revisar" | "manual" | "lista";
+
+/**
+ * Estados de una fila de la bandeja. Además de los de la planilla leída
+ * (`EstadoJornadaSecretaria`), la bandeja muestra las que entraron por
+ * recepción manual ("manual" mientras esperan, "cerrada" al procesarse,
+ * rechazarse o purgarse) y los lotes que ya no se pueden resolver.
+ */
+type EstadoFila = EstadoJornadaSecretaria | "manual" | "vencida" | "cerrada";
+
+const RECEPCION_ABIERTA = new Set(["PENDIENTE_ARCHIVO", "ERROR_SUBIDA", "RECIBIDA_PARA_REVISION", "EN_REVISION"]);
 
 interface FilaPlanilla {
   id: string;
@@ -21,7 +31,10 @@ interface FilaPlanilla {
   disciplina: string;
   grupo: string;
   archivo: string;
-  estado: EstadoJornadaSecretaria;
+  estado: EstadoFila;
+  href: string;
+  /** texto del chip cuando no alcanza con el estado (recepciones, vencidas) */
+  etiqueta?: string;
   decisiones?: number;
   /** YYYY-MM-DD para ordenar: la jornada más reciente, o la recepción si todavía no hay jornada */
   fecha?: string;
@@ -31,12 +44,15 @@ interface FilaPlanilla {
 
 // Lo que pide acción va siempre primero; dentro de cada estado, la jornada
 // más reciente arriba.
-const ORDEN: Record<EstadoJornadaSecretaria, number> = { revisar: 0, recibida: 1, lista: 2 };
+const ORDEN: Record<EstadoFila, number> = { revisar: 0, manual: 1, recibida: 2, vencida: 3, lista: 4, cerrada: 5 };
 
-const ESTADO_VISUAL: Record<EstadoJornadaSecretaria, { icono: React.ElementType; caja: string; chip: string }> = {
+const ESTADO_VISUAL: Record<EstadoFila, { icono: React.ElementType; caja: string; chip: string }> = {
   revisar: { icono: AlertTriangle, caja: "bg-destructive/10 text-destructive", chip: "bg-destructive/10 text-destructive" },
+  manual: { icono: Inbox, caja: "bg-warning-soft text-warning", chip: "bg-warning-soft text-warning" },
   recibida: { icono: Clock, caja: "bg-warning-soft text-warning", chip: "bg-warning-soft text-warning" },
+  vencida: { icono: TimerOff, caja: "bg-muted text-muted-foreground", chip: "bg-muted text-muted-foreground" },
   lista: { icono: CheckCircle2, caja: "bg-secondary text-primary", chip: "bg-secondary text-primary" },
+  cerrada: { icono: Archive, caja: "bg-muted text-muted-foreground", chip: "bg-muted text-muted-foreground" },
 };
 
 const MES = new Intl.DateTimeFormat("es-AR", { month: "short" });
@@ -62,6 +78,7 @@ function rangoMeses(desde: string, hasta: string) {
 }
 
 function etiquetaEstado(fila: FilaPlanilla) {
+  if (fila.etiqueta) return fila.etiqueta;
   if (fila.estado === "revisar") {
     return fila.decisiones ? `${fila.decisiones} ${fila.decisiones === 1 ? "decisión" : "decisiones"}` : "Resolver";
   }
@@ -77,9 +94,9 @@ export default function JornadasSecretaria() {
   const [filtro, setFiltro] = useState<Filtro>("todas");
   const { resumen, cargando, error, real } = useSecretaria();
   const [recepciones, setRecepciones] = useState<Array<{
-    id: string; numeroSeguimiento: string; archivo: string; etiquetaEstado: string;
+    id: string; numeroSeguimiento: string; archivo: string; estado: string; etiquetaEstado: string;
     contexto: { institucionOrigen?: string; disciplina?: string; grupo?: string };
-    recibidaEn: string;
+    recibidaEn: string | null;
   }>>([]);
   const [errorRecepciones, setErrorRecepciones] = useState<string | null>(null);
 
@@ -137,18 +154,37 @@ export default function JornadasSecretaria() {
           disciplina: lote.contexto.disciplina,
           grupo: lote.contexto.grupo,
           archivo: lote.nombre_archivo,
-          estado: importada ? "lista" : lote.bloqueos_pendientes > 0 ? "revisar" : "recibida",
+          estado: importada ? "lista" : lote.estado === "vencido" || lote.estado === "fallido" ? "vencida" : lote.bloqueos_pendientes > 0 ? "revisar" : "recibida",
+          etiqueta: lote.estado === "vencido" ? "Vencida" : lote.estado === "fallido" ? "Falló al importar" : undefined,
+          href: `/secretaria/jornadas/${lote.id}`,
           decisiones: lote.bloqueos_pendientes,
           fecha,
           fechaTexto,
         };
       })
-    : GRUPOS_SECRETARIA.map((grupo): FilaPlanilla => ({ ...grupo }))
+    : GRUPOS_SECRETARIA.map((grupo): FilaPlanilla => ({ ...grupo, href: "/evaluaciones/importar" }))
+  ).concat(
+    // Las que no se pudieron leer solas: van en la MISMA bandeja, no en una
+    // columna aparte. Al arrancar con clubes nuevos este va a ser el camino
+    // más común, porque el lector reconoce pocos formatos.
+    recepciones.map((recepcion): FilaPlanilla => ({
+      id: `recepcion-${recepcion.id}`,
+      institucion: recepcion.contexto.institucionOrigen ?? "Institución sin indicar",
+      disciplina: recepcion.contexto.disciplina ?? "—",
+      grupo: recepcion.contexto.grupo ?? "Sin plantel",
+      archivo: `${recepcion.archivo} · N.° ${recepcion.numeroSeguimiento}`,
+      estado: RECEPCION_ABIERTA.has(recepcion.estado) ? "manual" : "cerrada",
+      etiqueta: recepcion.etiquetaEstado,
+      href: `/secretaria/recepcion/${recepcion.id}`,
+      fecha: recepcion.recibidaEn ?? undefined,
+      fechaTexto: recepcion.recibidaEn ? `Recibida el ${fechaCorta(recepcion.recibidaEn)}` : undefined,
+    })),
   ).toSorted((a, b) => ORDEN[a.estado] - ORDEN[b.estado] || (b.fecha ?? "").localeCompare(a.fecha ?? ""));
 
   const cuenta = {
     todas: jornadas.length,
     revisar: jornadas.filter((item) => item.estado === "revisar").length,
+    manual: jornadas.filter((item) => item.estado === "manual").length,
     lista: jornadas.filter((item) => item.estado === "lista").length,
   };
   const termino = busqueda.trim().toLocaleLowerCase("es");
@@ -161,7 +197,6 @@ export default function JornadasSecretaria() {
     )
     : jornadas;
   const jornadasVisibles = porTexto.filter((jornada) => filtro === "todas" || jornada.estado === filtro);
-  const hayRecepciones = real && (recepciones.length > 0 || Boolean(errorRecepciones));
 
   return (
     <GuardiaSecretaria>
@@ -187,12 +222,13 @@ export default function JornadasSecretaria() {
 
         {/* Resumen y filtro son lo mismo: antes había una franja 9/2/7 y,
             debajo, chips con los mismos tres números. */}
-        <div role="group" aria-label="Filtrar planillas por estado" className="grid grid-cols-3 gap-1 rounded-2xl border border-border bg-card p-1">
+        <div role="group" aria-label="Filtrar planillas por estado" className="grid grid-cols-4 gap-1 rounded-2xl border border-border bg-card p-1">
           {([
-            ["todas", "Todas", ""],
-            ["revisar", "Por resolver", "text-destructive"],
-            ["lista", "Importadas", "text-primary"],
-          ] as const).map(([valor, etiqueta, tono]) => {
+            ["todas", "Todas", "Todas", ""],
+            ["revisar", "Por resolver", "Resolver", "text-destructive"],
+            ["manual", "Carga manual", "Manual", "text-warning"],
+            ["lista", "Importadas", "Importadas", "text-primary"],
+          ] as const).map(([valor, etiqueta, corta, tono]) => {
             const activo = filtro === valor;
             return (
               <button
@@ -206,7 +242,10 @@ export default function JornadasSecretaria() {
                 )}
               >
                 <span className={cn("text-xl font-extrabold tabular-nums leading-none", !activo && cuenta[valor] > 0 && tono)}>{cuenta[valor]}</span>
-                <span className={cn("mt-1 text-xs font-bold sm:mt-0", !activo && "text-muted-foreground")}>{etiqueta}</span>
+                <span className={cn("mt-1 text-[11px] font-bold sm:mt-0 sm:text-xs", !activo && "text-muted-foreground")}>
+                  <span className="sm:hidden">{corta}</span>
+                  <span className="hidden sm:inline">{etiqueta}</span>
+                </span>
               </button>
             );
           })}
@@ -223,12 +262,15 @@ export default function JornadasSecretaria() {
           />
         </label>
 
-        <div className={cn("grid gap-5", hayRecepciones && "xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start")}>
-        {hayRecepciones && <section className="overflow-hidden rounded-3xl border border-border bg-card xl:sticky xl:top-6 xl:col-start-2 xl:row-start-1">
-          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-4"><div className="flex items-center gap-2"><FileSpreadsheet className="size-4 text-warning" aria-hidden /><h2 className="text-sm font-extrabold">Recibidas para revisión manual</h2></div><span className="rounded-full bg-warning-soft px-2.5 py-1 text-[11px] font-extrabold text-warning">{recepciones.length}</span></div>
-          <p className="border-b border-border bg-warning-soft/35 px-5 py-3 text-xs leading-relaxed text-muted-foreground">Estos archivos quedaron resguardados. El equipo los revisará y organizará antes de incorporarlos a las mediciones.</p>
-          {errorRecepciones ? <p role="alert" className="px-5 py-4 text-xs text-destructive">{errorRecepciones}</p> : <div className="divide-y divide-border">{recepciones.map((recepcion) => <Link key={recepcion.id} href={`/secretaria/recepcion/${recepcion.id}`} className="flex min-w-0 items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/35"><span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-warning-soft text-warning"><FileSpreadsheet className="size-4"/></span><div className="min-w-0 flex-1"><p className="text-sm font-extrabold">{recepcion.contexto.institucionOrigen} · {recepcion.contexto.grupo}</p><p className="truncate text-[11px] text-muted-foreground">{recepcion.archivo} · {recepcion.numeroSeguimiento}</p></div><span className="hidden rounded-full bg-warning-soft px-2.5 py-1 text-[11px] font-extrabold text-warning sm:inline-flex">{recepcion.etiquetaEstado}</span><ChevronRight className="size-4 shrink-0 text-primary"/></Link>)}</div>}
-        </section>}
+        {errorRecepciones && (
+          <p role="alert" className="rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{`No pudimos cargar las planillas de carga manual: ${errorRecepciones}`}</p>
+        )}
+        {filtro === "manual" && (
+          <p className="flex items-start gap-2 rounded-xl bg-warning-soft/60 px-4 py-3 text-xs leading-relaxed text-muted-foreground">
+            <Inbox className="mt-0.5 size-4 shrink-0 text-warning" aria-hidden />
+            <span>Planillas que el lector no pudo interpretar solo. El archivo original quedó guardado: abrila para descargarlo, cargar los datos y marcarla como procesada.</span>
+          </p>
+        )}
 
         {jornadas.length === 0 ? (
           <EstadoVacio
@@ -238,7 +280,7 @@ export default function JornadasSecretaria() {
             accion={{ href: "/evaluaciones/importar", label: "Cargar la primera planilla" }}
           />
         ) : (
-        <section className="overflow-hidden rounded-3xl border border-border bg-card xl:col-start-1 xl:row-start-1">
+        <section className="overflow-hidden rounded-3xl border border-border bg-card">
           {/* Escritorio: tabla con columnas, se escanea de un vistazo.
               Mobile: la misma fila apilada, sin truncar el nombre. */}
           <div className="hidden grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,1fr)_8.5rem_1rem] gap-4 border-b border-border bg-muted/40 px-5 py-2.5 text-[11px] font-extrabold uppercase tracking-wide text-muted-foreground lg:grid">
@@ -256,7 +298,7 @@ export default function JornadasSecretaria() {
               return (
                 <li key={jornada.id}>
                   <Link
-                    href={real ? `/secretaria/jornadas/${jornada.id}` : "/evaluaciones/importar"}
+                    href={jornada.href}
                     className="flex items-start gap-3 px-4 py-3.5 transition-colors hover:bg-muted/35 active:bg-muted/60 lg:grid lg:grid-cols-[minmax(0,1.7fr)_minmax(0,1fr)_minmax(0,1fr)_8.5rem_1rem] lg:items-center lg:gap-4 lg:px-5"
                   >
                     <span className="flex min-w-0 flex-1 items-start gap-3">
@@ -290,7 +332,7 @@ export default function JornadasSecretaria() {
           </ul>
           {jornadasVisibles.length === 0 && (
             <div className="flex flex-col items-center gap-2 px-5 py-10 text-center">
-              <p className="text-sm font-bold">No hay planillas con ese criterio</p>
+              <p className="text-sm font-bold">{filtro === "manual" && !termino ? "No hay planillas esperando carga manual" : "No hay planillas con ese criterio"}</p>
               <button type="button" onClick={() => { setBusqueda(""); setFiltro("todas"); }} className="min-h-11 text-xs font-extrabold text-primary">
                 Ver todas
               </button>
@@ -298,7 +340,6 @@ export default function JornadasSecretaria() {
           )}
         </section>
         )}
-        </div>
       </div>
     </GuardiaSecretaria>
   );

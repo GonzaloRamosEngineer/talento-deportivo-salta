@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Check, CheckCircle2, FileUp, Info, LoaderCircle, Save, ShieldCheck } from "lucide-react";
+import Link from "next/link";
+import { AlertTriangle, Check, CheckCircle2, Clock, FileUp, Info, LoaderCircle, Save, ShieldCheck } from "lucide-react";
 import { PRESIONABLE } from "@/components/secretaria/presionable";
 import { cn } from "@/lib/utils";
 
@@ -9,7 +10,7 @@ type FilaSinProtocolo = { fila: number; valorCrudo: string; nombre: string; apel
 type Protocolo = { codigo: string; nombre: string };
 type Bloqueo = { id: string; codigo: string; titulo: string; detalle: string; cantidad?: number; opciones?: unknown[]; resuelto?: boolean; resolucion?: unknown };
 type Revision = {
-  loteId: string; archivo: string; hash: string; estado: string; vencido: boolean; editable: boolean;
+  loteId: string; archivo: string; hash: string; estado: string; vencido: boolean; venceEn?: string | null; editable: boolean;
   contexto: Record<string, string | undefined>; resolucionesGuardadas: Record<string, unknown>;
   reprocesadoEn?: string | null; filasSinProtocolo: FilaSinProtocolo[]; protocolosDisponibles: Protocolo[];
   bloqueos: Bloqueo[]; avisos: Array<{ id?: string; titulo?: string; detalle?: string }>;
@@ -37,6 +38,12 @@ export function RevisionPlanilla({ id, contextoInicial, onConfirmada }: {
   const [error, setError] = useState<string | null>(null);
   const [mensaje, setMensaje] = useState<string | null>(null);
   const [archivoElegido, setArchivoElegido] = useState<string | null>(null);
+  // Reloj para el aviso de vencimiento: se refresca cada 30 s.
+  const [ahora, setAhora] = useState(() => Date.now());
+  useEffect(() => {
+    const reloj = window.setInterval(() => setAhora(Date.now()), 30_000);
+    return () => window.clearInterval(reloj);
+  }, []);
   const gruposCrudos = useMemo(() => agruparFilas(revision?.filasSinProtocolo ?? []), [revision?.filasSinProtocolo]);
 
   const cargar = useCallback(async () => {
@@ -147,7 +154,29 @@ export function RevisionPlanilla({ id, contextoInicial, onConfirmada }: {
       </div>
     )}
 
-    {(!puedeOperar) && <p className="mt-4 rounded-xl bg-destructive/10 p-3 text-sm font-semibold text-destructive">{revision.vencido ? "La previsualización venció. Volvé a importar el archivo para iniciar una revisión vigente." : "Esta planilla no admite cambios en su estado actual."}</p>}
+    {(() => {
+      // La vista previa vence (hoy, 30 minutos después de subirla) y guardar
+      // NO la extiende. Se avisa ANTES de que pase, no solo cuando ya venció.
+      const vence = revision.venceEn ? new Date(revision.venceEn).getTime() : null;
+      const vencida = revision.vencido || (vence !== null && vence <= ahora);
+      if (vencida) {
+        return <div role="alert" className="mt-4 rounded-xl bg-destructive/10 p-3">
+          <p className="text-sm font-bold text-destructive">Esta revisión venció y ya no se puede confirmar.</p>
+          <p className="mt-1 text-xs text-muted-foreground">Volvé a subir el mismo archivo para abrir una revisión nueva. Lo que se decidió acá queda en la trazabilidad.</p>
+          <Link href="/evaluaciones/importar" className={`mt-2 inline-flex min-h-11 items-center rounded-xl bg-primary px-4 text-sm font-extrabold text-primary-foreground sm:min-h-9 ${PRESIONABLE}`}>Volver a subir el archivo</Link>
+        </div>;
+      }
+      if (!puedeOperar) return <p className="mt-4 rounded-xl bg-destructive/10 p-3 text-sm font-semibold text-destructive">Esta planilla no admite cambios en su estado actual.</p>;
+      if (vence === null) return null;
+      const minutos = Math.max(1, Math.round((vence - ahora) / 60_000));
+      const hora = new Intl.DateTimeFormat("es-AR", minutos >= 1440 ? { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit", hourCycle: "h23" } : { hour: "2-digit", minute: "2-digit", hourCycle: "h23" }).format(vence);
+      const restante = minutos >= 2880 ? `${Math.floor(minutos / 1440)} días` : minutos >= 120 ? `${Math.round(minutos / 60)} h` : minutos >= 60 ? `1 h ${minutos - 60} min` : `${minutos} min`;
+      const urgente = minutos <= 10;
+      return <p className={cn("mt-4 flex items-start gap-2 rounded-xl p-3 text-xs leading-relaxed", urgente ? "bg-destructive/10 text-destructive" : "bg-muted/60 text-muted-foreground")}>
+        <Clock className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+        <span><strong>{`La revisión sigue abierta hasta ${minutos >= 1440 ? "el" : "las"} ${hora} (quedan ${restante}).`}</strong>{" Después hay que volver a subir el archivo: si falta un dato que tiene que confirmar el club, conseguilo antes de empezar."}</span>
+      </p>;
+    })()}
 
     <ol className="mt-5 space-y-3">
       {bloqueos.map((bloqueo, indice) => {
