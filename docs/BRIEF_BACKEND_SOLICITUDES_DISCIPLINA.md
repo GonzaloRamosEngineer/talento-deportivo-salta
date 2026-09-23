@@ -2,8 +2,14 @@
 
 ## Estado de la implementación (2026-09-23)
 
-**Staging: aplicado y verificado. Producción: sin tocar, pendiente de
-revisión manual.**
+**Staging y producción: aplicado.** En producción el 2026-09-23 con
+aprobación explícita, después del backup
+`Backups Talento Deportivo/2026-09-23_1511/db_public.sql` (5,4 MB).
+Verificado en prod: columnas, checks e índice; `anon` sin privilegios; nadie
+con `TRUNCATE`; `aprobar_solicitud_disciplina` solo `service_role`; las 3
+funciones con `search_path=public`; catálogo idéntico antes y después.
+Pendiente: `authenticated` conserva `REFERENCES` y `TRIGGER` (privilegios por
+defecto de Supabase, no de datos); sacarlos es una migración aparte.
 
 - Migración `20260923170000_solicitudes_disciplina.sql` (staging ✅).
 - Lógica en `lib/plataforma/solicitudes.ts` (bandeja, resolución y el gate
@@ -35,8 +41,9 @@ revisión manual.**
   como `resolverSugerencia`); aprobar es la RPC transaccional.
 - El texto de un pedido de protocolo admite hasta 200 caracteres (el nombre de
   una disciplina sigue en 80).
-- `disciplina_solicitud`: `anon` sin privilegios; `authenticated` solo
-  `SELECT`; nadie con `TRUNCATE`. Los grants de `disciplina`,
+- `disciplina_solicitud`: `anon` sin privilegios; `authenticated` sin
+  escritura (de datos, solo `SELECT`; conserva `REFERENCES`/`TRIGGER` por
+  defecto); nadie con `TRUNCATE`. Los grants de `disciplina`,
   `disciplina_protocolo` y `protocolo` no se tocaron (siguen sin políticas de
   escritura, regla 2).
 
