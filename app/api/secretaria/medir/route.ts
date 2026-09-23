@@ -61,6 +61,16 @@ export async function POST(request: Request) {
     if (!cuerpo.contexto || !cuerpo.mediciones?.length || !cuerpo.idempotencyKey) {
       throw new ErrorImportacion("Completá la jornada y al menos una medición.", 400, "DATOS_INCOMPLETOS");
     }
+    // `p_idempotency_key` es uuid en la base. Sin este chequeo, mandar un
+    // string cualquiera revienta dentro del RPC y sale como 422
+    // JORNADA_NO_GUARDADA — un error genérico que no dice qué arreglar.
+    if (!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/iu.test(cuerpo.idempotencyKey)) {
+      throw new ErrorImportacion(
+        "La clave de idempotencia tiene que ser un UUID.",
+        400,
+        "IDEMPOTENCY_KEY_INVALIDA",
+      );
+    }
     const { data, error } = await supabase.rpc("guardar_jornada_evaluacion_manual", {
       p_contexto: cuerpo.contexto,
       p_mediciones: cuerpo.mediciones,

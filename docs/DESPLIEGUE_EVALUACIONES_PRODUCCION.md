@@ -28,6 +28,7 @@ Producción está en `20260913120000`. Faltan, **en este orden exacto**:
 | `20260923120000_purga_programada_recepcion` | `pg_cron` + `http` + purga diaria |
 | `20260923130000_habilitar_evaluaciones_produccion` | **Nueva.** Trigger anti-demo |
 | `20260923140000_restituir_una_cuenta_un_club` | **Nueva.** Vuelve a poner `membresia_auth_user_id_key` |
+| `20260923150000_declarar_grants_evaluaciones` | **Nueva.** Declara privilegios y saca TRUNCATE a los roles de la API |
 
 No hay `down`. El rollback es restaurar el backup (§5).
 
@@ -225,10 +226,24 @@ BASE_URL=… SECRETARIA_EMAIL=… SECRETARIA_PASSWORD=… \
   node scripts/verificar-navegador.mjs
 ```
 
-**26/26 en el ensayo.** Cubre las 4 demos (incluido el observatorio anónimo),
+**29/29 en el ensayo.** Cubre las 4 demos (incluido el observatorio anónimo),
 que ninguna demo vea el acceso a Secretaría ni pase la API (403 `CUENTA_DEMO`),
-que la cuenta privada entre y cargue las 5 pantallas, y que pueda **escribir**
-una medición de forma idempotente.
+y que la cuenta privada entre, cargue las 5 pantallas y vea los conteos
+correctos.
+
+**En producción se corre SIN `DEPORTISTA_ID`**: así no escribe absolutamente
+nada. Las variables `ESPERADO_*` convierten los conteos en aserciones, incluida
+la que importa de verdad — que las 2 planillas sin confirmar **sigan** sin
+confirmar. Confirmar un lote crea mediciones: si `lotesPendientes` bajó, alguien
+importó algo que no debía.
+
+```bash
+BASE_URL=https://talentodeportivo.com.ar \
+SECRETARIA_EMAIL=secretaria@evolucionantoniana.com SECRETARIA_PASSWORD=… \
+ESPERADO_PLANILLAS=9 ESPERADO_DEPORTISTAS=141 ESPERADO_MEDICIONES=1653 \
+ESPERADO_PENDIENTES=2 ESPERADO_IMPORTADOS=7 \
+  node scripts/verificar-navegador.mjs
+```
 
 ---
 
@@ -352,23 +367,23 @@ Apunta al **ensayo**, no a staging ni a producción. Para volver a levantarlo:
 variables del ensayo exportadas (las del shell tienen prioridad sobre
 `.env.local`, así que no hace falta tocar ese archivo).
 
-## 8. Hallazgos colaterales
-
-Ninguno bloquea el despliegue, pero conviene tenerlos anotados:
+## 8. Hallazgos colaterales · **corregidos**
 
 - **`supabase/seed.sql` estaba roto** por las migraciones: usaba
   `on conflict (club_id, disciplina_id, nombre)` y `20260922090000` cambió esa
-  unicidad para incluir `institucion_origen_id`. Corregido en esta entrega. Sin
-  esto no se puede levantar el entorno local ni, más adelante, regenerar el
-  proyecto demo de T-003.
-- **`seed.sql` crea "Club Atlético Antoniana"** pero `crear-usuarios-demo.mjs` y
-  `sembrar-showcase.mjs` buscan "Club Fundación Evolución Antoniana" y fallan.
-  No lo toqué: no sé cuál de los dos nombres es el correcto.
-- **Los GRANT por defecto difieren** entre un proyecto Supabase real
-  (`anon/authenticated/service_role` con `arwdDxtm`) y el stack local (solo
-  `Dxtm`). Las migraciones no declaran grants y dependen del default del
-  proveedor. No afecta producción, pero hace que el entorno local no reproduzca
-  el real sin un `grant` manual.
-- **`/api/secretaria/medir` devuelve 422 genérico** (`JORNADA_NO_GUARDADA`)
-  cuando `idempotencyKey` no es un UUID. El campo es `uuid` en la base; un 400
-  diciéndolo ahorraría un rato de depuración.
+  unicidad para incluir `institucion_origen_id`. Sin esto no levanta el entorno
+  local ni, más adelante, se regenera el proyecto demo de T-003. **Corregido.**
+- **`seed.sql` creaba "Club Atlético Antoniana"** mientras los scripts de
+  siembra buscaban "Club Fundación Evolución Antoniana" y fallaban. Producción
+  usa el segundo, así que ese es el bueno: **renombrado** en `seed.sql` y en
+  `sembrar-demo-9na.mjs`. Ahora `supabase db reset` + los seeds corren de una.
+- **Los GRANT no se declaraban.** Se dependía del default del proveedor
+  (`anon/authenticated/service_role` con `arwdDxtm` sobre todo `public`), que en
+  el stack local es distinto (`Dxtm`). Dos consecuencias: el entorno local no
+  reproducía al real, y `anon` tenía escritura y **TRUNCATE** sobre tablas con
+  datos de menores. TRUNCATE **no pasa por RLS**. `20260923150000` declara los
+  privilegios, se los quita a `anon` en las tablas de Secretaría y saca TRUNCATE
+  a los tres roles de la API. No cambia lo que la app puede hacer.
+- **`/api/secretaria/medir` devolvía 422 genérico** (`JORNADA_NO_GUARDADA`)
+  cuando `idempotencyKey` no era un UUID. Ahora responde **400
+  `IDEMPOTENCY_KEY_INVALIDA`** diciendo qué pasa.

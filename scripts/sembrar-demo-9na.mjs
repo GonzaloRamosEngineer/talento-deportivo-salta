@@ -27,7 +27,7 @@ const DOCS = ["ANT-0101", "ANT-0102", "ANT-0103"];
 const { data: club } = await admin
   .from("club")
   .select("id")
-  .eq("nombre", "Club Atlético Antoniana")
+  .eq("nombre", "Club Fundación Evolución Antoniana")
   .single();
 
 if (process.argv.includes("--limpiar")) {

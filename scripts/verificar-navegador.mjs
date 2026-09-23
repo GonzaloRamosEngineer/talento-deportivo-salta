@@ -16,7 +16,9 @@
  *   [DEPORTISTA_ID=... GRUPO=... DISCIPLINA=... INSTITUCION=...] \
  *   node scripts/verificar-navegador.mjs
  *
- * Sin las variables de escritura, saltea la prueba de registrar medición.
+ * En PRODUCCIÓN se corre SIN `DEPORTISTA_ID`: así no escribe absolutamente
+ * nada y se limita a comprobar accesos y conteos. Las variables
+ * `ESPERADO_*` convierten los conteos en aserciones.
  */
 import { chromium } from "playwright";
 import { randomUUID } from "node:crypto";
@@ -103,6 +105,36 @@ if (!EMAIL || !PASS) {
     chk(`secretaría · ${ruta}`, true, espera.test(t) && !/algo salió mal|application error/i.test(t));
   }
 
+  // ---------- Conteos esperados, por API, SIN escribir nada ----------
+  // Esto es lo que se corre en producción: verifica que lo trasladado esté
+  // completo y que los pendientes sigan pendientes, sin tocar un solo dato.
+  const esperado = {
+    planillas: Number(process.env.ESPERADO_PLANILLAS ?? 0),
+    deportistas: Number(process.env.ESPERADO_DEPORTISTAS ?? 0),
+    mediciones: Number(process.env.ESPERADO_MEDICIONES ?? 0),
+    pendientes: Number(process.env.ESPERADO_PENDIENTES ?? 0),
+    importados: Number(process.env.ESPERADO_IMPORTADOS ?? 0),
+  };
+  if (esperado.deportistas || esperado.planillas) {
+    const ind = await p.evaluate(async (b) => {
+      const x = await fetch(`${b}/api/secretaria/resumen`);
+      return x.ok ? (await x.json()).indicadores : null;
+    }, BASE);
+    if (!ind) {
+      chk("producción · indicadores del resumen", "presentes", "ausentes");
+    } else {
+      if (esperado.deportistas) chk("producción · deportistas", esperado.deportistas, ind.deportistas);
+      if (esperado.planillas) chk("producción · planillas", esperado.planillas, ind.lotes);
+      if (esperado.mediciones) chk("producción · mediciones", esperado.mediciones, ind.mediciones);
+      // Lo que importa no es sólo cuántas hay, sino que las que estaban sin
+      // confirmar sigan sin confirmar. Confirmar un lote crea mediciones: si
+      // este número bajó, alguien importó algo que no debía.
+      if (esperado.pendientes) chk("producción · planillas aún pendientes", esperado.pendientes, ind.lotesPendientes);
+      if (esperado.importados) chk("producción · planillas importadas", esperado.importados, ind.lotesImportados);
+    }
+  }
+
+  // Escritura: SOLO fuera de producción. Deja una jornada real.
   if (process.env.DEPORTISTA_ID) {
     // idempotencyKey es UUID, no texto libre: con un string suelto la API
     // devuelve 422 JORNADA_NO_GUARDADA sin decir cuál es el problema.

@@ -41,12 +41,12 @@ on conflict (coalesce(disciplina_id, '00000000-0000-0000-0000-000000000000'::uui
 
 -- ---------- Club piloto: Antoniana ----------
 insert into club (nombre, localidad, departamento)
-select 'Club Atlético Antoniana', 'Salta', 'Capital'
-where not exists (select 1 from club where nombre = 'Club Atlético Antoniana');
+select 'Club Fundación Evolución Antoniana', 'Salta', 'Capital'
+where not exists (select 1 from club where nombre = 'Club Fundación Evolución Antoniana');
 
 -- Ubicación en el mapa para clubes sembrados antes de la columna
 update club set departamento = 'Capital'
- where nombre = 'Club Atlético Antoniana' and departamento is null;
+ where nombre = 'Club Fundación Evolución Antoniana' and departamento is null;
 
 -- ---------- Categorías reales del club (cohortes 2026) ----------
 insert into categoria (club_id, disciplina_id, nombre, tipo, anio_nacimiento)
@@ -69,7 +69,7 @@ from club c, disciplina d,
        ('Reserva (La Local)',  'reserva',   null::int),
        ('Primera',             'primera',   null::int)
      ) as cat(nombre, tipo, anio)
-where c.nombre = 'Club Atlético Antoniana' and d.nombre = 'Fútbol'
+where c.nombre = 'Club Fundación Evolución Antoniana' and d.nombre = 'Fútbol'
 -- La unicidad de `categoria` cambió en 20260922090000: ahora incluye
 -- `institucion_origen_id` (unique nulls not distinct). El seed no la usa —
 -- deja NULL— pero el ON CONFLICT tiene que nombrar la constraint vigente o
@@ -84,5 +84,5 @@ from club c,
        ('Cancha principal — Sede', 'Av. Independencia 910, Salta'),
        ('Predio de inferiores',    'B° El Tribuno, Salta')
      ) as l(nombre, direccion)
-where c.nombre = 'Club Atlético Antoniana'
+where c.nombre = 'Club Fundación Evolución Antoniana'
 on conflict (club_id, nombre) do nothing;

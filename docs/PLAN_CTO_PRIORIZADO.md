@@ -315,6 +315,8 @@ Evidencia:
 - **Responsable:** por asignar.
 - **Dependencias:** ninguna. **Debe resolverse ANTES de vincular usuarios existentes.**
 - **Estado:** terminada y aplicada en producción el 2026-09-13.
+  **Revisada el 2026-09-23** (ver abajo): el Espacio Secretaría la levantó
+  de costado y se volvió a imponer explícitamente.
 
 Problema verificado:
 
@@ -398,6 +400,39 @@ mediciones — los cuatro idénticos al backup previo.
 
 Backup verificado antes de aplicar (no solo ejecutado: se contaron las filas
 dentro del dump). Es la primera evidencia concreta para T-011.
+
+
+#### Revisión del 2026-09-23 · levantada y restituida
+
+`20260922090000_espacio_secretaria_evaluaciones.sql` incluía, en la línea 14:
+
+```sql
+alter table membresia drop constraint if exists membresia_auth_user_id_key;
+```
+
+Es decir, **revertía esta tarea** — y lo hacía como efecto colateral de una
+migración cuyo tema era otro. La intención era legítima: permitir que una
+persona tuviera membresía en un club y en la Secretaría a la vez.
+
+Revisado el caso real, no hacía falta: **el Espacio Secretaría lo opera una
+cuenta privada dedicada** (`secretaria@evolucionantoniana.com`), que no tiene
+ni va a tener membresía en ningún club.
+
+Como las migraciones ya aplicadas no se reescriben, la constraint se restituye
+al final de la cadena con `20260923140000_restituir_una_cuenta_un_club.sql`,
+que además verifica antes
+que no exista ninguna cuenta con dos membresías y falla con un mensaje claro
+si la hubiera.
+
+Nada de esto llegó a producción: el hallazgo es anterior al despliegue.
+
+**Qué mirar si algún día se quiere levantar de verdad.** La migración original
+(`20260913120000`) condicionaba la reversión a implementar "el selector de club
++ membresía activa". Eso hoy existe: `/api/contextos` lista los espacios y los
+tres lookups (`use-club`, `perfil-context`, `evaluaciones/backend`) leen arrays
+en vez de `.maybeSingle()`. O sea que la precondición está cumplida y levantarla
+es viable — pero mientras no haya un caso real que lo pida, la garantía fuerte
+vale más que la flexibilidad sin usar.
 
 ### [x] T-002C · Recuperación de clave autoservicio con Resend
 
@@ -928,7 +963,7 @@ T-002C para no dejar a nadie sin recuperación):
 
 - [x] T-001 · Contención demo. *(código 2026-08-02; en producción 2026-08-30)*
 - [x] T-002 · Recuperación e invitaciones. *(2026-09-13)*
-- [x] T-002B · Una cuenta = un club. *(2026-09-13, en producción)*
+- [x] T-002B · Una cuenta = un club. *(2026-09-13, en producción; revisada el 2026-09-23: el Espacio Secretaría la levantó y `20260923140000` la restituye)*
 - [x] T-002C · Autoservicio de clave (Resend). *(2026-09-13)*
 - [x] T-004 · Dependencias. *(2026-09-13, 0 vulnerabilidades)*
 - [ ] T-003 · Separación demo/producción.
@@ -1013,3 +1048,4 @@ Requiere evidencia de retención, calidad metodológica, costos operativos reale
 | 2026-09-13 | UX/Auth | Una sesión real sin membresía caía en el fallback de "profesor" y veía el MOCK: club y deportistas inventados, con la app aparentemente funcional. No era fuga (datos ficticios, RLS intacto) pero en una plataforma sobre datos de chicos se lee como "se perdieron los datos del club". El caso dejó de ser teórico con T-002C: quien fue dado de baja ahora vuelve a entrar por su cuenta. Se agregó `sinMembresia` al contexto (solo se afirma si la consulta salió bien) con pantalla, sin rol y sin navegación. Aparte: el cartel "los paneles siguen con datos de ejemplo" NO estaba condicionado y se lo comían los usuarios reales — el error inverso y más caro. **Queda abierto en T-006**: el perfil por defecto sigue siendo un rol y debería ser un estado | Gastón + agente | commits `929775b`, `6e053ed` |
 | 2026-09-13 | T-002 | **CERRADA.** Ningún camino emite tokens de cuentas activadas. La regla se centralizó en `lib/acceso.ts` y depende del estado de la cuenta, no de la existencia del email. **El gotcha documentado era incorrecto**: `invite` solo rechaza cuentas ACTIVADAS, y —lo que importa— `magiclink` y `recovery` entregan tokens de cuentas activadas sin protestar. La API no protege nada; la seguridad la pone el chequeo explícito | Gastón + agente | `scripts/verificar-t002.mjs` 8/8 contra el backend real |
 | 2026-09-13 | Documentación | Auditoría completa. README decía "prototipo visual con datos mock, sin Supabase" con el MVP en producción, y atribuía el producto a la Fundación; CONTEXT.md igual; CLAUDE.md y OPERACION.md describían el recovery administrado como vigente; PERFILES.md no contemplaba la sesión sin club | Gastón + agente | este commit |
+| 2026-09-23 | T-002B | **Revisada.** `20260922090000` (Espacio Secretaría) hacía `drop constraint membresia_auth_user_id_key`, revirtiendo esta tarea de costado. La ampliación a multi-espacio no hacía falta: la Secretaría se opera con una cuenta dedicada. Se restituye con `20260923140000`, que valida antes que ninguna cuenta tenga dos membresías. No llegó a producción: se detectó en la auditoría previa al despliegue | Gastón + agente | commit `1a4736f`, ensayo 15/15 SQL + 26/26 navegador |
