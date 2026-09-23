@@ -1,8 +1,10 @@
 import "server-only";
 
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
+import { createClient } from "@supabase/supabase-js";
 import { crearClienteServer } from "@/lib/supabase/server";
 import { esCuentaDemo } from "@/lib/demo";
+import { ErrorImportacion } from "./errores";
 
 const ROLES_OPERATIVOS = new Set([
   "admin_secretaria",
@@ -10,15 +12,7 @@ const ROLES_OPERATIVOS = new Set([
   "evaluador",
 ]);
 
-export class ErrorImportacion extends Error {
-  constructor(
-    message: string,
-    readonly status: number,
-    readonly codigo: string,
-  ) {
-    super(message);
-  }
-}
+export { ErrorImportacion };
 
 /**
  * Compuerta del módulo de Evaluaciones.
@@ -157,7 +151,27 @@ export function firmarPreview(payload: PayloadToken) {
   return `${cuerpo}.${firma}`;
 }
 
-export function verificarPreview(token: string, usuarioId: string): PayloadToken {
+/**
+ * Clave de servicio: solo para Storage (buckets privados, sin policies de
+ * escritura). Nunca para leer o escribir tablas: eso va por RLS/RPC.
+ */
+export function clienteServicio() {
+  return createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SECRET_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  });
+}
+
+/**
+ * `vencimiento: "lo-decide-el-lote"` ignora el `exp` del token: el token
+ * prueba QUIÉN subió QUÉ lote, pero si el lote sigue abierto lo dice
+ * `lote_importacion.vence_en`, que la revisión extiende. Un token emitido
+ * al subir no puede cortar una revisión que sigue viva.
+ */
+export function verificarPreview(
+  token: string,
+  usuarioId: string,
+  { vencimiento = "token" }: { vencimiento?: "token" | "lo-decide-el-lote" } = {},
+): PayloadToken {
   const [cuerpo, firma] = token.split(".");
   if (!cuerpo || !firma) throw new ErrorImportacion("La previsualización no es válida.", 400, "TOKEN_INVALIDO");
   const esperada = createHmac("sha256", secretoToken()).update(cuerpo).digest();
@@ -179,7 +193,7 @@ export function verificarPreview(token: string, usuarioId: string): PayloadToken
   if (payload.usuarioId !== usuarioId) {
     throw new ErrorImportacion("Esta previsualización pertenece a otra sesión.", 403, "SIN_ALCANCE");
   }
-  if (payload.exp < Date.now()) {
+  if (vencimiento === "token" && payload.exp < Date.now()) {
     throw new ErrorImportacion("La previsualización venció. Volvé a analizar el archivo.", 410, "PREVIEW_EXPIRADO");
   }
   return payload;

@@ -1,5 +1,82 @@
 # Brief backend · Que ninguna planilla se pierda al cargarla
 
+## Estado de la implementación (2026-09-23)
+
+**Staging: implementado y verificado. Producción: sin tocar, pendiente de
+revisión manual.**
+
+| Paso | Staging | Producción |
+| --- | --- | --- |
+| 0 · Sincronizar las 3 migraciones que faltaban | ✅ aplicado; `schema_migrations` igual a prod | — |
+| P0 · `20260923160000_conservar_original_lotes.sql` (puntos 1 y 2) | ✅ aplicado | ⏳ requiere revisión manual |
+| P1 · `20260923161000_filas_pendientes_y_bandeja.sql` (puntos 3, 4 y 5) | ✅ aplicado | ⏳ requiere revisión manual **y** el frontend del punto 4 |
+
+Verificación: `npm run test:carga-planillas` (e2e de la sección 6, 44
+asserts, se limpia solo) y `npm run test:importadores` (9 planillas reales
+con mediciones y resumen fijados + casos sintéticos de cada motivo).
+
+### Decisiones que difieren del texto del brief
+
+- **`filas-pendientes` es un bloqueo, no solo un `info`.** Si fuera
+  informativo, al confirmar esas filas se perderían sin que nadie decida,
+  que es justo lo que este brief prohíbe. El `info` con los conteos existe
+  aparte (`conteo-filas`). Resoluciones: `carga_manual` o `excluir`.
+- **Bucket paralelo `planillas-lotes`** (misma configuración que
+  `planillas-recepcion`), ruta `<club_id>/<lote_id>.<ext>`, con su propia
+  policy de lectura. La purga diaria existente recorre los dos buckets.
+- **Motivo extra `sin_nombre`**: una fila con datos y sin nombre también se
+  conserva. Y `valor_ilegible` trae `columnasIlegibles` y `seImportoElResto`
+  (en saltos/gimnasia/rugby lo legible de la fila sí entra).
+- **El pie de estadísticas se detecta** ("Mín", "Máx", "DS", "Estadísticas",
+  tabla de clasificación). Antes caía como "fila sin fecha": convertirlo
+  tal cual en pendientes habría llenado la bandeja de "deportistas" llamados
+  "Muy Malo". SUB13 cuenta 18 filas de resumen (el `+= 8` fijo estaba mal).
+- **Sin filas abiertas se purga a los 30 días; con filas para carga manual
+  el original espera** a que se cierren (tope duro de 180 días igual).
+
+### Cambios de comportamiento a revisar
+
+1. `lote_importacion` pasa a **privilegios por columna** para
+   `authenticated` (insert del alta; update solo de `estado, resoluciones,
+   resultado, confirmado_en, preview_json`). Sin esto la policy
+   `lote_update` dejaba reescribir `ruta_storage` y pedir el original de otro
+   espacio. Una migración futura con `grant update on lote_importacion` a
+   nivel tabla lo deshace.
+2. **Trigger de invariantes** en `lote_importacion`: no se importa un lote
+   nuevo sin original guardado (`ORIGINAL_PENDIENTE`), y un lote con
+   `protocolos-desconocidos` o `filas-pendientes` solo se importa por
+   `confirmar_lote_revisado` (`REQUIERE_REVISION`). Consecuencia: desde la
+   pantalla de carga rápida ya no se confirma una planilla con protocolos
+   sin mapear. Antes, elegir "Mapear" ahí **descartaba esas filas sin
+   avisar**; ahora el mensaje manda a resolverla desde Planillas.
+3. `/api/evaluaciones/importar` ya no corta por el `exp` del token: decide
+   `vence_en` del lote.
+4. `filas_ignoradas` = pendientes + resumen + vacías. En SUB13 pasa de 8 a 18.
+
+### Antes de aplicar en producción
+
+- [ ] Revisión manual de las dos migraciones (datos de menores, RLS, bucket,
+      privilegios, trigger).
+- [ ] P0 puede ir sola. **P1 no debe ir antes del frontend** que resuelve el
+      bloqueo `filas-pendientes` en la revisión: sin eso, una planilla con
+      esas filas no se confirma desde la pantalla (sí puede ir a recepción
+      manual).
+- [ ] Aplicar con `supabase db push --db-url <prod>` (el CLI de este repo está
+      linkeado a producción: nunca un `db push` pelado para probar).
+- [ ] Verificar en prod: bucket `planillas-lotes` privado, ACL de las
+      funciones nuevas, `TRUNCATE` en 0, job de purga activo.
+- [ ] Decidir la retención de `lote_fila_pendiente.datos` (nombres y valores
+      de menores): hoy queda como traza después de cerrada la fila.
+
+### Endpoints nuevos para el frontend
+
+- `GET /api/secretaria/planillas/[id]/original` → URL firmada de 5 min (admin, coordinación, analista).
+- `POST /api/secretaria/planillas/[id]/reprocesar` → sin archivo si `archivoGuardado`.
+- `GET /api/secretaria/planillas/[id]/revision` → suma `archivoGuardado`, `reprocesoPideArchivo`, `filasPendientes`, `conteoFilas`, `filasCargaManual`.
+- `GET /api/secretaria/planillas/[id]/filas-pendientes` → filas en la bandeja de un lote.
+- `POST /api/secretaria/filas-pendientes/[id]` → `{ tipo: "cargada", jornadaId }` o `{ tipo: "descartada", motivo }`.
+- `GET /api/secretaria/pendientes` → `pendientes_de_carga()`; y `indicadores.pendientesCarga` en `/api/secretaria/resumen`.
+
 ## Objetivo
 
 Lo primero que va a hacer la Secretaría es cargar planillas. El principio:

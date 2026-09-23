@@ -6,7 +6,25 @@ const RESUMEN = new Set([
   "desv est",
   "desvio estandar",
   "desviacion estandar",
+  // Pies de estadística de las planillas de rugby y gimnasia: sin esto,
+  // "Mín", "Máx" o "DS" parecían deportistas sin fecha.
+  "min",
+  "max",
+  "ds",
+  "sd",
+  "desvio",
+  "mediana",
+  "total",
+  "totales",
+  "estadisticas",
+  "estadistica",
 ]);
+
+/**
+ * Filas que abren el pie de la planilla (estadísticas, tabla de
+ * clasificación). Todo lo que viene después es resumen, no deportistas.
+ */
+const INICIO_PIE = [/^estadisticas?\b/u, /^tabla de clasificacion\b/u, /^clasificacion$/u];
 
 export function texto(valor: unknown): string {
   if (valor === null || valor === undefined) return "";
@@ -29,6 +47,26 @@ export function claveDeportista(nombre: string, apellido?: string | null): strin
 export function esFilaResumen(valor: unknown): boolean {
   const normalizado = normalizarTexto(valor);
   return RESUMEN.has(normalizado);
+}
+
+export function esInicioPie(valor: unknown): boolean {
+  const normalizado = normalizarTexto(valor);
+  return INICIO_PIE.some((patron) => patron.test(normalizado));
+}
+
+/** Guiones y marcas de "sin dato": la celda está vacía a propósito, no es ilegible. */
+const SIN_DATO = /^(?:[-–—.\s]+|n\/?a|s\/?d|nd)$/iu;
+
+/**
+ * Una celda con texto que no se puede leer como número ("ausente",
+ * "lesionado", "12,5,,"). No es lo mismo que una vacía: alguien escribió
+ * algo y hay que mostrárselo a una persona.
+ */
+export function esIlegible(valor: unknown): boolean {
+  if (typeof valor === "number") return !Number.isFinite(valor);
+  const crudo = texto(valor);
+  if (!crudo || SIN_DATO.test(crudo)) return false;
+  return numeros(crudo).length === 0;
 }
 
 export function numero(valor: unknown): number | null {

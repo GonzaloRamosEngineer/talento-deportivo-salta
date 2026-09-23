@@ -8,6 +8,8 @@ import type {
 import {
   claveDeportista,
   esFilaResumen,
+  esIlegible,
+  esInicioPie,
   fechaEnTitulo,
   fechaISO,
   ladoAsimetria,
@@ -19,6 +21,7 @@ import {
   texto,
 } from "./normalizacion";
 import type {
+  FilaPendiente,
   FilaSinProtocolo,
   HojaTabular,
   ImportacionNormalizada,
@@ -156,6 +159,114 @@ function deduplicarTransversales(mediciones: MedicionNormalizada[]) {
 }
 
 const FECHA_AUSENTE_ID = "fecha-ausente";
+const FILAS_PENDIENTES_ID = "filas-pendientes";
+
+type Columnas = ReadonlyArray<readonly [codigo: string, indice: number]>;
+
+const ETIQUETA_MOTIVO: Record<FilaPendiente["motivo"], [singular: string, plural: string]> = {
+  sin_fecha: ["sin fecha", "sin fecha"],
+  sin_nombre: ["sin nombre", "sin nombre"],
+  valor_ilegible: ["con un valor ilegible", "con valores ilegibles"],
+  protocolo_desconocido: ["con protocolo desconocido", "con protocolo desconocido"],
+};
+
+/**
+ * Lleva la cuenta de TODO lo que no entra como medición. Nada se descarta
+ * en silencio: o es resumen (no es un deportista), o está vacía (no hay
+ * dato que perder), o queda pendiente para que una persona decida.
+ */
+class RegistroFilas {
+  readonly pendientes: FilaPendiente[] = [];
+  resumen = 0;
+  vacias = 0;
+  private enPie = false;
+
+  constructor(private readonly hoja: string) {}
+
+  /** true si la fila es del pie (estadísticas, clasificación) o un resumen suelto. */
+  esResumen(etiqueta: string, celdas: unknown[]): boolean {
+    if (this.enPie || esInicioPie(etiqueta)) {
+      this.enPie = true;
+      if (celdas.some((celda) => texto(celda))) this.resumen += 1;
+      return true;
+    }
+    if (esFilaResumen(etiqueta)) {
+      this.resumen += 1;
+      return true;
+    }
+    return false;
+  }
+
+  pendiente(fila: Omit<FilaPendiente, "hoja">) {
+    this.pendientes.push({ ...fila, hoja: this.hoja });
+  }
+
+  get ignoradas() {
+    return this.pendientes.length + this.resumen + this.vacias;
+  }
+
+  static unir(hoja: string, registros: RegistroFilas[]) {
+    const total = new RegistroFilas(hoja);
+    for (const registro of registros) {
+      total.pendientes.push(...registro.pendientes);
+      total.resumen += registro.resumen;
+      total.vacias += registro.vacias;
+    }
+    return total;
+  }
+}
+
+function valoresDe(fila: unknown[], columnas: Columnas, extra: Record<string, string | null> = {}) {
+  return { ...extra, ...Object.fromEntries(columnas.map(([codigo, indice]) => [codigo, texto(fila[indice]) || null])) };
+}
+
+/** Hay algo que perder: al menos un número o un texto que alguien escribió. */
+function conDatos(fila: unknown[], columnas: Columnas) {
+  return columnas.some(([, indice]) => numeros(fila[indice]).length > 0 || esIlegible(fila[indice]));
+}
+
+function ilegiblesDe(fila: unknown[], columnas: Columnas) {
+  return columnas.filter(([, indice]) => esIlegible(fila[indice])).map(([codigo]) => codigo);
+}
+
+function hallazgosDeFilas(registro: RegistroFilas): HallazgoImportacion[] {
+  const hallazgos: HallazgoImportacion[] = [];
+  const { pendientes, resumen, vacias } = registro;
+  if (pendientes.length) {
+    const porMotivo = new Map<FilaPendiente["motivo"], number>();
+    pendientes.forEach((fila) => porMotivo.set(fila.motivo, (porMotivo.get(fila.motivo) ?? 0) + 1));
+    const partes = [...porMotivo.entries()].map(([motivo, n]) => `${n} ${ETIQUETA_MOTIVO[motivo][n === 1 ? 0 : 1]}`);
+    hallazgos.push({
+      id: FILAS_PENDIENTES_ID,
+      codigo: "fila_pendiente",
+      severidad: "bloqueo",
+      titulo: pendientes.length === 1 ? "Una fila no se pudo leer completa" : `${pendientes.length} filas no se pudieron leer completas`,
+      detalle: `${partes.join(", ")}. No se descartan solas: se decide desde la revisión de la planilla, con motivo.`,
+      cantidad: pendientes.length,
+      requiereResolucion: true,
+      opciones: [
+        { valor: "carga_manual", etiqueta: "Dejar para carga manual", detalle: "Se importa lo reconocido y estas filas quedan en la bandeja de pendientes." },
+        { valor: "excluir", etiqueta: "Excluir estas filas", detalle: "No se importan. Queda registrado quién lo decidió y por qué." },
+      ],
+    });
+  }
+  if (pendientes.length || resumen || vacias) {
+    const partes = [
+      resumen && `${resumen} de resumen o estadística`,
+      vacias && `${vacias} sin datos`,
+      pendientes.length && `${pendientes.length} pendientes de decisión`,
+    ].filter(Boolean);
+    hallazgos.push({
+      id: "conteo-filas",
+      codigo: "fila_resumen",
+      severidad: "info",
+      titulo: "Filas que no son mediciones",
+      detalle: `${partes.join(" · ")}. Media, máximo o pie de estadísticas no se tratan como deportistas.`,
+      cantidad: registro.ignoradas,
+    });
+  }
+  return hallazgos;
+}
 
 function parsearSaltosTabular(hojas: HojaTabular[], contexto: ContextoEvaluacion): ImportacionNormalizada {
   const hoja = hojas[0];
@@ -170,18 +281,24 @@ function parsearSaltosTabular(hojas: HojaTabular[], contexto: ContextoEvaluacion
   const indiceCabecera = hoja.filas.findIndex((fila) => normalizarTexto(fila[0]) === "nombre" && normalizarTexto(fila[3]) === "test");
   if (indiceCabecera < 0) throw new Error("No reconocimos la cabecera de la matriz de saltos.");
   const mediciones: MedicionNormalizada[] = [];
-  let ignoradas = 0;
+  const registro = new RegistroFilas(hoja.nombre);
   const protocolosDesconocidos = new Set<string>();
   const filasSinProtocolo: FilaSinProtocolo[] = [];
   const COLUMNAS = ["peso_corporal", "altura_salto", "fuerza_pico_aterrizaje",
     "potencia_relativa", "rsi_mod", "asimetria_aterrizaje", "asimetria_concentrica", "handgrip"];
+  const POSICIONES: Columnas = COLUMNAS.map((codigo, i) => [codigo, 4 + i] as const);
   let numeroFila = indiceCabecera;
   for (const fila of hoja.filas.slice(indiceCabecera + 1)) {
     numeroFila += 1;
     const nombre = texto(fila[0]);
     const apellido = texto(fila[1]) || null;
-    if (!nombre || esFilaResumen(nombre)) {
-      if (fila.some((celda) => texto(celda))) ignoradas += 1;
+    if (registro.esResumen(nombre, fila)) continue;
+    if (!nombre) {
+      if (!fila.some((celda) => texto(celda))) continue;
+      if (conDatos(fila, POSICIONES)) {
+        registro.pendiente({ fila: numeroFila + 1, motivo: "sin_nombre", nombre: "", apellido, edad: numero(fila[2]),
+          valores: valoresDe(fila, POSICIONES, { test: texto(fila[3]) || null }) });
+      } else registro.vacias += 1;
       continue;
     }
     const protocolo = protocoloCodigo(fila[3]);
@@ -199,6 +316,15 @@ function parsearSaltosTabular(hojas: HojaTabular[], contexto: ContextoEvaluacion
         valores: Object.fromEntries(COLUMNAS.map((c, i) => [c, texto(fila[4 + i]) || null])),
       });
       continue;
+    }
+    if (!conDatos(fila, POSICIONES)) {
+      registro.vacias += 1;
+      continue;
+    }
+    const ilegibles = ilegiblesDe(fila, POSICIONES);
+    if (ilegibles.length) {
+      registro.pendiente({ fila: numeroFila + 1, motivo: "valor_ilegible", nombre, apellido, edad: numero(fila[2]),
+        valores: valoresDe(fila, POSICIONES, { test: texto(fila[3]) || null }), columnasIlegibles: ilegibles, seImportoElResto: true });
     }
     const base = {
       deportistaClave: claveDeportista(nombre, apellido),
@@ -245,7 +371,7 @@ function parsearSaltosTabular(hojas: HojaTabular[], contexto: ContextoEvaluacion
         ],
       }]
     : [];
-  hallazgos.push(...hallazgosProtocolo);
+  hallazgos.push(...hallazgosProtocolo, ...hallazgosDeFilas(registro));
   const depuradas = deduplicarTransversales(mediciones);
   const duplicados = mediciones.length - depuradas.length;
   if (duplicados > 0) {
@@ -258,7 +384,7 @@ function parsearSaltosTabular(hojas: HojaTabular[], contexto: ContextoEvaluacion
       cantidad: duplicados,
     });
   }
-  const salida = finalizar("saltos_tabular", contexto, hojas, depuradas, hallazgos, ignoradas, duplicados);
+  const salida = finalizar("saltos_tabular", contexto, hojas, depuradas, hallazgos, registro, duplicados);
   salida.filasSinProtocolo = filasSinProtocolo;
   return salida;
 }
@@ -266,18 +392,40 @@ function parsearSaltosTabular(hojas: HojaTabular[], contexto: ContextoEvaluacion
 function parsearGimnasia(hojas: HojaTabular[], contexto: ContextoEvaluacion): ImportacionNormalizada {
   const hoja = hojas.find((item) => normalizarTexto(item.nombre).includes("cmj")) ?? hojas[0];
   const mediciones: MedicionNormalizada[] = [];
-  let ignoradas = 0;
+  const registro = new RegistroFilas(hoja.nombre);
+  const COLUMNAS: Columnas = [["peso_corporal", 3], ["altura_salto", 4], ["fuerza_pico_aterrizaje", 5],
+    ["potencia_relativa", 6], ["rsi_mod", 7], ["asimetria_aterrizaje", 8], ["asimetria_concentrica", 9]];
+  let numeroFila = 1;
   for (const fila of hoja.filas.slice(1)) {
+    numeroFila += 1;
     const completo = texto(fila[1]);
-    if (!completo || esFilaResumen(completo)) {
-      if (fila.some((celda) => texto(celda))) ignoradas += 1;
+    if (registro.esResumen(completo, fila)) continue;
+    const { nombre, apellido } = separarNombreCompleto(completo);
+    const hayDatos = conDatos(fila, COLUMNAS);
+    if (!completo) {
+      if (!fila.some((celda) => texto(celda))) continue;
+      if (hayDatos) {
+        registro.pendiente({ fila: numeroFila, motivo: "sin_nombre", nombre: "", apellido: null, edad: null,
+          valores: valoresDe(fila, COLUMNAS, { fecha: texto(fila[2]) || null }) });
+      } else registro.vacias += 1;
       continue;
     }
-    const { nombre, apellido } = separarNombreCompleto(completo);
+    if (!hayDatos) {
+      registro.vacias += 1;
+      continue;
+    }
     const fecha = contexto.fechaDeclarada || fechaISO(fila[2]);
     if (!fecha) {
-      ignoradas += 1;
+      // Antes: `ignoradas += 1` y la fila desaparecía. Sin fecha no hay
+      // jornada, así que no se importa, pero se conserva para decidir.
+      registro.pendiente({ fila: numeroFila, motivo: "sin_fecha", nombre, apellido, edad: null,
+        valores: valoresDe(fila, COLUMNAS, { fecha: texto(fila[2]) || null }) });
       continue;
+    }
+    const ilegibles = ilegiblesDe(fila, COLUMNAS);
+    if (ilegibles.length) {
+      registro.pendiente({ fila: numeroFila, motivo: "valor_ilegible", nombre, apellido, edad: null,
+        valores: valoresDe(fila, COLUMNAS, { fecha }), columnasIlegibles: ilegibles, seImportoElResto: true });
     }
     const base = { deportistaClave: claveDeportista(nombre), nombre, apellido, edad: null, fecha, protocoloCodigo: "CMJ" };
     agregar(mediciones, { ...base, protocoloCodigo: null }, "peso_corporal", fila[3]);
@@ -288,25 +436,45 @@ function parsearGimnasia(hojas: HojaTabular[], contexto: ContextoEvaluacion): Im
     agregar(mediciones, base, "asimetria_aterrizaje", fila[8], { lado: ladoAsimetria(fila[8]) });
     agregar(mediciones, base, "asimetria_concentrica", fila[9], { lado: ladoAsimetria(fila[9]) });
   }
-  return finalizar("gimnasia_cmj", contexto, hojas, mediciones, [], ignoradas, 0);
+  return finalizar("gimnasia_cmj", contexto, hojas, mediciones, hallazgosDeFilas(registro), registro, 0);
 }
 
 function parsearRugby(hojas: HojaTabular[], contexto: ContextoEvaluacion): ImportacionNormalizada {
   const hoja = hojas.find((item) => normalizarTexto(item.nombre).includes("sprint 30"));
   if (!hoja) throw new Error("No encontramos la hoja de Sprint 30 m.");
   const mediciones: MedicionNormalizada[] = [];
-  let ignoradas = 0;
+  const registro = new RegistroFilas(hoja.nombre);
+  const COLUMNAS: Columnas = [["tiempo_10m", 2], ["tiempo_tramo_10_30m", 3], ["tiempo_30m", 6],
+    ["velocidad_10m", 9], ["velocidad_10_30m", 10]];
+  let numeroFila = 1;
   for (const fila of hoja.filas.slice(1)) {
+    numeroFila += 1;
     const completo = texto(fila[1]);
-    if (!completo || esFilaResumen(completo)) {
-      if (fila.some((celda) => texto(celda))) ignoradas += 1;
+    if (registro.esResumen(completo, fila)) continue;
+    const { nombre, apellido } = separarNombreCompleto(completo);
+    const hayDatos = conDatos(fila, COLUMNAS);
+    if (!completo) {
+      if (!fila.some((celda) => texto(celda))) continue;
+      if (hayDatos) {
+        registro.pendiente({ fila: numeroFila, motivo: "sin_nombre", nombre: "", apellido: null, edad: null,
+          valores: valoresDe(fila, COLUMNAS, { fecha: texto(fila[0]) || null }) });
+      } else registro.vacias += 1;
       continue;
     }
-    const { nombre, apellido } = separarNombreCompleto(completo);
+    if (!hayDatos) {
+      registro.vacias += 1;
+      continue;
+    }
     const fecha = contexto.fechaDeclarada || fechaISO(fila[0]);
     if (!fecha) {
-      ignoradas += 1;
+      registro.pendiente({ fila: numeroFila, motivo: "sin_fecha", nombre, apellido, edad: null,
+        valores: valoresDe(fila, COLUMNAS, { fecha: texto(fila[0]) || null }) });
       continue;
+    }
+    const ilegibles = ilegiblesDe(fila, COLUMNAS);
+    if (ilegibles.length) {
+      registro.pendiente({ fila: numeroFila, motivo: "valor_ilegible", nombre, apellido, edad: null,
+        valores: valoresDe(fila, COLUMNAS, { fecha }), columnasIlegibles: ilegibles, seImportoElResto: true });
     }
     const base = { deportistaClave: claveDeportista(nombre), nombre, apellido, edad: null, fecha, protocoloCodigo: "SPRINT_30M" };
     agregar(mediciones, base, "tiempo_10m", fila[2]);
@@ -315,27 +483,61 @@ function parsearRugby(hojas: HojaTabular[], contexto: ContextoEvaluacion): Impor
     agregar(mediciones, base, "velocidad_10m", fila[9]);
     agregar(mediciones, base, "velocidad_10_30m", fila[10]);
   }
-  return finalizar("rugby_sprint", contexto, hojas, mediciones, [], ignoradas, 0);
+  return finalizar("rugby_sprint", contexto, hojas, mediciones, hallazgosDeFilas(registro), registro, 0);
 }
 
 function parsearSub13(hojas: HojaTabular[], contexto: ContextoEvaluacion): ImportacionNormalizada {
   const principal = hojas.find((hoja) => hoja.filas.some((fila) => normalizarTexto(fila[0]).includes("prueba cmj")));
   if (!principal) throw new Error("No encontramos los bloques CMJ, Abalakov y SJ del archivo SUB13.");
   const mediciones: MedicionNormalizada[] = [];
-  let ignoradas = 0;
   const bloques = [
     { inicio: 0, protocolo: "CMJ" },
     { inicio: 8, protocolo: "ABALAKOV" },
     { inicio: 16, protocolo: "SJ" },
   ];
+  // Un registro por bloque: cada bloque es una tabla con su propio pie.
+  const registros: RegistroFilas[] = [];
   for (const { inicio, protocolo } of bloques) {
+    const registro = new RegistroFilas(`${principal.nombre} · ${PROTOCOLOS[protocolo] ?? protocolo}`);
+    registros.push(registro);
+    const COLUMNAS: Columnas = [["peso_corporal", inicio + 2], ["altura_salto", inicio + 3],
+      ["fuerza_pico_aterrizaje", inicio + 4], ["potencia_relativa", inicio + 5], ["rsi_mod", inicio + 6]];
+    let numeroFila = 2;
     for (const fila of principal.filas.slice(2)) {
+      numeroFila += 1;
       const completo = texto(fila[inicio]);
-      if (!completo || esFilaResumen(completo)) continue;
+      const celdas = fila.slice(inicio, inicio + 7);
+      if (registro.esResumen(completo, celdas)) continue;
+      const hayDatos = conDatos(fila, COLUMNAS);
+      if (!completo) {
+        if (!celdas.some((celda) => texto(celda))) continue;
+        if (hayDatos) {
+          registro.pendiente({ fila: numeroFila, motivo: "sin_nombre", nombre: "", apellido: null, edad: null,
+            valores: valoresDe(fila, COLUMNAS, { fecha: texto(fila[inicio + 1]) || null }) });
+        } else registro.vacias += 1;
+        continue;
+      }
+      if (!hayDatos) {
+        registro.vacias += 1;
+        continue;
+      }
+      const { nombre, apellido } = separarNombreCompleto(completo);
+      const valores = valoresDe(fila, COLUMNAS, { fecha: texto(fila[inicio + 1]) || null });
+      const ilegibles = ilegiblesDe(fila, COLUMNAS);
       const peso = numero(fila[inicio + 2]);
       const altura = numero(fila[inicio + 3]);
-      if (peso === null || altura === null) continue;
-      const { nombre, apellido } = separarNombreCompleto(completo);
+      // Sin peso y altura el bloque no se puede leer: antes la fila se
+      // salteaba sin contarla. Ahora queda entera para decidir.
+      if (peso === null || altura === null) {
+        const faltan = COLUMNAS.slice(0, 2).filter(([, i]) => numero(fila[i]) === null).map(([codigo]) => codigo);
+        registro.pendiente({ fila: numeroFila, motivo: "valor_ilegible", nombre, apellido, edad: null, valores,
+          columnasIlegibles: [...new Set([...faltan, ...ilegibles])], seImportoElResto: false });
+        continue;
+      }
+      if (ilegibles.length) {
+        registro.pendiente({ fila: numeroFila, motivo: "valor_ilegible", nombre, apellido, edad: null, valores,
+          columnasIlegibles: ilegibles, seImportoElResto: true });
+      }
       const base = {
         deportistaClave: claveDeportista(nombre), nombre, apellido, edad: null,
         fecha: fechaISO(fila[inicio + 1]), protocoloCodigo: protocolo,
@@ -381,16 +583,10 @@ function parsearSub13(hojas: HojaTabular[], contexto: ContextoEvaluacion): Impor
     detalle: "La segunda hoja repite el bloque SJ de la primera. Se conserva una sola propuesta por deportista y métrica.",
     cantidad: duplicadosSJ,
   });
-  hallazgos.push({
-    id: "resumen-sub13",
-    codigo: "fila_resumen",
-    severidad: "info",
-    titulo: "Filas estadísticas separadas",
-    detalle: "Media, máximo, mínimo y desvío estándar no se tratan como deportistas.",
-    cantidad: 8,
-  });
-  ignoradas += 8;
-  return finalizar("sub13_bloques", contexto, hojas, conFechaOriginal, hallazgos, ignoradas, duplicadosSJ);
+  // Antes: `ignoradas += 8` fijo. Ahora se cuentan las filas que hay.
+  const registro = RegistroFilas.unir(principal.nombre, registros);
+  hallazgos.push(...hallazgosDeFilas(registro));
+  return finalizar("sub13_bloques", contexto, hojas, conFechaOriginal, hallazgos, registro, duplicadosSJ);
 }
 
 function finalizar(
@@ -399,12 +595,19 @@ function finalizar(
   hojas: HojaTabular[],
   mediciones: MedicionNormalizada[],
   hallazgos: ImportacionNormalizada["hallazgos"],
-  filasIgnoradas: number,
+  registro: RegistroFilas,
   duplicados: number,
 ): ImportacionNormalizada {
   const protocolos = [...new Set(mediciones.map((item) => item.protocoloCodigo).filter((item): item is string => Boolean(item)))];
   const metricas = [...new Set(mediciones.map((item) => item.atributoCodigo))];
-  return { version: 1, adaptador, contexto, hojas: hojas.map((hoja) => hoja.nombre), mediciones, protocolos, metricas, hallazgos, filasIgnoradas, duplicados };
+  return {
+    version: 1, adaptador, contexto, hojas: hojas.map((hoja) => hoja.nombre), mediciones, protocolos, metricas, hallazgos,
+    filasIgnoradas: registro.ignoradas,
+    duplicados,
+    filasPendientes: registro.pendientes,
+    filasResumen: registro.resumen,
+    filasVacias: registro.vacias,
+  };
 }
 
 function detectar(hojas: HojaTabular[]) {
