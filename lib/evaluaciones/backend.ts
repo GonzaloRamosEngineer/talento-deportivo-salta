@@ -2,8 +2,8 @@ import "server-only";
 
 import { createHash, createHmac, timingSafeEqual } from "node:crypto";
 import { crearClienteServer } from "@/lib/supabase/server";
+import { esCuentaDemo } from "@/lib/demo";
 
-const REF_PRODUCCION = "hjaeihdrrictmgilzaic";
 const ROLES_OPERATIVOS = new Set([
   "admin_secretaria",
   "coordinador_secretaria",
@@ -20,45 +20,76 @@ export class ErrorImportacion extends Error {
   }
 }
 
-function projectRef(): string | null {
-  try {
-    return new URL(process.env.NEXT_PUBLIC_SUPABASE_URL ?? "").hostname.split(".")[0] || null;
-  } catch {
-    return null;
+/**
+ * Compuerta del módulo de Evaluaciones.
+ *
+ * ANTES esto era un bloqueo POR ENTORNO: ref de producción hardcodeado +
+ * `APP_ENV === "staging"`. Servía mientras Evaluaciones no existía en
+ * producción, pero es una compuerta que no distingue QUIÉN pide: dice
+ * "acá no", no "vos no". Al habilitar producción hay que reemplazarla por
+ * una que sí lo distinga, no simplemente quitarla.
+ *
+ * Lo que queda son tres capas, de la más débil a la más fuerte:
+ *
+ *   1. `EVALUACIONES_HABILITADAS` — interruptor por ambiente, apagado por
+ *      defecto. Su única función es permitir apagar el módulo sin
+ *      redeploy. NO es una medida de seguridad.
+ *   2. `sesionOperativaSecretaria()` / `sesionSecretaria()` — sesión real,
+ *      membresía en una organización `secretaria` y rol operativo. Acá se
+ *      rechazan las cuentas demo.
+ *   3. RLS — cada tabla filtra por `club_id` con `es_miembro_de` /
+ *      `es_admin_de`. Es la que de verdad aísla, y la única que sigue
+ *      valiendo si alguien se saltea el server.
+ *
+ * El interruptor no reemplaza a 2 y 3: se suma. Encenderlo en producción
+ * no le da acceso a nadie que no lo tuviera ya por membresía.
+ */
+export function exigirEvaluacionesHabilitadas() {
+  if (process.env.EVALUACIONES_HABILITADAS !== "true") {
+    throw new ErrorImportacion(
+      "El módulo de Evaluaciones no está habilitado en este entorno.",
+      503,
+      "EVALUACIONES_DESHABILITADAS",
+    );
   }
 }
 
-export function exigirEntornoImportacion() {
-  const ref = projectRef();
-  if (ref === REF_PRODUCCION) {
+/**
+ * Compatibilidad: las rutas viejas siguen llamando a este nombre.
+ * @deprecated usar `exigirEvaluacionesHabilitadas`.
+ */
+export const exigirEntornoImportacion = exigirEvaluacionesHabilitadas;
+
+
+/**
+ * Las cuentas de la vitrina pública NUNCA entran a Evaluaciones.
+ *
+ * Hoy esto es redundante: las demo son miembros de un club, no de la
+ * Secretaría, así que el RLS ya las deja afuera. Es a propósito. Lo que
+ * protege es el día que alguien, por comodidad, le dé una membresía de
+ * Secretaría a una cuenta demo para "mostrar el módulo". Ese día el RLS
+ * la dejaría pasar y esto no. La misma regla está además en la base
+ * (trigger `membresia_sin_demo_en_secretaria`), porque una guarda que
+ * vive solo en el server se saltea con la service key.
+ */
+function rechazarCuentaDemo(user: { email?: string | null; app_metadata?: Record<string, unknown> }) {
+  if (esCuentaDemo(user as never)) {
     throw new ErrorImportacion(
-      "La carga de evaluaciones está bloqueada en la base productiva. Configurá el proyecto de staging.",
-      503,
-      "ENTORNO_PRODUCTIVO_BLOQUEADO",
-    );
-  }
-  if (process.env.IMPORT_BACKEND_ENABLED !== "true") {
-    throw new ErrorImportacion(
-      "El backend de importación no está habilitado en este entorno.",
-      503,
-      "IMPORTADOR_DESHABILITADO",
-    );
-  }
-  if (process.env.APP_ENV !== "staging") {
-    throw new ErrorImportacion(
-      "La importación real solo se habilita con APP_ENV=staging.",
-      503,
-      "ENTORNO_NO_AUTORIZADO",
+      "Las cuentas de la demo no acceden a Evaluaciones.",
+      403,
+      "CUENTA_DEMO",
     );
   }
 }
 
 export async function sesionOperativaSecretaria() {
+  exigirEvaluacionesHabilitadas();
   const supabase = await crearClienteServer();
   const { data: { user }, error: errorUsuario } = await supabase.auth.getUser();
   if (errorUsuario || !user) {
     throw new ErrorImportacion("Iniciá sesión para cargar evaluaciones.", 401, "SESION_REQUERIDA");
   }
+  rechazarCuentaDemo(user);
 
   const { data, error } = await supabase
     .from("membresia")
@@ -83,9 +114,11 @@ export async function sesionOperativaSecretaria() {
 }
 
 export async function sesionSecretaria() {
+  exigirEvaluacionesHabilitadas();
   const supabase = await crearClienteServer();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new ErrorImportacion("Iniciá sesión.", 401, "SESION_REQUERIDA");
+  rechazarCuentaDemo(user);
   const { data, error } = await supabase
     .from("membresia")
     .select("id, club_id, rol, club:club_id(id, nombre, tipo_organizacion)")

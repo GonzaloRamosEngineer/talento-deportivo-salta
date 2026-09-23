@@ -7,11 +7,12 @@ import {
 export async function GET() {
   try {
     const { supabase, membresia } = await sesionOperativaSecretaria();
-    const [grupos, deportistas, enlaces, responsable] = await Promise.all([
+    const [grupos, deportistas, enlaces, responsable, arbol, disciplinas] = await Promise.all([
       supabase
         .from("categoria")
         .select("id, nombre, institucion:institucion_origen_id(id, nombre), disciplina:disciplina_id(id, nombre)")
         .eq("club_id", membresia.club_id)
+        .eq("activo", true)
         .order("nombre"),
       supabase
         .from("deportista")
@@ -30,14 +31,19 @@ export async function GET() {
         .select("nombre")
         .eq("id", membresia.id)
         .single(),
+      supabase.rpc("arbol_secretaria", { p_incluir_inactivos: false }),
+      supabase.from("disciplina").select("id, nombre").eq("activo", true).order("nombre"),
     ]);
-    const error = grupos.error ?? deportistas.error ?? enlaces.error ?? responsable.error;
+    const error = grupos.error ?? deportistas.error ?? enlaces.error ?? responsable.error ?? arbol.error ?? disciplinas.error;
     if (error) throw error;
     return Response.json({
       grupos: grupos.data ?? [],
       deportistas: deportistas.data ?? [],
       protocolos: enlaces.data ?? [],
       responsable: responsable.data?.nombre ?? "Equipo Secretaría",
+      arbol: arbol.data ?? [],
+      disciplinas: disciplinas.data ?? [],
+      rol: membresia.rol,
     });
   } catch (error) {
     return respuestaError(error);

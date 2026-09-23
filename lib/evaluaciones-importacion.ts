@@ -81,12 +81,19 @@ export interface ResultadoImportacion {
   filasIgnoradas: number;
 }
 
-async function leerError(respuesta: Response): Promise<string> {
+export class ErrorRespuestaEvaluacion extends Error {
+  constructor(message: string, readonly codigo?: string) {
+    super(message);
+    this.name = "ErrorRespuestaEvaluacion";
+  }
+}
+
+async function leerError(respuesta: Response): Promise<ErrorRespuestaEvaluacion> {
   try {
-    const cuerpo = (await respuesta.json()) as { error?: string; message?: string };
-    return cuerpo.error ?? cuerpo.message ?? `Error ${respuesta.status}`;
+    const cuerpo = (await respuesta.json()) as { error?: string; message?: string; codigo?: string };
+    return new ErrorRespuestaEvaluacion(cuerpo.error ?? cuerpo.message ?? `Error ${respuesta.status}`, cuerpo.codigo);
   } catch {
-    return `Error ${respuesta.status}`;
+    return new ErrorRespuestaEvaluacion(`Error ${respuesta.status}`);
   }
 }
 
@@ -103,7 +110,7 @@ export async function previsualizarEvaluacion(
     body: cuerpo,
     credentials: "same-origin",
   });
-  if (!respuesta.ok) throw new Error(await leerError(respuesta));
+  if (!respuesta.ok) throw await leerError(respuesta);
   return (await respuesta.json()) as PrevisualizacionEvaluacion;
 }
 
@@ -117,7 +124,7 @@ export async function importarEvaluacion(
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ previewToken, resoluciones }),
   });
-  if (!respuesta.ok) throw new Error(await leerError(respuesta));
+  if (!respuesta.ok) throw await leerError(respuesta);
   return (await respuesta.json()) as ResultadoImportacion;
 }
 

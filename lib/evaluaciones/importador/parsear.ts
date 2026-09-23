@@ -19,6 +19,7 @@ import {
   texto,
 } from "./normalizacion";
 import type {
+  FilaSinProtocolo,
   HojaTabular,
   ImportacionNormalizada,
   MedicionNormalizada,
@@ -171,7 +172,12 @@ function parsearSaltosTabular(hojas: HojaTabular[], contexto: ContextoEvaluacion
   const mediciones: MedicionNormalizada[] = [];
   let ignoradas = 0;
   const protocolosDesconocidos = new Set<string>();
+  const filasSinProtocolo: FilaSinProtocolo[] = [];
+  const COLUMNAS = ["peso_corporal", "altura_salto", "fuerza_pico_aterrizaje",
+    "potencia_relativa", "rsi_mod", "asimetria_aterrizaje", "asimetria_concentrica", "handgrip"];
+  let numeroFila = indiceCabecera;
   for (const fila of hoja.filas.slice(indiceCabecera + 1)) {
+    numeroFila += 1;
     const nombre = texto(fila[0]);
     const apellido = texto(fila[1]) || null;
     if (!nombre || esFilaResumen(nombre)) {
@@ -180,8 +186,18 @@ function parsearSaltosTabular(hojas: HojaTabular[], contexto: ContextoEvaluacion
     }
     const protocolo = protocoloCodigo(fila[3]);
     if (!protocolo) {
-      protocolosDesconocidos.add(texto(fila[3]) || "vacío");
-      ignoradas += 1;
+      // La fila NO se descarta: se conserva con sus valores originales para
+      // que una persona la mapee o la excluya de forma explícita.
+      const crudo = texto(fila[3]) || "vacío";
+      protocolosDesconocidos.add(crudo);
+      filasSinProtocolo.push({
+        fila: numeroFila + 1,
+        valorCrudo: crudo,
+        nombre,
+        apellido,
+        edad: numero(fila[2]),
+        valores: Object.fromEntries(COLUMNAS.map((c, i) => [c, texto(fila[4 + i]) || null])),
+      });
       continue;
     }
     const base = {
@@ -221,6 +237,12 @@ function parsearSaltosTabular(hojas: HojaTabular[], contexto: ContextoEvaluacion
         severidad: "bloqueo" as const,
         titulo: "Hay protocolos sin mapear",
         detalle: [...protocolosDesconocidos].join(", "),
+        cantidad: filasSinProtocolo.length,
+        requiereResolucion: true,
+        opciones: [
+          { valor: "excluir_todo", etiqueta: "Excluir estas filas", detalle: "No se importa ninguna de sus mediciones. Queda registrado." },
+          { valor: "mapear", etiqueta: "Mapear a un protocolo", detalle: "Elegí a qué protocolo del catálogo corresponde cada valor." },
+        ],
       }]
     : [];
   hallazgos.push(...hallazgosProtocolo);
@@ -236,7 +258,9 @@ function parsearSaltosTabular(hojas: HojaTabular[], contexto: ContextoEvaluacion
       cantidad: duplicados,
     });
   }
-  return finalizar("saltos_tabular", contexto, hojas, depuradas, hallazgos, ignoradas, duplicados);
+  const salida = finalizar("saltos_tabular", contexto, hojas, depuradas, hallazgos, ignoradas, duplicados);
+  salida.filasSinProtocolo = filasSinProtocolo;
+  return salida;
 }
 
 function parsearGimnasia(hojas: HojaTabular[], contexto: ContextoEvaluacion): ImportacionNormalizada {

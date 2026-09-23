@@ -70,7 +70,11 @@ from club c, disciplina d,
        ('Primera',             'primera',   null::int)
      ) as cat(nombre, tipo, anio)
 where c.nombre = 'Club Atlético Antoniana' and d.nombre = 'Fútbol'
-on conflict (club_id, disciplina_id, nombre) do nothing;
+-- La unicidad de `categoria` cambió en 20260922090000: ahora incluye
+-- `institucion_origen_id` (unique nulls not distinct). El seed no la usa —
+-- deja NULL— pero el ON CONFLICT tiene que nombrar la constraint vigente o
+-- psql corta con "no unique or exclusion constraint matching".
+on conflict (club_id, disciplina_id, institucion_origen_id, nombre) do nothing;
 
 -- ---------- Lugares del club ----------
 insert into lugar (club_id, nombre, direccion)

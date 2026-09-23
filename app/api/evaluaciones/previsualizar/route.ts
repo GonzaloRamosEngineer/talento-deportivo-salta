@@ -42,7 +42,25 @@ export async function POST(request: Request) {
       throw new ErrorImportacion("El archivo está vacío o supera los 20 MB.", 400, "ARCHIVO_INVALIDO");
     }
     const contexto = validarContexto(formulario.get("contexto"));
-    const normalizada = await parsearEvaluacion(archivo, contexto);
+    let normalizada: Awaited<ReturnType<typeof parsearEvaluacion>>;
+    try {
+      normalizada = await parsearEvaluacion(archivo, contexto);
+    } catch (error) {
+      const detalle = error instanceof Error ? error.message : "";
+      if (
+        detalle.includes("La estructura de esta planilla todavía no tiene un adaptador reconocido")
+        || detalle.includes("No reconocimos la cabecera")
+        || detalle.includes("No encontramos la hoja")
+        || detalle.includes("El formato .xls antiguo no se admite todavía")
+      ) {
+        throw new ErrorImportacion(
+          "No pudimos leer esta estructura con seguridad. Podés enviarla al equipo para revisión manual; todavía no se guardó ni se importó.",
+          422,
+          "FORMATO_NO_RECONOCIDO",
+        );
+      }
+      throw error;
+    }
     const hash = await hashArchivo(archivo);
     const bloqueos = normalizada.hallazgos.filter((hallazgo) => hallazgo.severidad === "bloqueo").length;
 
@@ -80,4 +98,3 @@ export async function POST(request: Request) {
     return respuestaError(error);
   }
 }
-

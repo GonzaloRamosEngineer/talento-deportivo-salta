@@ -18,6 +18,20 @@ export interface MedicionNormalizada {
   detalle: Record<string, string | number | boolean | null>;
 }
 
+/**
+ * Fila que el adaptador no pudo mapear a un protocolo conocido. NO se
+ * descarta: se preserva con sus valores originales para que una persona
+ * decida mapearla o excluirla explícitamente.
+ */
+export interface FilaSinProtocolo {
+  fila: number;
+  valorCrudo: string;
+  nombre: string;
+  apellido: string | null;
+  edad: number | null;
+  valores: Record<string, string | null>;
+}
+
 export interface ImportacionNormalizada {
   version: 1;
   adaptador: "saltos_tabular" | "gimnasia_cmj" | "rugby_sprint" | "sub13_bloques";
@@ -29,6 +43,7 @@ export interface ImportacionNormalizada {
   hallazgos: HallazgoImportacion[];
   filasIgnoradas: number;
   duplicados: number;
+  filasSinProtocolo?: FilaSinProtocolo[];
 }
 
 export interface HojaTabular {
