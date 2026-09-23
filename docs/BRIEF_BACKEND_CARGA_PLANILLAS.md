@@ -9,7 +9,7 @@ revisión manual.**
 | --- | --- | --- |
 | 0 · Sincronizar las 3 migraciones que faltaban | ✅ aplicado; `schema_migrations` igual a prod | — |
 | P0 · `20260923160000_conservar_original_lotes.sql` (puntos 1 y 2) | ✅ aplicado | ⏳ requiere revisión manual |
-| P1 · `20260923161000_filas_pendientes_y_bandeja.sql` (puntos 3, 4 y 5) | ✅ aplicado | ⏳ requiere revisión manual **y** el frontend del punto 4 |
+| P1 · `20260923161000_filas_pendientes_y_bandeja.sql` (puntos 3, 4 y 5) | ✅ aplicado | ⏳ requiere revisión manual (frontend listo: `2253d31`) |
 
 Verificación: `npm run test:carga-planillas` (e2e de la sección 6, 44
 asserts, se limpia solo) y `npm run test:importadores` (9 planillas reales
@@ -57,10 +57,12 @@ con mediciones y resumen fijados + casos sintéticos de cada motivo).
 
 - [ ] Revisión manual de las dos migraciones (datos de menores, RLS, bucket,
       privilegios, trigger).
-- [ ] P0 puede ir sola. **P1 no debe ir antes del frontend** que resuelve el
-      bloqueo `filas-pendientes` en la revisión: sin eso, una planilla con
-      esas filas no se confirma desde la pantalla (sí puede ir a recepción
-      manual).
+- [x] P0 puede ir sola. **P1 no debe ir antes del frontend** que resuelve el
+      bloqueo `filas-pendientes` en la revisión. → **Hecho en `2253d31`**
+      (revisión con "carga manual / excluir", filas de carga manual en el
+      detalle, bandeja y contador del panel), probado contra staging.
+      P0, P1 y el frontend tienen que salir juntos: el frontend ya llama a
+      los endpoints nuevos.
 - [ ] Aplicar con `supabase db push --db-url <prod>` (el CLI de este repo está
       linkeado a producción: nunca un `db push` pelado para probar).
 - [ ] Verificar en prod: bucket `planillas-lotes` privado, ACL de las
