@@ -8,6 +8,7 @@ import { cn, paraBuscar } from "@/lib/utils";
 import { CampoBusqueda } from "@/components/secretaria/campo-busqueda";
 import { PRESIONABLE } from "@/components/secretaria/presionable";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
+import type { SolicitudSecretaria } from "@/lib/secretaria/solicitudes";
 
 export interface GrupoArbol {
   id: string;
@@ -18,7 +19,7 @@ export interface GrupoArbol {
 }
 export interface DisciplinaArbol { id: string; nombre: string; grupos: GrupoArbol[] }
 export interface InstitucionArbol { id: string; nombre: string; tipo: string | null; localidad: string | null; activo: boolean; disciplinas: DisciplinaArbol[] }
-export interface ConfiguracionSecretaria { arbol: InstitucionArbol[]; disciplinas: Array<{ id: string; nombre: string }>; rol: string }
+export interface ConfiguracionSecretaria { arbol: InstitucionArbol[]; disciplinas: Array<{ id: string; nombre: string }>; rol: string; solicitudes?: SolicitudSecretaria[] }
 type Accion = "institucion" | "grupo" | "deportista" | "disciplina";
 interface Candidato { id: string; nombre: string; apellido: string | null; fechaNacimiento: string | null; grupo: string | null; institucion: string | null; activo: boolean; coincidencia: string }
 interface DeportistaLista { id: string; nombre: string; apellido: string | null; grupoId: string; grupo: string; institucion: string; disciplina: string; mediciones: number }
@@ -75,6 +76,9 @@ export function ConfiguradorSecretaria({ inicial, recargar, vista }: { inicial: 
   const [localidad, setLocalidad] = useState("");
   const [notas, setNotas] = useState("");
   const [descripcion, setDescripcion] = useState("");
+  // Pedido al catálogo: una disciplina nueva, o algo que falta medir en una
+  // que ya existe (antes solo existía la primera y la segunda se rechazaba).
+  const [tipoSolicitud, setTipoSolicitud] = useState<"nueva" | "falta">("nueva");
   const [guardando, setGuardando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [aviso, setAviso] = useState<string | null>(null);
@@ -131,7 +135,7 @@ export function ConfiguradorSecretaria({ inicial, recargar, vista }: { inicial: 
     setInstitucionId(contexto?.institucionId ?? (nuevaAccion === "grupo" ? inicial.arbol[0]?.id ?? "" : ""));
     setGrupoId(contexto?.grupoId ?? (nuevaAccion === "deportista" ? grupos[0]?.id ?? "" : ""));
     setDisciplinaId(nuevaAccion === "grupo" ? inicial.disciplinas[0]?.id ?? "" : "");
-    setNombre(""); setApellido(""); setFechaNacimiento(""); setTipo(""); setLocalidad(""); setNotas(""); setDescripcion(""); setError(null); setAviso(null); setCandidatos([]);
+    setNombre(""); setApellido(""); setFechaNacimiento(""); setTipo(""); setLocalidad(""); setNotas(""); setDescripcion(""); setError(null); setAviso(null); setCandidatos([]); setTipoSolicitud("nueva");
   }
 
   async function enviar(resolucion?: string) {
@@ -141,7 +145,9 @@ export function ConfiguradorSecretaria({ inicial, recargar, vista }: { inicial: 
       institucion: { accion: "crear_institucion", nombre, tipo, localidad, notas },
       grupo: { accion: "crear_grupo", institucionId, disciplinaId, nombre, tipo },
       deportista: { accion: "crear_deportista", grupoId, identidad: { nombre, apellido, fechaNacimiento }, resolucion },
-      disciplina: { accion: "solicitar_disciplina", nombre, descripcion, contexto: notas },
+      disciplina: tipoSolicitud === "falta"
+        ? { accion: "solicitar_protocolo", disciplinaId, texto: nombre, contexto: notas }
+        : { accion: "solicitar_disciplina", nombre, descripcion, contexto: notas },
     };
     const respuesta = await fetch("/api/secretaria/configuracion", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(cuerpos[accion]) });
     const cuerpo = await respuesta.json();
@@ -150,8 +156,8 @@ export function ConfiguradorSecretaria({ inicial, recargar, vista }: { inicial: 
     if (cuerpo.estado === "DEPORTISTA_POSIBLE_DUPLICADO") { setCandidatos(cuerpo.candidatos ?? []); return; }
     if (cuerpo.estado === "INSTITUCION_POSIBLE_DUPLICADO") { setAviso(`Ya existe ${cuerpo.existente?.nombre}. No se creó otra institución.`); return; }
     if (cuerpo.estado === "GRUPO_POSIBLE_DUPLICADO") { setAviso("Ese grupo ya existe para la institución y disciplina seleccionadas."); return; }
-    if (cuerpo.estado === "DISCIPLINA_YA_EXISTE") { setAviso("La disciplina ya existe en el catálogo. Podés seleccionarla al crear el grupo."); return; }
-    if (cuerpo.estado === "SOLICITUD_YA_PENDIENTE") { setAviso("Esta disciplina ya fue solicitada y está pendiente de revisión."); return; }
+    if (cuerpo.estado === "DISCIPLINA_YA_EXISTE") { setAviso("Esa disciplina ya existe en el catálogo: podés elegirla al crear un plantel. Si falta algo para medir en ella, elegí «Algo que falta en una disciplina»."); return; }
+    if (cuerpo.estado === "SOLICITUD_YA_PENDIENTE") { setAviso("Ya hay un pedido igual esperando respuesta."); return; }
     await recargar();
     setAccion(null);
   }
@@ -235,6 +241,23 @@ export function ConfiguradorSecretaria({ inicial, recargar, vista }: { inicial: 
         {disciplinasVisibles.length === 0 ? sinResultados("Todavía no hay disciplinas con planteles.") : <div className="divide-y divide-border">{disciplinasVisibles.map((disciplina) => <button type="button" key={disciplina.id} onClick={() => setDisciplinaAbierta(disciplina.id)} className="flex min-h-14 w-full min-w-0 items-center gap-3 px-4 py-3 text-left hover:bg-muted/30 active:bg-muted/50"><span className="min-w-0 flex-1"><span className="block text-sm font-extrabold">{disciplina.nombre}</span><span className="block text-xs text-muted-foreground">{`${disciplina.instituciones} · ${plural(disciplina.grupos, "plantel", "planteles")}`}</span></span><ChevronRight className="size-4 shrink-0 text-muted-foreground" aria-hidden /></button>)}</div>}
       </>}</section>}
 
+      {vista === "disciplinas" && !disciplinaDetalle && (inicial.solicitudes?.length ?? 0) > 0 && <section className="overflow-hidden rounded-2xl border border-border bg-card">
+        <div className="border-b border-border px-4 py-3"><h2 className="text-sm font-extrabold">Tus solicitudes al catálogo</h2><p className="mt-0.5 text-xs text-muted-foreground">Las revisa la plataforma. Acá ves en qué quedó cada una.</p></div>
+        <ul className="divide-y divide-border">{(inicial.solicitudes ?? []).map((solicitud) => {
+          const estado = { pendiente: ["Esperando respuesta", "bg-warning-soft text-warning"], aprobada: ["Aprobada", "bg-secondary text-primary"], rechazada: ["No se incorporó", "bg-muted text-muted-foreground"] }[solicitud.estado];
+          return <li key={solicitud.id} className="px-4 py-3">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-sm font-extrabold">{solicitud.nombre}</p>
+                <p className="text-xs text-muted-foreground">{solicitud.tipo === "protocolo" ? `Para ${solicitud.disciplinaObjetivo ?? "una disciplina"}` : "Disciplina nueva"}{` · pedida el ${new Intl.DateTimeFormat("es-AR", { dateStyle: "medium" }).format(new Date(solicitud.creadoEn))}`}</p>
+              </div>
+              <span className={cn("shrink-0 rounded-full px-2.5 py-1 text-[11px] font-bold", estado[1])}>{estado[0]}</span>
+            </div>
+            {solicitud.resolucion && <p className="mt-2 rounded-lg bg-muted/50 px-3 py-2 text-xs">{solicitud.resolucion}</p>}
+          </li>;
+        })}</ul>
+      </section>}
+
       {vista === "deportistas" && <section className="overflow-hidden rounded-2xl border border-border bg-card">
         <div className="border-b border-border px-4 py-3"><h2 className="text-sm font-extrabold">{`Deportistas · ${deportistas ? (termino ? `${deportistasFiltrados.length} de ${deportistas.length}` : deportistas.length) : "…"}`}</h2></div>
         {!deportistas ? <p className="p-6 text-center text-sm text-muted-foreground">Cargando deportistas…</p> : <>
@@ -243,17 +266,30 @@ export function ConfiguradorSecretaria({ inicial, recargar, vista }: { inicial: 
         </>}
       </section>}
 
-      {accion && <ModalMovil titulo={{ institucion: "Sumar institución", grupo: "Nuevo plantel", deportista: "Agregar deportista", disciplina: "Solicitar disciplina" }[accion]} onClose={() => setAccion(null)}>
+      {accion && <ModalMovil titulo={{ institucion: "Sumar institución", grupo: "Nuevo plantel", deportista: "Agregar deportista", disciplina: "Pedir al catálogo" }[accion]} onClose={() => setAccion(null)}>
         <div className="space-y-3">
           {accion === "institucion" && <><label className="block min-w-0 text-xs font-bold">Nombre<input value={nombre} onChange={(e) => setNombre(e.target.value)} className={campo} placeholder="Ej. Club Atlético Central Norte" /></label><label className="block min-w-0 text-xs font-bold">Tipo<select value={tipo} onChange={(e) => setTipo(e.target.value)} className={campo}><option value="">Sin especificar</option><option value="club">Club</option><option value="liga">Liga</option><option value="asociacion">Asociación</option><option value="escuela">Escuela</option><option value="grupo">Grupo</option><option value="otro">Otro</option></select></label><label className="block min-w-0 text-xs font-bold">Localidad<input value={localidad} onChange={(e) => setLocalidad(e.target.value)} className={campo} /></label><label className="block min-w-0 text-xs font-bold">Notas <span className="font-normal text-muted-foreground">(opcional)</span><textarea value={notas} onChange={(e) => setNotas(e.target.value)} className={cn(campo, "h-16 py-2.5")} /></label></>}
           {accion === "grupo" && <><label className="block min-w-0 text-xs font-bold">Institución<select value={institucionId} onChange={(e) => setInstitucionId(e.target.value)} className={campo}>{inicial.arbol.filter((item) => item.activo).map((item) => <option key={item.id} value={item.id}>{item.nombre}</option>)}</select></label><label className="block min-w-0 text-xs font-bold">Disciplina<select value={disciplinaId} onChange={(e) => setDisciplinaId(e.target.value)} className={campo}>{inicial.disciplinas.map((item) => <option key={item.id} value={item.id}>{item.nombre}</option>)}</select></label><label className="block min-w-0 text-xs font-bold">Nombre del plantel<input value={nombre} onChange={(e) => setNombre(e.target.value)} className={campo} placeholder="Ej. U16, Iniciación o Primera" /></label><p className="text-xs text-muted-foreground">Puede ser una categoría, una etapa o el nombre del plantel.</p></>}
           {accion === "deportista" && <><label className="block min-w-0 text-xs font-bold">Plantel<select value={grupoId} onChange={(e) => setGrupoId(e.target.value)} className={campo}>{grupos.filter((item) => item.activo).map((item) => <option key={item.id} value={item.id}>{item.institucion} · {item.disciplina} · {item.nombre}</option>)}</select></label><div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2"><label className="block min-w-0 text-xs font-bold">Nombre<input value={nombre} onChange={(e) => setNombre(e.target.value)} className={campo} /></label><label className="block min-w-0 text-xs font-bold">Apellido<input value={apellido} onChange={(e) => setApellido(e.target.value)} className={campo} /></label></div><label className="block min-w-0 text-xs font-bold">Fecha de nacimiento <span className="font-normal text-muted-foreground">(opcional)</span><input type="date" value={fechaNacimiento} onChange={(e) => setFechaNacimiento(e.target.value)} className={campo} /></label></>}
-          {accion === "disciplina" && <><p className="rounded-xl bg-secondary p-3 text-xs text-muted-foreground">La solicitud permite revisar protocolos, métricas y unidades antes de habilitar la disciplina.</p><label className="block min-w-0 text-xs font-bold">Nombre<input value={nombre} onChange={(e) => setNombre(e.target.value)} className={campo} placeholder="Ej. Hockey sobre césped" /></label><label className="block min-w-0 text-xs font-bold">Descripción <span className="font-normal text-muted-foreground">(opcional)</span><textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className={cn(campo, "h-16 py-2.5")} /></label><label className="block min-w-0 text-xs font-bold">¿Para qué grupo o evaluación la necesitan? <span className="font-normal text-muted-foreground">(opcional)</span><textarea value={notas} onChange={(e) => setNotas(e.target.value)} className={cn(campo, "h-16 py-2.5")} /></label></>}
+          {accion === "disciplina" && <>
+            <div role="radiogroup" aria-label="Qué querés pedir" className="grid grid-cols-2 gap-1 rounded-xl bg-muted p-1">
+              {([["nueva", "Una disciplina nueva"], ["falta", "Algo que falta en una disciplina"]] as const).map(([valor, etiqueta]) => (
+                <button key={valor} type="button" role="radio" aria-checked={tipoSolicitud === valor} onClick={() => { setTipoSolicitud(valor); setAviso(null); setError(null); }} className={cn("min-h-11 rounded-lg px-2 text-xs font-bold leading-tight", tipoSolicitud === valor ? "bg-card text-foreground shadow-sm" : "text-muted-foreground")}>{etiqueta}</button>
+              ))}
+            </div>
+            <p className="rounded-xl bg-secondary p-3 text-xs text-muted-foreground">{tipoSolicitud === "nueva" ? "La plataforma revisa el pedido y elige qué protocolos se van a poder medir, para que los datos sean comparables en toda la provincia." : "Contá qué prueba o medición necesitan y la plataforma la suma al catálogo de esa disciplina, si existe un protocolo para eso."}</p>
+            {tipoSolicitud === "falta" ? <>
+              <label className="block min-w-0 text-xs font-bold">Disciplina<select value={disciplinaId} onChange={(e) => setDisciplinaId(e.target.value)} className={campo}><option value="">Elegí una disciplina…</option>{inicial.disciplinas.map((item) => <option key={item.id} value={item.id}>{item.nombre}</option>)}</select></label>
+              <label className="block min-w-0 text-xs font-bold">¿Qué falta medir?<input value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={200} className={campo} placeholder="Ej. Drop Jump, o un test de velocidad de 20 m" /></label>
+            </> : <>
+              <label className="block min-w-0 text-xs font-bold">Nombre<input value={nombre} onChange={(e) => setNombre(e.target.value)} maxLength={80} className={campo} placeholder="Ej. Hockey sobre césped" /></label>
+              <label className="block min-w-0 text-xs font-bold">Descripción <span className="font-normal text-muted-foreground">(opcional)</span><textarea value={descripcion} onChange={(e) => setDescripcion(e.target.value)} className={cn(campo, "h-16 py-2.5")} /></label>
+            </>}<label className="block min-w-0 text-xs font-bold">¿Para qué grupo o evaluación la necesitan? <span className="font-normal text-muted-foreground">(opcional)</span><textarea value={notas} onChange={(e) => setNotas(e.target.value)} className={cn(campo, "h-16 py-2.5")} /></label></>}
 
           {candidatos.length > 0 && <div className="rounded-2xl border border-warning/40 bg-warning-soft p-3"><p className="text-sm font-extrabold text-warning">Encontramos una ficha parecida</p><p className="mt-1 text-xs text-muted-foreground">Elegí si es la misma persona o un homónimo.</p><div className="mt-3 space-y-2">{candidatos.map((candidato) => <div key={candidato.id} className="rounded-xl bg-card p-3"><p className="text-sm font-bold">{candidato.nombre} {candidato.apellido ?? ""}</p><p className="text-xs text-muted-foreground">{candidato.institucion} · {candidato.grupo}{candidato.fechaNacimiento ? ` · ${candidato.fechaNacimiento}` : ""}</p><button disabled={guardando} onClick={() => enviar(`vincular:${candidato.id}`)} className="mt-1 min-h-11 text-xs font-extrabold text-primary underline">Es la misma persona: usar esta ficha</button></div>)}</div><button disabled={guardando} onClick={() => enviar("crear_igual")} className="mt-2 min-h-11 text-xs font-extrabold underline">Es otra persona: crear una ficha nueva</button></div>}
           {aviso && <p className="rounded-xl bg-secondary p-3 text-sm font-semibold text-primary">{aviso}</p>}
           {error && <p className="rounded-xl bg-destructive/10 p-3 text-sm font-semibold text-destructive">{error}</p>}
-          {candidatos.length === 0 && <button disabled={guardando || !nombre.trim() || (accion === "grupo" && (!institucionId || !disciplinaId)) || (accion === "deportista" && !grupoId)} onClick={() => enviar()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground disabled:opacity-40">{guardando ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}{guardando ? "Guardando…" : accion === "disciplina" ? "Enviar solicitud" : "Guardar"}</button>}
+          {candidatos.length === 0 && <button disabled={guardando || !nombre.trim() || (accion === "grupo" && (!institucionId || !disciplinaId)) || (accion === "deportista" && !grupoId) || (accion === "disciplina" && tipoSolicitud === "falta" && !disciplinaId)} onClick={() => enviar()} className="flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary text-sm font-extrabold text-primary-foreground disabled:opacity-40">{guardando ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />}{guardando ? "Guardando…" : accion === "disciplina" ? "Enviar solicitud" : "Guardar"}</button>}
         </div>
       </ModalMovil>}
     </>
