@@ -143,7 +143,7 @@ export default function DisciplinasSecretaria() {
         <Ayuda titulo="¿Qué muestra esta sección?" bullets={[
           "Qué se mide en cada disciplina, en qué instituciones y cuántas jornadas hay registradas.",
           "Un protocolo es cómo se hace la prueba (CMJ, SJ…); una métrica es el resultado (altura de salto). La misma métrica puede medirse con protocolos distintos.",
-          "Qué se puede medir en cada disciplina es un catálogo común para toda la provincia: así los datos de distintos clubes se pueden comparar. No se edita desde acá; si falta un protocolo o una disciplina, pedilo desde Planteles con \"Solicitar disciplina\".",
+          "Qué se puede medir en cada disciplina es un catálogo común para toda la provincia: así los datos de distintos clubes se pueden comparar. No se edita desde acá: si falta una disciplina, pedila desde Planteles con \"Solicitar disciplina\".",
         ]} />
 
         {real ? (
