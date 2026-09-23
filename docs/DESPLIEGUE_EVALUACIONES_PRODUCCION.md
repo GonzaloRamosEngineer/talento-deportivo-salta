@@ -10,7 +10,7 @@ Destinatario: quien ejecute el despliegue (Gastón o su agente).
 
 ### Migraciones (13 pendientes en producción)
 
-Producción está en `20260913120000`. Faltan, **en este orden exacto**:
+Producción está en `20260913120000` (9 aplicadas). Faltan **15**, en este orden exacto:
 
 | Migración | Qué hace |
 |---|---|
@@ -295,63 +295,147 @@ Vale anotarlas porque son el tipo de error que hace confiar de más:
    sesión anterior. Con el stack completo se vio: leía exactamente 141 y 1.653,
    los datos de Secretaría. Corregido, da 0.
 
-## 6. Runbook
+## 6. Despliegue coordinado
 
-### Antes
+**Destino:** `https://talentodeportivo.com.ar` (canónica; `www` redirige ahí y
+`talentodeportivo.digitalmatchglobal.com` es el alias anterior).
+**Proyecto Supabase:** `hjaeihdrrictmgilzaic`.
+**Commit a publicar:** `5e7f533` — fast-forward sobre `main` (`6ab22d2`), 18 commits.
 
-1. **Reapuntar el CLI.** Hoy `supabase/.temp/project-ref` dice
-   `hjaeihdrrictmgilzaic` (producción) mientras la app usa staging. Verificar el
-   destino **antes de cada comando**.
-2. Commitear: 1 archivo modificado, 4 nuevos, 13 migraciones. Borrar `scripts/_tmp-v.ts`.
-3. `npm run lint && npm run build` (verificado: 0 errores, 2 warnings preexistentes).
-4. **T-002B: resuelto, no pendiente.** `20260922090000` hacía
-   `drop constraint membresia_auth_user_id_key` para permitir que una persona
-   estuviera en un club Y en la Secretaría. Revisado el caso real, no hace falta:
-   la Secretaría la opera una cuenta privada dedicada. Como las migraciones ya
-   aplicadas no se reescriben, `20260923140000` **vuelve a poner la constraint**
-   al final de la cadena. Queda por actualizar la entrada de T-002B en
-   `PLAN_CTO_PRIORIZADO.md` con este ida y vuelta.
+El orden importa porque hay dependencias reales entre los pasos:
 
-### Durante
+```
+migraciones  →  variables  →  deploy  →  alta de cuenta  →  traslado  →  validación
+     │             │            │              │                │
+     │             │            │              │                └─ necesita la cuenta creada
+     │             │            │              └─ necesita el esquema nuevo (rol admin_secretaria)
+     │             │            └─ necesita las variables, o el módulo arranca apagado
+     │             └─ EVALUACIONES_HABILITADAS e IMPORT_PREVIEW_SECRET
+     └─ el código nuevo tolera el esquema viejo, pero no al revés
+```
 
-5. Backup `pg_dump -Fc` y **verificar que restaura** en una base descartable.
-   Un backup no verificado no es un backup.
-6. Ensayo en seco sobre los datos reales — los cuatro deben dar 0:
-   duplicados de `uq_medicion_manual_dia`, valores fuera de `numeric(10,2)`,
-   duplicados de `categoria(club,disciplina,nombre)`, roles fuera del check nuevo.
-7. Cargar `supabase_url` y `service_key` en el Vault **antes** de `20260923120000`.
-8. Aplicar las 13 migraciones, **una sola vez**, mirando la salida.
-9. Variables en Vercel (§1) y **deploy el mismo día** — la regla que dejó T-001:
-   backend sin frontend = demo caída 4 semanas.
-10. `alta-secretaria.mjs --ejecutar` (solo la cuenta), entregar el link por
-    canal privado.
-11. Storage y después filas (§2). La verificación aborta sola si algo no cuadra.
-12. Confirmar que quedó **1 sola** membresía de Secretaría (el traslado lo
-    verifica, pero mirarlo).
+### Paso 0 · Antes de tocar nada
 
-### Smoke tests
+```bash
+# El CLI está enlazado a PRODUCCIÓN. Verificalo en cada comando.
+cat supabase/.temp/project-ref      # hjaeihdrrictmgilzaic
 
-- Los 4 accesos demo, uno por uno.
-- `/panel`, `/deportistas`, `/medicion` con conteos intactos: 2 clubes · 308 · 17.082.
-- Sesión de Secretaría: `/secretaria/planillas` muestra 9, `/secretaria/deportistas` 141.
-- Registrar una medición desde `/secretaria/medir` y verla.
-- `scripts/verificar-aislamiento-evaluaciones.sql` → 15/15.
-- `scripts/verificar-navegador.mjs` → 26/26 (cubre las 4 demos y la cuenta privada).
-- Con sesión demo, `GET /api/secretaria/resumen` → **403 `CUENTA_DEMO`**.
+git checkout main && git merge --ff-only codex/espacio-secretaria
+git rev-parse --short HEAD          # debe decir 5e7f533
+npm run lint && npm run build
+```
+
+### Paso 1 · Backup, y probar que restaura
+
+```bash
+pg_dump "$SUPABASE_DB_URL_PROD" --no-owner --no-acl \
+  --schema=public --schema=supabase_migrations -Fc > prod-AAAAMMDD-HHMM.dump
+
+# Restaurar en una base descartable y contar. Si esto no da, NO se sigue.
+createdb verif && pg_restore -d verif --no-owner --no-acl prod-*.dump
+psql verif -c "select (select count(*) from club), (select count(*) from deportista),
+                      (select count(*) from medicion), (select count(*) from membresia)"
+# esperado: 2 · 308 · 17082 · 17
+```
+
+### Paso 2 · Ensayo en seco sobre los datos reales
+
+Los cuatro deben dar **0**; si alguno no, abortar:
+
+```sql
+select count(*) from (select deportista_id, atributo_id, fecha from medicion
+                       group by 1,2,3 having count(*)>1) t;                    -- uq_medicion_manual_dia
+select count(*) from medicion where abs(valor) >= 100000000;                   -- numeric(10,2)
+select count(*) from (select club_id, disciplina_id, nombre from categoria
+                       group by 1,2,3 having count(*)>1) t;                    -- unicidad de categoria
+select count(*) from membresia where auth_user_id in (
+  select auth_user_id from membresia group by auth_user_id having count(*)>1); -- una cuenta = un club
+```
+
+### Paso 3 · Vault y migraciones
+
+```bash
+# Los secretos ANTES de 20260923120000, o el cron corre y falla todos los días.
+# supabase_url y service_key, cargados desde el dashboard (Vault).
+
+supabase db push          # 15 migraciones, una sola vez, mirando la salida
+```
+
+### Paso 4 · Variables en Vercel (Production) y deploy
+
+| Variable | Valor |
+|---|---|
+| `EVALUACIONES_HABILITADAS` | `true` |
+| `IMPORT_PREVIEW_SECRET` | nuevo, ≥32 chars, **distinto al de staging** |
+| `APP_ENV` | `production` |
+| `IMPORT_BACKEND_ENABLED` | borrar (reemplazada) |
+
+Deploy de `main` **el mismo día** que las migraciones. La regla que dejó T-001:
+backend sin frontend = demo caída 4 semanas.
+
+### Paso 5 · Cuenta privada
+
+```bash
+SECRETARIA_EMAIL=secretaria@evolucionantoniana.com \
+SITE_URL=https://talentodeportivo.com.ar \
+  node scripts/alta-secretaria.mjs --ejecutar
+```
+
+Entregar el link por canal privado. **La persona tiene que aceptar la invitación
+y fijar su contraseña antes del paso 7**: la validación del acceso privado no se
+puede hacer sin eso.
+
+### Paso 6 · Traslado
+
+```bash
+# Archivos primero (hoy son 0, pero el orden queda fijado)
+node scripts/trasladar-planillas-storage.mjs --ejecutar
+# Filas después: una transacción, con verificación por firma md5
+CLUB_ID=a0bf5fb1-c65a-4106-bce3-87132ae56e62 \
+  node scripts/trasladar-secretaria.mjs --ejecutar
+```
+
+Debe terminar con `VERIFICACIÓN OK: las 12 tablas coinciden` y
+`Membresía única de Secretaría`. Si imprime `ABORTA:`, no insistir.
+
+### Paso 7 · Validación productiva (sin escribir nada)
+
+```bash
+psql "$SUPABASE_DB_URL_PROD" -f scripts/verificar-aislamiento-evaluaciones.sql   # 15/15
+
+BASE_URL=https://talentodeportivo.com.ar \
+SECRETARIA_EMAIL=secretaria@evolucionantoniana.com SECRETARIA_PASSWORD=… \
+ESPERADO_PLANILLAS=9 ESPERADO_DEPORTISTAS=141 ESPERADO_MEDICIONES=1653 \
+ESPERADO_PENDIENTES=2 ESPERADO_IMPORTADOS=7 \
+  node scripts/verificar-navegador.mjs                                          # 29/29
+```
+
+Sin `DEPORTISTA_ID` no escribe **nada**. Y a mano, los conteos de los clubes:
+
+```sql
+select c.nombre, count(d.*) from club c left join deportista d on d.club_id=c.id
+group by 1;   -- Evolución Antoniana 308 · Cachorros 0 · Secretaría 141
+select count(*) from medicion;   -- 17082 + 1653 = 18735
+```
 
 ### Abortar si
 
-- cualquier conteo del ensayo en seco da ≠ 0;
+- el backup del paso 1 no restauró;
+- cualquier conteo del paso 2 da ≠ 0;
 - `db push` falla a mitad (Supabase no envuelve el lote en una transacción:
-  quedás a medio camino → restaurar, no improvisar);
-- un conteo de los clubes existentes cambia;
-- una demo ve algo de Secretaría;
-- el aislamiento no da 15/15;
-- el backup no restauró en el paso 5;
-- el traslado imprime `ABORTA:` (no insistir: revisar qué difiere);
-- queda más de una membresía de Secretaría.
+  quedás a medio camino → restaurar del dump, no improvisar);
+- el traslado imprime `ABORTA:`;
+- queda más de una membresía de Secretaría;
+- **`lotesPendientes` ≠ 2** — significa que se confirmó una planilla que no debía;
+- una demo ve algo de Secretaría, o deja de entrar;
+- los conteos de los clubes existentes cambian.
 
----
+### Recuperación
+
+No hay `down` para ninguna migración, y `20260922090000` toca 8 tablas: revertir
+a mano no es realista. El rollback es **restaurar el dump del paso 1**, que por
+eso se verifica antes de empezar. El traslado no necesita rollback propio: es una
+sola transacción y, si algo no cuadra, no llega a commitear.
 
 ## 7. Validación visual
 
