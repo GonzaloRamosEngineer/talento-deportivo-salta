@@ -190,6 +190,7 @@ function navPara(perfil: Perfil): NavItem[] {
       { href: "/plataforma/clubes", label: "Clubes", icon: Shield },
       { href: "/plataforma/parametros", label: "Parámetros", icon: Sprout },
       { href: "/plataforma/sugerencias", label: "Sugerencias", icon: MessageSquareText },
+      { href: "/plataforma/solicitudes", label: "Solicitudes", icon: Shapes },
     ];
   }
   if (perfil === "secretaria") {

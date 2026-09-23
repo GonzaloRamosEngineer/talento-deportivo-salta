@@ -1,15 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Building2, Filter, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
 import { GuardiaSecretaria } from "@/components/secretaria/guardia-secretaria";
 import { CargandoPelota } from "@/components/cargando-pelota";
 import { AvisoAcceso } from "@/components/aviso-acceso";
-import { ConfiguradorSecretaria, type ConfiguracionSecretaria } from "@/components/secretaria/configurador-secretaria";
+import { ConfiguradorSecretaria, type ConfiguracionSecretaria, type VistaConfiguracion } from "@/components/secretaria/configurador-secretaria";
 import { Ayuda } from "@/components/ayuda";
 
 export default function GruposSecretaria() {
-  const [vista, setVista] = useState<"instituciones" | "grupos" | "disciplinas" | "deportistas">("instituciones");
+  const [vista, setVista] = useState<VistaConfiguracion>("instituciones");
   const [configuracion, setConfiguracion] = useState<ConfiguracionSecretaria | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,31 +56,45 @@ export default function GruposSecretaria() {
     <GuardiaSecretaria>
       <div className="flex flex-col gap-4 sm:gap-5">
         <div>
-          <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Organización operativa</p>
-          <h1 className="mt-1 text-2xl font-extrabold tracking-tight">Instituciones y planteles</h1>
+          <p className="hidden text-xs font-extrabold uppercase tracking-[0.16em] text-primary sm:block">Organización operativa</p>
+          <h1 className="text-2xl font-extrabold tracking-tight sm:mt-1">Instituciones y planteles</h1>
           <p className="mt-1 text-sm text-muted-foreground">Organizá dónde y a quiénes medir.</p>
         </div>
 
         <Ayuda titulo="¿Cómo se organiza?" bullets={[
           "Cada institución reúne disciplinas; cada disciplina contiene sus grupos o planteles.",
-          "Elegí los indicadores para ver solo instituciones, grupos, disciplinas o deportistas.",
+          "Las pestañas cambian la lista: instituciones, planteles, disciplinas o deportistas. El buscador filtra la que estás viendo.",
           "Desde acá podés agregar y organizar los planteles que después vas a seleccionar al medir.",
         ]} />
 
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-          {[
-            [Building2, configuracion.arbol.length, "instituciones"],
-            [Users, totales.grupos, "grupos"],
-            [Filter, totales.disciplinas, "disciplinas"],
-            [Users, totales.deportistas, "deportistas"],
-          ].map(([Icono, valor, etiqueta]) => {
-            const Icon = Icono as typeof Users;
-            return <button type="button" aria-pressed={vista === etiqueta} onClick={() => setVista(etiqueta as typeof vista)} key={String(etiqueta)} className={`flex min-w-0 items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors sm:rounded-2xl sm:p-4 ${vista === etiqueta ? "border-primary bg-secondary" : "border-border bg-card"}`}><Icon className="size-4 shrink-0 text-primary" /><p className="shrink-0 text-base font-extrabold sm:text-2xl">{String(valor)}</p><p className="min-w-0 truncate text-xs text-muted-foreground sm:text-sm">{String(etiqueta)}</p></button>;
+        {/* Antes eran 4 cajas con números que, sin decirlo, cambiaban la lista.
+            Son pestañas: se ven y se anuncian como tales. */}
+        <div role="tablist" aria-label="Qué ver" className="grid grid-cols-2 gap-1 rounded-2xl border border-border bg-card p-1 sm:grid-cols-4">
+          {([
+            ["instituciones", configuracion.arbol.length, "Instituciones"],
+            ["grupos", totales.grupos, "Planteles"],
+            ["disciplinas", totales.disciplinas, "Disciplinas"],
+            ["deportistas", totales.deportistas, "Deportistas"],
+          ] as const).map(([valor, cantidad, etiqueta]) => {
+            const activa = vista === valor;
+            return (
+              <button
+                key={valor}
+                type="button"
+                role="tab"
+                aria-selected={activa}
+                onClick={() => setVista(valor)}
+                className={cn("flex min-h-11 items-center justify-center gap-2 rounded-xl px-2 transition-colors", activa ? "bg-primary text-primary-foreground shadow-sm" : "hover:bg-muted")}
+              >
+                <span className="text-base font-extrabold tabular-nums">{cantidad}</span>
+                <span className={cn("text-xs font-bold", !activa && "text-muted-foreground")}>{etiqueta}</span>
+              </button>
+            );
           })}
         </div>
 
         {error && <p className="rounded-xl bg-destructive/10 p-3 text-sm font-semibold text-destructive">{error}</p>}
-        <ConfiguradorSecretaria inicial={configuracion} recargar={cargar} vista={vista} />
+        <ConfiguradorSecretaria key={vista} inicial={configuracion} recargar={cargar} vista={vista} />
       </div>
     </GuardiaSecretaria>
   );

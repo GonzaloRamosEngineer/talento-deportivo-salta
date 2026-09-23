@@ -4,6 +4,7 @@ import {
   respuestaError,
   sesionOperativaSecretaria,
 } from "@/lib/evaluaciones/backend";
+import { solicitudesDelEspacio } from "@/lib/secretaria/solicitudes";
 
 function errorRpc(error: { message: string }) {
   const codigo = error.message.match(/TDS:([A-Z_]+)/u)?.[1] ?? "CONFIGURACION_NO_GUARDADA";
@@ -19,6 +20,8 @@ function errorRpc(error: { message: string }) {
     GRUPO_DUPLICADO: "Ya existe ese grupo para la institución y disciplina.",
     GRUPO_CON_MEDICIONES: "No se puede cambiar la disciplina de un grupo que ya tiene mediciones.",
     DISCIPLINA_DESCONOCIDA: "La disciplina seleccionada ya no está disponible.",
+    TEXTO_REQUERIDO: "Contá qué falta medir en esa disciplina.",
+    TEXTO_DEMASIADO_LARGO: "El pedido supera los 200 caracteres.",
   };
   const status = codigo === "SIN_ALCANCE" || codigo === "ROL_INSUFICIENTE" ? 403
     : codigo.includes("DUPLICAD") || codigo === "GRUPO_CON_MEDICIONES" ? 409
@@ -29,15 +32,18 @@ function errorRpc(error: { message: string }) {
 export async function GET() {
   try {
     const { supabase, membresia } = await sesionOperativaSecretaria();
-    const [arbol, disciplinas] = await Promise.all([
+    const [arbol, disciplinas, solicitudes] = await Promise.all([
       supabase.rpc("arbol_secretaria", { p_incluir_inactivos: false }),
       supabase.from("disciplina").select("id, nombre").eq("activo", true).order("nombre"),
+      // Lo que pidió este espacio y lo que respondió la plataforma.
+      solicitudesDelEspacio(supabase, membresia.club_id),
     ]);
     const error = arbol.error ?? disciplinas.error;
     if (error) throw error;
     return Response.json({
       arbol: arbol.data ?? [],
       disciplinas: disciplinas.data ?? [],
+      solicitudes,
       rol: membresia.rol,
     });
   } catch (error) {
@@ -80,6 +86,15 @@ export async function POST(request: Request) {
         operacion = await supabase.rpc("solicitar_disciplina_secretaria", {
           p_nombre: cuerpo.nombre,
           p_descripcion: cuerpo.descripcion || null,
+          p_contexto: cuerpo.contexto || null,
+        });
+        break;
+      case "solicitar_protocolo":
+        // Algo que falta medir en una disciplina que ya existe. Texto libre:
+        // la Secretaría no tiene por qué conocer el catálogo de protocolos.
+        operacion = await supabase.rpc("solicitar_protocolo_secretaria", {
+          p_disciplina_id: cuerpo.disciplinaId,
+          p_texto: cuerpo.texto,
           p_contexto: cuerpo.contexto || null,
         });
         break;
