@@ -3,15 +3,13 @@
 import Link from "next/link";
 import {
   AlertTriangle,
-  ArrowUpRight,
+  ArrowRight,
   Building2,
   CheckCircle2,
+  ChevronRight,
   FileSpreadsheet,
-  FileStack,
   Gauge,
-  Shapes,
   Users,
-  ArrowRight,
 } from "lucide-react";
 import { EstadoJornada } from "@/components/secretaria/estado-jornada";
 import { SelectorContextoSecretaria } from "@/components/secretaria/selector-contexto-secretaria";
@@ -40,21 +38,51 @@ export function InicioSecretaria() {
     return <AvisoAcceso titulo="No pudimos cargar el Espacio Secretaría" detalle={error} accionHref="/panel" accionLabel="Reintentar" />;
   }
 
+  const importados = resumen?.indicadores.lotesImportados ?? 0;
+  const totalLotes = resumen?.indicadores.lotes ?? 0;
+  const progreso = totalLotes > 0 ? Math.round((importados / totalLotes) * 100) : 0;
+  const instituciones = new Set(resumen?.lotes.map((lote) => lote.contexto.institucionOrigen)).size;
+  const porRevisar = resumen?.indicadores.lotesPendientes ?? 0;
+  const plural = (n: number, uno: string, varios: string) => `${n.toLocaleString("es-AR")} ${n === 1 ? uno : varios}`;
+  // Número y etiqueta se leen juntos ("9 planillas"): van en la misma línea.
+  // El detalle es siempre un dato, nunca una invitación, y lo que
+  // pide acción (planillas por revisar) se destaca en ámbar.
   const indicadores = resumen
     ? [
-        { valor: String(resumen.indicadores.lotes), etiqueta: "planillas recibidas", icon: FileStack },
-        { valor: String(resumen.indicadores.disciplinas), etiqueta: "disciplinas", icon: Shapes },
-        { valor: String(resumen.indicadores.deportistas), etiqueta: "deportistas evaluados", icon: Users },
-        { valor: String(resumen.indicadores.mediciones), etiqueta: "mediciones", icon: Gauge },
+        {
+          valor: resumen.indicadores.lotes,
+          etiqueta: resumen.indicadores.lotes === 1 ? "planilla" : "planillas",
+          href: "/secretaria/jornadas",
+          detalle: plural(importados, "incorporada", "incorporadas"),
+          alerta: porRevisar > 0 ? `${porRevisar} por revisar` : null,
+        },
+        {
+          valor: resumen.indicadores.disciplinas,
+          etiqueta: resumen.indicadores.disciplinas === 1 ? "disciplina" : "disciplinas",
+          href: "/secretaria/disciplinas",
+          detalle: `de ${plural(instituciones, "institución", "instituciones")}`,
+          alerta: null,
+        },
+        {
+          valor: resumen.indicadores.deportistas,
+          etiqueta: resumen.indicadores.deportistas === 1 ? "deportista" : "deportistas",
+          href: "/secretaria/deportistas",
+          detalle: `en ${plural(resumen.indicadores.grupos, "plantel", "planteles")}`,
+          alerta: null,
+        },
+        {
+          valor: resumen.indicadores.mediciones,
+          etiqueta: resumen.indicadores.mediciones === 1 ? "medición" : "mediciones",
+          href: "/secretaria/reportes",
+          detalle: `en ${plural(resumen.indicadores.jornadas, "jornada", "jornadas")}`,
+          alerta: null,
+        },
       ]
     : [];
   const lotesConBloqueo = resumen?.lotes.filter((lote) => lote.bloqueos_pendientes > 0) ?? [];
   const loteConBloqueo = lotesConBloqueo[0];
   const otrasBloqueadas = lotesConBloqueo.length - 1;
   const decisiones = loteConBloqueo?.bloqueos_pendientes ?? 0;
-  const importados = resumen?.indicadores.lotesImportados ?? 0;
-  const totalLotes = resumen?.indicadores.lotes ?? 0;
-  const progreso = totalLotes > 0 ? Math.round((importados / totalLotes) * 100) : 0;
 
   return (
     <div className="flex flex-col gap-4 sm:gap-5">
@@ -79,51 +107,69 @@ export function InicioSecretaria() {
         "Los datos confirmados forman una base común para seguir la evolución y orientar decisiones deportivas.",
       ]} />
 
-      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border sm:grid-cols-4">
-        {indicadores.map(({ valor, etiqueta, icon: Icon }) => {
-          const destino = etiqueta === "planillas recibidas" ? "/secretaria/jornadas" : etiqueta === "disciplinas" ? "/secretaria/disciplinas" : etiqueta === "deportistas evaluados" ? "/secretaria/deportistas" : "/secretaria/reportes";
-          const detalle = etiqueta === "planillas recibidas" ? `${importados} incorporadas · ${resumen?.indicadores.lotesPendientes ?? 0} por revisar` : etiqueta === "disciplinas" ? "Explorar cobertura" : etiqueta === "deportistas evaluados" ? `${resumen?.indicadores.grupos ?? 0} planteles` : `${resumen?.indicadores.jornadas ?? 0} jornadas registradas`;
-          return <Link href={destino} key={etiqueta} className="group min-w-0 bg-card px-3 py-3 text-center transition-colors hover:bg-muted sm:p-4 sm:text-left">
-            <Icon className="mx-auto hidden size-4 text-primary sm:block sm:mx-0" aria-hidden />
-            <p className="text-xl font-extrabold tabular-nums sm:mt-2 sm:text-2xl">{Number(valor).toLocaleString("es-AR")}</p>
-            <p className="mt-0.5 truncate text-[11px] font-bold leading-tight text-muted-foreground">
-              {etiqueta === "planillas recibidas" ? "planillas" : etiqueta === "deportistas evaluados" ? "deportistas" : etiqueta}
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-border bg-border lg:grid-cols-4">
+        {indicadores.map(({ valor, etiqueta, href, detalle, alerta }) => (
+          <Link key={href} href={href} className="group relative min-w-0 bg-card px-3 py-3.5 transition-colors hover:bg-muted sm:px-5 sm:py-4">
+            <p className="flex items-baseline gap-x-1.5 whitespace-nowrap">
+              <span className="text-[22px] font-extrabold tabular-nums tracking-tight sm:text-3xl">{valor.toLocaleString("es-AR")}</span>
+              <span className="text-[13px] font-bold text-muted-foreground sm:text-sm">{etiqueta}</span>
             </p>
-            <p className="mt-1 hidden truncate text-[11px] text-muted-foreground lg:block">{detalle}</p>
-          </Link>;
-        })}
+            <p className="mt-1 text-xs text-muted-foreground">
+              {detalle}
+              {alerta && (
+                <>
+                  <span className="hidden sm:inline">{" · "}</span>
+                  <span className="block font-bold text-warning sm:inline">{alerta}</span>
+                </>
+              )}
+            </p>
+            <ChevronRight className="absolute right-3 top-1/2 hidden size-4 -translate-y-1/2 text-muted-foreground opacity-0 transition-opacity group-hover:opacity-100 sm:block" aria-hidden />
+          </Link>
+        ))}
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,.85fr)] xl:items-start">
       <div className="flex flex-col gap-4">
+      {/* Dos pesos: lo que se hace seguido (medir, cargar) va como botón
+          ancho con su explicación siempre visible; lo que se consulta
+          (organizar, deportistas) queda como botón liviano. Flecha hacia
+          adelante: son pantallas de la app, no enlaces externos. */}
       <div>
         <h2 className="mb-2 text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Acciones rápidas</h2>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
-        <Link href="/secretaria/medir" className={`group flex min-h-24 flex-col gap-3 rounded-2xl bg-primary p-4 text-primary-foreground shadow-sm ${PRESIONABLE}`}>
-          <span className="flex items-start justify-between"><span className="flex size-9 items-center justify-center rounded-xl bg-white/15"><Gauge className="size-4" aria-hidden /></span><ArrowUpRight className="size-3.5" /></span>
-          <span><span className="block text-sm font-extrabold">Nueva medición</span><span className="mt-0.5 hidden text-xs text-primary-foreground/75 sm:line-clamp-2">Cargá al plantel de corrido</span></span>
-        </Link>
-        <Link
-          href="/evaluaciones/importar"
-          className={`group flex min-h-24 flex-col gap-3 rounded-2xl bg-primary p-4 text-primary-foreground shadow-sm ${PRESIONABLE}`}
-        >
-          <span className="flex items-start justify-between"><span className="flex size-9 items-center justify-center rounded-xl bg-white/15"><FileSpreadsheet className="size-4" aria-hidden /></span><ArrowUpRight className="size-3.5" /></span>
-          <span><span className="block text-sm font-extrabold">Cargar planilla</span><span className="mt-0.5 hidden text-xs text-primary-foreground/75 sm:line-clamp-2">Vista previa o revisión por Secretaría</span></span>
-        </Link>
-        <Link
-          href="/secretaria/grupos"
-          className={`group flex min-h-24 flex-col gap-3 rounded-2xl border border-border bg-card p-4 hover:bg-muted/40 ${PRESIONABLE}`}
-        >
-          <span className="flex items-start justify-between"><span className="flex size-9 items-center justify-center rounded-xl bg-secondary text-primary"><Building2 className="size-4" aria-hidden /></span><ArrowUpRight className="size-3.5 text-muted-foreground" /></span>
-          <span><span className="block text-sm font-extrabold">Organizar</span><span className="mt-0.5 hidden text-xs text-muted-foreground sm:line-clamp-2">Instituciones y planteles</span></span>
-        </Link>
-        <Link href="/secretaria/deportistas" className={`group flex min-h-24 flex-col gap-3 rounded-2xl border border-border bg-card p-4 hover:bg-muted/40 ${PRESIONABLE}`}>
-          <span className="flex items-start justify-between"><span className="flex size-9 items-center justify-center rounded-xl bg-secondary text-primary"><Users className="size-4" aria-hidden /></span><ArrowUpRight className="size-3.5 text-muted-foreground" /></span>
-          <span><span className="block text-sm font-extrabold">Deportistas</span><span className="mt-0.5 hidden text-xs text-muted-foreground sm:line-clamp-2">Ficha y evolución</span></span>
-        </Link>
+        <div className="grid gap-2 sm:grid-cols-2 sm:gap-3">
+          {[
+            { href: "/secretaria/medir", titulo: "Nueva medición", detalle: "Cargá al plantel de corrido", icon: Gauge },
+            { href: "/evaluaciones/importar", titulo: "Cargar planilla", detalle: "Subila y revisala antes de incorporarla", icon: FileSpreadsheet },
+          ].map(({ href, titulo, detalle, icon: Icon }) => (
+            <Link key={href} href={href} className={`flex items-center gap-3 rounded-2xl bg-primary p-3.5 text-primary-foreground shadow-sm hover:bg-primary/90 sm:p-4 ${PRESIONABLE}`}>
+              <span className="grid size-11 shrink-0 place-items-center rounded-xl bg-white/15"><Icon className="size-5" aria-hidden /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-base font-extrabold leading-tight">{titulo}</span>
+                <span className="mt-0.5 block text-xs text-primary-foreground/80">{detalle}</span>
+              </span>
+              <ChevronRight className="size-5 shrink-0 opacity-70" aria-hidden />
+            </Link>
+          ))}
+        </div>
+        <div className="mt-2 grid grid-cols-2 gap-2 sm:mt-3 sm:gap-3">
+          {[
+            { href: "/secretaria/grupos", titulo: "Organizar", detalle: "Instituciones y planteles", icon: Building2 },
+            { href: "/secretaria/deportistas", titulo: "Deportistas", detalle: "Ficha y evolución", icon: Users },
+          ].map(({ href, titulo, detalle, icon: Icon }) => (
+            <Link key={href} href={href} className={`flex min-h-12 items-center gap-2.5 rounded-xl border border-border bg-card px-3 py-2.5 hover:bg-muted/40 sm:px-3.5 ${PRESIONABLE}`}>
+              <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-secondary text-primary"><Icon className="size-4" aria-hidden /></span>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-extrabold leading-tight">{titulo}</span>
+                <span className="block text-[11px] leading-tight text-muted-foreground">{detalle}</span>
+              </span>
+              <ChevronRight className="hidden size-4 shrink-0 text-muted-foreground sm:block" aria-hidden />
+            </Link>
+          ))}
         </div>
       </div>
-      <section className={`rounded-3xl border bg-card p-5 ${loteConBloqueo ? "border-destructive/20" : "border-primary/20"}`}>
+      {/* En mobile, lo que hay que decidir va antes que las acciones: si
+          no, queda debajo del pliegue. En escritorio entra igual. */}
+      <section className={`rounded-3xl border bg-card p-5 ${loteConBloqueo ? "order-first border-destructive/20 sm:order-none" : "border-primary/20"}`}>
         <div className="flex items-start gap-3">
           <span className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${loteConBloqueo ? "bg-destructive/10 text-destructive" : "bg-secondary text-primary"}`}>
             {loteConBloqueo ? <AlertTriangle className="size-4" aria-hidden /> : <CheckCircle2 className="size-4" aria-hidden />}
@@ -150,11 +196,9 @@ export function InicioSecretaria() {
             <div className="min-w-0 flex-1">
               <p className="text-sm font-extrabold">{`${loteConBloqueo.contexto.institucionOrigen} · ${loteConBloqueo.contexto.grupo}`}</p>
               <p className="break-words text-xs text-muted-foreground">{loteConBloqueo.nombre_archivo}</p>
+              <div className="mt-2"><EstadoJornada estado="revisar" /></div>
             </div>
-            <div className="flex items-center justify-between gap-2 sm:justify-end">
-              <EstadoJornada estado="revisar" />
-              <Link href={`/secretaria/jornadas/${loteConBloqueo.id}`} className={`inline-flex min-h-11 items-center gap-1.5 rounded-xl bg-primary px-4 text-sm font-extrabold text-primary-foreground sm:min-h-9 sm:text-xs ${PRESIONABLE}`}>Revisar planilla<ArrowRight className="size-3.5" aria-hidden /></Link>
-            </div>
+            <Link href={`/secretaria/jornadas/${loteConBloqueo.id}`} className={`inline-flex min-h-11 w-full items-center justify-center gap-1.5 whitespace-nowrap rounded-xl bg-primary px-4 text-sm font-extrabold text-primary-foreground sm:min-h-9 sm:w-auto sm:text-xs ${PRESIONABLE}`}>Revisar planilla<ArrowRight className="size-3.5" aria-hidden /></Link>
           </div>
         )}
         {otrasBloqueadas > 0 && (
