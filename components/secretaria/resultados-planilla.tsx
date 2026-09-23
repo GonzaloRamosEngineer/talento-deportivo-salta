@@ -115,15 +115,15 @@ export function ResultadosPlanilla({ resultados }: { resultados: ResultadoPlanil
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
             <div className="flex items-center gap-2"><TableProperties className="size-4 text-primary" /><h2 className="text-sm font-extrabold">Resultados de la planilla</h2></div>
-            <p className="mt-1 text-xs text-muted-foreground">Cada protocolo e intento se conserva por separado. Tocá un atleta para abrir su evolución.</p>
-            <p className="mt-1 text-[10px] font-semibold text-primary sm:hidden">Deslizá la tabla hacia los lados para ver todas las métricas.</p>
+            <p className="mt-1 text-xs text-muted-foreground">Cada protocolo e intento se conserva por separado. Tocá un deportista para abrir su evolución.</p>
+            <p className="mt-1 text-[11px] font-semibold text-primary sm:hidden">Deslizá la tabla hacia los lados para ver todas las métricas.</p>
           </div>
-          <span className="rounded-full bg-secondary px-2.5 py-1 text-[10px] font-extrabold text-primary">{filas.length} atletas</span>
+          <span className="rounded-full bg-secondary px-2.5 py-1 text-[11px] font-extrabold text-primary">{`${filas.length} ${filas.length === 1 ? "deportista" : "deportistas"}`}</span>
         </div>
         {protocolos.length > 1 && (
           <div className="mt-4 flex gap-2 overflow-x-auto pb-1">
-            <button type="button" onClick={() => setProtocoloActivo("todos")} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-extrabold ${protocoloActivo === "todos" ? "bg-primary text-primary-foreground" : "border border-border bg-background"}`}>Todos</button>
-            {protocolos.map((protocolo) => <button key={protocolo.codigo} type="button" onClick={() => setProtocoloActivo(protocolo.codigo)} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-extrabold ${protocoloActivo === protocolo.codigo ? "bg-primary text-primary-foreground" : "border border-border bg-background"}`}>{protocolo.nombre}</button>)}
+            <button type="button" onClick={() => setProtocoloActivo("todos")} className={`min-h-11 shrink-0 rounded-full px-3.5 text-xs font-extrabold sm:min-h-8 ${protocoloActivo === "todos" ? "bg-primary text-primary-foreground" : "border border-border bg-background"}`}>Todos</button>
+            {protocolos.map((protocolo) => <button key={protocolo.codigo} type="button" onClick={() => setProtocoloActivo(protocolo.codigo)} className={`min-h-11 shrink-0 rounded-full px-3.5 text-xs font-extrabold sm:min-h-8 ${protocoloActivo === protocolo.codigo ? "bg-primary text-primary-foreground" : "border border-border bg-background"}`}>{protocolo.nombre}</button>)}
           </div>
         )}
       </div>
@@ -135,7 +135,7 @@ export function ResultadosPlanilla({ resultados }: { resultados: ResultadoPlanil
               <th className="sticky left-0 z-30 min-w-44 max-w-44 border-b border-r border-border bg-muted px-3 py-3 font-extrabold sm:min-w-52 sm:max-w-52 sm:px-4">Deportista</th>
               {columnas.map((columna) => (
                 <th key={columna.clave} className="min-w-28 border-b border-border px-2.5 py-3 align-bottom sm:min-w-36 sm:px-3">
-                  <span className="block text-[10px] font-extrabold uppercase tracking-wide text-primary">{columna.protocolo}</span>
+                  <span className="block text-[11px] font-extrabold uppercase tracking-wide text-primary">{columna.protocolo}</span>
                   <span className="mt-0.5 block font-bold">{columna.atributo}</span>
                   <span className="font-medium text-muted-foreground">{columna.unidad ?? "sin unidad"}</span>
                 </th>
@@ -156,7 +156,7 @@ export function ResultadosPlanilla({ resultados }: { resultados: ResultadoPlanil
                   const valores = fila.valores.get(columna.clave) ?? [];
                   return (
                     <td key={columna.clave} className="border-b border-border px-2.5 py-2.5 align-top sm:px-3">
-                      {valores.length ? <div className="flex flex-wrap gap-1">{valores.map((valor) => <span key={`${valor.intento}-${valor.valor}`} className="whitespace-nowrap rounded-md bg-secondary px-1.5 py-1 font-bold text-foreground" title={`Intento ${valor.intento}`}>{valores.length > 1 && <span className="mr-1 text-[9px] text-muted-foreground">I{valor.intento}</span>}{formatearValor(valor.valor)}</span>)}</div> : <span className="text-muted-foreground/50">—</span>}
+                      {valores.length ? <div className="flex flex-wrap gap-1">{valores.map((valor) => <span key={`${valor.intento}-${valor.valor}`} className="whitespace-nowrap rounded-md bg-secondary px-1.5 py-1 font-bold text-foreground" title={`Intento ${valor.intento}`}>{valores.length > 1 && <span className="mr-1 text-[10px] font-semibold text-muted-foreground">I{valor.intento}</span>}{formatearValor(valor.valor)}</span>)}</div> : <span className="text-muted-foreground/50">—</span>}
                     </td>
                   );
                 })}
