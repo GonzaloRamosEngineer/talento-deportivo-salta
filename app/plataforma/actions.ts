@@ -2,8 +2,14 @@
 
 import { crearClienteServer } from "@/lib/supabase/server";
 import { crearClienteAdmin } from "@/lib/supabase/admin";
-import { esCuentaDemo } from "@/lib/demo";
 import { generarAccesoOnboarding, linkDeAcceso } from "@/lib/acceso";
+import {
+  esUsuarioPlataforma,
+  listarSolicitudesDisciplina as listarSolicitudes,
+  resolverSolicitudDisciplina as resolverSolicitud,
+  type ResolucionSolicitud,
+  type SolicitudDisciplinaPlataforma,
+} from "@/lib/plataforma/solicitudes";
 
 /**
  * Server actions de la PLATAFORMA (pasos 1-2 de docs/OPERACION.md,
@@ -47,12 +53,15 @@ export interface ClubPlataforma {
  * profundidad, no la contención principal.
  */
 async function esPlataforma(): Promise<boolean> {
+  return esUsuarioPlataforma(await usuarioActual());
+}
+
+async function usuarioActual() {
   const supabase = await crearClienteServer();
   const {
     data: { user },
   } = await supabase.auth.getUser();
-  if (!user || esCuentaDemo(user)) return false;
-  return Boolean(user.app_metadata?.plataforma);
+  return user;
 }
 
 
@@ -479,4 +488,25 @@ export async function resolverSugerencia(input: {
   if (error) return { ok: false, error: error.message };
   if (!data?.length) return { ok: false, error: "Esa sugerencia ya fue resuelta (o no existe)." };
   return { ok: true, data: null };
+}
+
+// ---------- Bandeja de solicitudes de disciplina/protocolo ----------
+// La lógica vive en lib/plataforma/solicitudes.ts (la prueba el e2e);
+// el gate se verifica ahí, con el mismo esUsuarioPlataforma de arriba.
+
+export type { SolicitudDisciplinaPlataforma, ResolucionSolicitud };
+
+/** Pendientes primero, después resueltas (200 como máximo). */
+export async function listarSolicitudesDisciplina(): Promise<Resultado<SolicitudDisciplinaPlataforma[]>> {
+  return listarSolicitudes(crearClienteAdmin(), await usuarioActual());
+}
+
+/**
+ * Rechazar (con resolución), vincular a una disciplina existente o aprobar
+ * eligiendo protocolos del catálogo. Nunca crea protocolos ni métricas.
+ */
+export async function resolverSolicitudDisciplina(
+  input: ResolucionSolicitud,
+): Promise<Resultado<{ id: string; estado: string; disciplinaId: string | null; protocolosNuevos?: number }>> {
+  return resolverSolicitud(crearClienteAdmin(), await usuarioActual(), input);
 }

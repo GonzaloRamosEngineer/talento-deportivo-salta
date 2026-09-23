@@ -1,5 +1,45 @@
 # Brief backend · Que las solicitudes de disciplina lleguen a alguien
 
+## Estado de la implementación (2026-09-23)
+
+**Staging: aplicado y verificado. Producción: sin tocar, pendiente de
+revisión manual.**
+
+- Migración `20260923170000_solicitudes_disciplina.sql` (staging ✅).
+- Lógica en `lib/plataforma/solicitudes.ts` (bandeja, resolución y el gate
+  `esUsuarioPlataforma`, que ahora usa también `esPlataforma()` de
+  `app/plataforma/actions.ts`) y `lib/secretaria/solicitudes.ts` (lo que ve la
+  Secretaría). Las server actions `listarSolicitudesDisciplina` /
+  `resolverSolicitudDisciplina` son envoltorios finos: el e2e prueba el mismo
+  código.
+- `/api/secretaria/configuracion`: el GET suma `solicitudes`; el POST acepta
+  `{ accion: "solicitar_protocolo", disciplinaId, texto, contexto? }`.
+- Verificación: `npm run test:solicitudes-disciplina` (sección 5, 35 asserts,
+  se limpia solo y deja Vóley como estaba).
+
+### Decisiones a revisar
+
+- **Vincular** deja la solicitud en `aprobada` con `disciplina_id` de la
+  existente y, si no se escribe otra, la resolución "Ya existe en el catálogo
+  como «X»". No se agregó un estado nuevo (el contrato del punto 4 tiene tres).
+  Solo aplica a pedidos de tipo `disciplina`.
+- **Aprobar** exige al menos un protocolo; si alguno no existe o está
+  inactivo, falla entero (no crea nada). Si la disciplina ya existe con ese
+  nombre, falla con `DISCIPLINA_YA_EXISTE`: la salida correcta es vincular. En
+  un pedido de protocolo, los que ya estaban activos no se duplican; uno
+  inactivo se reactiva. `protocolosNuevos` dice cuántos se sumaron de verdad.
+- `aprobar_solicitud_disciplina` es ejecutable solo por `service_role` **y**
+  además verifica en `auth.users` que `p_usuario` sea plataforma y no demo:
+  ni con la clave de servicio se aprueba a nombre de otro.
+- Rechazar y vincular son un `update … where estado = 'pendiente'` (atómico,
+  como `resolverSugerencia`); aprobar es la RPC transaccional.
+- El texto de un pedido de protocolo admite hasta 200 caracteres (el nombre de
+  una disciplina sigue en 80).
+- `disciplina_solicitud`: `anon` sin privilegios; `authenticated` solo
+  `SELECT`; nadie con `TRUNCATE`. Los grants de `disciplina`,
+  `disciplina_protocolo` y `protocolo` no se tocaron (siguen sin políticas de
+  escritura, regla 2).
+
 ## Objetivo
 
 Hoy una coordinadora de la Secretaría puede tocar **"Solicitar disciplina"**

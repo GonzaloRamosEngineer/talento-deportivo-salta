@@ -9,6 +9,7 @@
     "lint": "eslint",
     "test:importadores": "tsx scripts/verificar-importadores.ts",
     "test:carga-planillas": "tsx scripts/e2e-carga-planillas.mts",
+    "test:solicitudes-disciplina": "tsx scripts/e2e-solicitudes-disciplina.mts",
     "setup:secretaria-staging": "node scripts/configurar-secretaria-staging.mjs"
   },
   "dependencies": {
