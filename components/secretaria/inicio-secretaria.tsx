@@ -20,6 +20,7 @@ import { CargandoPelota } from "@/components/cargando-pelota";
 import { useSecretaria } from "@/lib/use-secretaria";
 import { usePerfil } from "@/components/perfil-context";
 import { Ayuda } from "@/components/ayuda";
+import { EscaleraDatos } from "@/components/secretaria/escalera-datos";
 
 // Respuesta al presionar: en la cancha, con el dedo, es la única señal de
 // que el toque se registró. Con reduced-motion queda solo el color.
@@ -191,16 +192,7 @@ export function InicioSecretaria() {
       </section>
       </div>
 
-      <section className="rounded-3xl border border-primary/15 bg-gradient-to-br from-secondary/75 via-card to-card p-5 xl:p-6">
-        <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-primary">De los registros al seguimiento</p>
-        <h2 className="mt-1 text-lg font-extrabold tracking-tight">Una base común para entender la evolución</h2>
-        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">Cada planilla ordenada vincula deportistas, planteles, fechas, métricas y protocolos. Así, las mediciones dejan de quedar aisladas y pueden leerse con contexto.</p>
-        <div className="mt-5 grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
-          <Link href="/secretaria/jornadas" className={`group flex items-center gap-3 rounded-2xl border border-border/80 bg-card/80 p-3 hover:border-primary/35 hover:bg-card ${PRESIONABLE}`}><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-secondary text-primary"><FileStack className="size-4" /></span><span className="min-w-0 flex-1"><span className="block text-xs font-extrabold">Conservar el origen</span><span className="block text-[11px] text-muted-foreground">Revisar cada archivo antes de incorporarlo</span></span><ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" /></Link>
-          <Link href="/secretaria/disciplinas" className={`group flex items-center gap-3 rounded-2xl border border-border/80 bg-card/80 p-3 hover:border-primary/35 hover:bg-card ${PRESIONABLE}`}><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-secondary text-primary"><Shapes className="size-4" /></span><span className="min-w-0 flex-1"><span className="block text-xs font-extrabold">Ver qué se está midiendo</span><span className="block text-[11px] text-muted-foreground">Explorar métricas, protocolos y cobertura</span></span><ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" /></Link>
-          <Link href="/secretaria/reportes" className={`group flex items-center gap-3 rounded-2xl border border-border/80 bg-card/80 p-3 hover:border-primary/35 hover:bg-card ${PRESIONABLE}`}><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-secondary text-primary"><Gauge className="size-4" /></span><span className="min-w-0 flex-1"><span className="block text-xs font-extrabold">Preparar reportes comparables</span><span className="block text-[11px] text-muted-foreground">Se habilitan al validar jornadas y protocolos</span></span><ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" /></Link>
-        </div>
-      </section>
+      {resumen && <EscaleraDatos resumen={resumen} />}
       </div>
     </div>
   );
