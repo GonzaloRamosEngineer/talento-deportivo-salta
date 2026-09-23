@@ -300,7 +300,9 @@ Vale anotarlas porque son el tipo de error que hace confiar de más:
 **Destino:** `https://talentodeportivo.com.ar` (canónica; `www` redirige ahí y
 `talentodeportivo.digitalmatchglobal.com` es el alias anterior).
 **Proyecto Supabase:** `hjaeihdrrictmgilzaic`.
-**Commit a publicar:** `5e7f533` — fast-forward sobre `main` (`6ab22d2`), 18 commits.
+**Commit a publicar:** la punta de `codex/espacio-secretaria`. Es fast-forward
+sobre `main` (`6ab22d2`). El SHA exacto se confirma en el paso 0 — no se escribe
+acá porque este documento vive dentro del commit que nombraría.
 
 El orden importa porque hay dependencias reales entre los pasos:
 
@@ -321,7 +323,7 @@ migraciones  →  variables  →  deploy  →  alta de cuenta  →  traslado  �
 cat supabase/.temp/project-ref      # hjaeihdrrictmgilzaic
 
 git checkout main && git merge --ff-only codex/espacio-secretaria
-git rev-parse --short HEAD          # debe decir 5e7f533
+git rev-parse --short HEAD          # anotar: es el commit que queda en producción
 npm run lint && npm run build
 ```
 
