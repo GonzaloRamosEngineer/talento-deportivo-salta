@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { ArrowLeft, ArrowUpRight, ClipboardPlus, LineChart } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, ClipboardPlus, Table2 } from "lucide-react";
 import { GuardiaSecretaria } from "@/components/secretaria/guardia-secretaria";
 import { CargandoPelota } from "@/components/cargando-pelota";
 import { AvisoAcceso } from "@/components/aviso-acceso";
@@ -12,6 +12,7 @@ import { EvolutionChart } from "@/components/evolution-chart";
 import type { Atributo, Medicion } from "@/lib/mock-data";
 import { cn } from "@/lib/utils";
 import { PRESIONABLE } from "@/components/secretaria/presionable";
+import { TablaMediciones } from "@/components/secretaria/tabla-mediciones";
 
 interface FichaSecretaria {
   deportista: { id: string; nombre: string; apellido: string | null; fechaNacimiento: string | null; sexo: string | null; lateralidad: string | null; grupoId: string; grupo: string; institucion: string; disciplina: string };
@@ -36,14 +37,15 @@ export default function FichaDeportistaSecretaria() {
   const { id } = useParams<{ id: string }>();
   const [ficha, setFicha] = useState<FichaSecretaria | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [serieActiva, setSerieActiva] = useState("");
+  // "todo" = la tabla con todas las métricas; si no, la clave de una serie.
+  const [serieActiva, setSerieActiva] = useState("todo");
   const detalleRef = useRef<HTMLElement>(null);
 
-  // En mobile el detalle queda debajo de la grilla: al elegir una métrica se
-  // baja hasta él (sin animación si el usuario pidió menos movimiento).
-  function elegirSerie(clave: string) {
+  // Elegir una métrica desde la tabla lleva a su detalle: se sube hasta él
+  // (sin animación si el usuario pidió menos movimiento).
+  function elegirSerie(clave: string, desplazar = false) {
     setSerieActiva(clave);
-    if (window.innerWidth >= 1024) return;
+    if (!desplazar) return;
     const suave = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
     requestAnimationFrame(() => detalleRef.current?.scrollIntoView({ block: "start", behavior: suave ? "smooth" : "auto" }));
   }
@@ -78,7 +80,8 @@ export default function FichaDeportistaSecretaria() {
     for (const serie of mapa.values()) serie.filas.sort((a, b) => a.fecha.localeCompare(b.fecha) || a.intento - b.intento);
     return [...mapa.values()].sort((a, b) => a.nombre.localeCompare(b.nombre, "es") || a.protocolo.localeCompare(b.protocolo, "es"));
   })();
-  const activa = series.find((serie) => serie.clave === serieActiva) ?? series[0] ?? null;
+  const verTodo = serieActiva === "todo";
+  const activa = verTodo ? null : series.find((serie) => serie.clave === serieActiva) ?? null;
   const fechasActiva = activa ? new Set(activa.mediciones.map((medicion) => medicion.fecha)).size : 0;
 
   if (error) return <AvisoAcceso titulo="No pudimos cargar la ficha" detalle={error} accionHref="/secretaria/deportistas" accionLabel="Volver" />;
@@ -105,31 +108,26 @@ export default function FichaDeportistaSecretaria() {
         </div>
 
         {series.length > 0 ? <>
-          <section>
-            <h2 className="mb-2 text-sm font-extrabold">Último registro por métrica</h2>
-            {/* Antes: chips en fila horizontal, había que tocar cada métrica
-                para ver su valor. Con una sola jornada (el caso más común al
-                arrancar) la ficha tiene que leerse de un vistazo. */}
-            <div className="grid grid-cols-2 gap-2 lg:grid-cols-3 xl:grid-cols-4">
-              {series.map((serie) => {
-                const ultima = serie.filas.at(-1)!;
-                const fechas = new Set(serie.filas.map((f) => f.fecha)).size;
-                const elegida = activa?.clave === serie.clave;
-                return <button key={serie.clave} type="button" aria-pressed={elegida} onClick={() => elegirSerie(serie.clave)} className={cn(`flex min-h-24 min-w-0 flex-col justify-between rounded-2xl border p-3 text-left ${PRESIONABLE}`, elegida ? "border-primary bg-secondary/60 ring-1 ring-primary/30" : "border-border bg-card hover:bg-muted/40")}>
-                  <span className="min-w-0">
-                    <span className="block text-xs font-extrabold leading-snug">{serie.nombre}</span>
-                    <span className="block text-[11px] text-muted-foreground">{serie.protocolo}</span>
-                  </span>
-                  <span className="mt-2 flex items-end justify-between gap-1">
-                    <span className="text-lg font-extrabold tabular-nums leading-none">{ultima.valor.toLocaleString("es-AR")}<span className="ml-1 text-xs font-bold text-muted-foreground">{serie.unidad}</span></span>
-                    {fechas > 1 && <LineChart className="size-4 shrink-0 text-primary" aria-label="Tiene curva" />}
-                  </span>
-                </button>;
-              })}
+          <section ref={detalleRef} className="scroll-mt-20">
+            <h2 className="mb-2 text-sm font-extrabold">Métricas y protocolos</h2>
+            <div className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 sm:mx-0 sm:px-0">
+              <button type="button" aria-pressed={verTodo} onClick={() => elegirSerie("todo")} className={cn(`inline-flex min-h-11 shrink-0 items-center gap-1.5 rounded-full border px-4 text-xs font-extrabold sm:min-h-9 ${PRESIONABLE}`, verTodo ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-muted")}>
+                <Table2 className="size-3.5" aria-hidden />{`Todo · ${series.length}`}
+              </button>
+              {series.map((serie) => (
+                <button key={serie.clave} type="button" aria-pressed={activa?.clave === serie.clave} onClick={() => elegirSerie(serie.clave)} className={cn(`min-h-11 shrink-0 rounded-full border px-3.5 text-xs font-bold sm:min-h-9 ${PRESIONABLE}`, activa?.clave === serie.clave ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card hover:bg-muted")}>
+                  {`${serie.nombre} · ${serie.protocolo}`}
+                </button>
+              ))}
             </div>
           </section>
 
-          {activa && atributo && <section ref={detalleRef} className="scroll-mt-20 rounded-2xl border border-border bg-card p-4 sm:rounded-3xl sm:p-5">
+          {verTodo && <section className="rounded-2xl border border-border bg-card p-4 sm:rounded-3xl sm:p-5">
+            <h2 className="mb-3 text-base font-extrabold">Todas las mediciones</h2>
+            <TablaMediciones series={series} onElegir={(clave) => elegirSerie(clave, true)} />
+          </section>}
+
+          {activa && atributo && <section className="rounded-2xl border border-border bg-card p-4 sm:rounded-3xl sm:p-5">
             <div>
               <h2 className="text-base font-extrabold">{activa.nombre} <span className="text-sm text-muted-foreground">· {activa.protocolo}</span></h2>
               <p className="text-xs text-muted-foreground">Cada protocolo conserva su propia serie; los intentos no se promedian.</p>
