@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { AlertTriangle, Archive, CheckCircle2, ChevronRight, Clock, FileSpreadsheet, Inbox, Search, TimerOff } from "lucide-react";
+import { AlertTriangle, Archive, CheckCircle2, ChevronRight, Clock, FileSpreadsheet, Inbox, TimerOff } from "lucide-react";
+import { CampoBusqueda } from "@/components/secretaria/campo-busqueda";
 import { GuardiaSecretaria } from "@/components/secretaria/guardia-secretaria";
 import { PRESIONABLE } from "@/components/secretaria/presionable";
 import { GRUPOS_SECRETARIA, type EstadoJornadaSecretaria } from "@/lib/secretaria-demo";
@@ -11,7 +12,7 @@ import { CargandoPelota } from "@/components/cargando-pelota";
 import { AvisoAcceso } from "@/components/aviso-acceso";
 import { Ayuda } from "@/components/ayuda";
 import { EstadoVacio } from "@/components/estado-vacio";
-import { cn } from "@/lib/utils";
+import { cn, paraBuscar } from "@/lib/utils";
 
 type Filtro = "todas" | "revisar" | "manual" | "lista";
 
@@ -212,14 +213,9 @@ export default function JornadasSecretaria() {
     manual: jornadas.filter((item) => item.estado === "manual").length,
     lista: jornadas.filter((item) => item.estado === "lista").length,
   };
-  const termino = busqueda.trim().toLocaleLowerCase("es");
+  const termino = paraBuscar(busqueda);
   const porTexto = termino
-    ? jornadas.filter((jornada) =>
-      [jornada.institucion, jornada.disciplina, jornada.grupo, jornada.archivo]
-        .join(" ")
-        .toLocaleLowerCase("es")
-        .includes(termino),
-    )
+    ? jornadas.filter((jornada) => paraBuscar([jornada.institucion, jornada.disciplina, jornada.grupo, jornada.archivo].join(" ")).includes(termino))
     : jornadas;
   const jornadasVisibles = porTexto.filter((jornada) => filtro === "todas" || jornada.estado === filtro);
 
@@ -276,16 +272,7 @@ export default function JornadasSecretaria() {
           })}
         </div>
 
-        <label className="flex h-12 items-center gap-2 rounded-xl border border-input bg-card px-3 text-muted-foreground focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
-          <Search className="size-4 shrink-0" aria-hidden />
-          <input
-            value={busqueda}
-            onChange={(evento) => setBusqueda(evento.target.value)}
-            aria-label="Buscar planillas"
-            placeholder="Buscar institución, plantel, disciplina o archivo"
-            className="min-w-0 flex-1 bg-transparent text-base font-medium text-foreground outline-none placeholder:text-muted-foreground sm:text-sm"
-          />
-        </label>
+        <CampoBusqueda valor={busqueda} onCambio={setBusqueda} etiqueta="Buscar planillas" placeholder="Buscar institución, plantel, disciplina o archivo" />
 
         {errorRecepciones && (
           <p role="alert" className="rounded-xl bg-destructive/10 px-4 py-3 text-sm font-semibold text-destructive">{`No pudimos cargar las planillas de carga manual: ${errorRecepciones}`}</p>

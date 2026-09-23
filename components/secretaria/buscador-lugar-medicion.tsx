@@ -1,8 +1,10 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { Building2, ChevronRight, Search, Users, X } from "lucide-react";
+import { Building2, ChevronRight, Users } from "lucide-react";
+import { CampoBusqueda } from "@/components/secretaria/campo-busqueda";
 import { PRESIONABLE } from "@/components/secretaria/presionable";
+import { paraBuscar as normalizar } from "@/lib/utils";
 
 export interface OpcionInstitucion {
   id: string;
@@ -20,10 +22,6 @@ export interface OpcionPlantel {
   deportistas: number;
 }
 
-/** Sin tildes ni mayúsculas: "natacion" encuentra "Natación", "sub 13" encuentra "SUB13". */
-function normalizar(texto: string) {
-  return texto.normalize("NFD").replace(/\p{Diacritic}/gu, "").toLocaleLowerCase("es").replace(/\s+/g, "");
-}
 
 const MAXIMO_RESULTADOS = 8;
 
@@ -60,23 +58,7 @@ export function BuscadorLugarMedicion({ instituciones, planteles, onInstitucion,
 
   return (
     <div className="flex flex-col gap-3">
-      <label className="flex h-12 items-center gap-2 rounded-xl border border-input bg-card px-3 text-muted-foreground focus-within:border-ring focus-within:ring-3 focus-within:ring-ring/50">
-        <Search className="size-4 shrink-0" aria-hidden />
-        <input
-          value={texto}
-          onChange={(evento) => setTexto(evento.target.value)}
-          aria-label="Buscar institución o plantel"
-          placeholder="Buscá institución o plantel"
-          enterKeyHint="search"
-          autoComplete="off"
-          className="min-w-0 flex-1 bg-transparent text-base font-medium text-foreground outline-none placeholder:text-muted-foreground sm:text-sm"
-        />
-        {texto && (
-          <button type="button" onClick={() => setTexto("")} aria-label="Borrar búsqueda" className="-mr-1 grid size-9 place-items-center rounded-lg hover:bg-muted">
-            <X className="size-4" aria-hidden />
-          </button>
-        )}
-      </label>
+      <CampoBusqueda valor={texto} onCambio={setTexto} etiqueta="Buscar institución o plantel" placeholder="Buscá institución o plantel" />
 
       {plantelesEncontrados.length > 0 && (
         <div>
