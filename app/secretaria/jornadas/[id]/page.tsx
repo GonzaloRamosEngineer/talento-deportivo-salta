@@ -87,10 +87,71 @@ export default function DetallePlanillaSecretaria() {
     detalle.filasIgnoradas > 0 && `${detalle.filasIgnoradas} ${detalle.filasIgnoradas === 1 ? "fila que no se importa" : "filas que no se importan"}`,
   ].filter(Boolean) as string[];
 
-  const jornadasProducidas = detalle.jornadas.length > 0 && (
+  const jornadasVisibles = detalle.jornadas.slice(0, 3);
+  const jornadasOcultas = detalle.jornadas.slice(3);
+  const filaJornada = (jornada: DetalleLote["jornadas"][number]) => (
+    <li key={jornada.id} className="flex items-center justify-between gap-3 py-2.5">
+      <div className="min-w-0"><p className="text-sm font-bold">{fecha(jornada.fecha)} · {jornada.grupo}</p><p className="truncate text-xs text-muted-foreground">Evaluó {jornada.evaluadoPor}</p></div>
+      <span className="shrink-0 text-xs font-extrabold tabular-nums text-primary">{jornada.mediciones} mediciones</span>
+    </li>
+  );
+
+  const trazabilidad = (detalle.hallazgos.length > 0 || detalle.correcciones.length > 0) && (
+    <details className="group">
+      <summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 sm:min-h-8"><ShieldCheck className="size-4 text-primary" aria-hidden /><span className="flex-1 text-sm font-extrabold">Trazabilidad</span><span className="text-[11px] font-bold text-muted-foreground">{`${detalle.hallazgos.length + detalle.correcciones.length} registros`}<span className="group-open:hidden"> · ver</span></span></summary>
+      <div className="mt-3 space-y-3">{detalle.hallazgos.map((hallazgo) => <div key={hallazgo.id} className="rounded-2xl bg-muted/50 p-3"><p className="text-xs font-extrabold">{hallazgo.titulo ?? hallazgo.id}</p><p className="mt-1 text-xs text-muted-foreground">{hallazgo.detalle}</p></div>)}{detalle.correcciones.map((correccion, indice) => <div key={`${correccion.campo}-${indice}`} className="flex gap-3 rounded-2xl border border-border p-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden /><div><p className="text-xs font-extrabold">{correccion.campo} corregido por {correccion.por}</p><p className="mt-1 text-xs text-muted-foreground">{correccion.motivo} · {fecha(correccion.cuando)}</p></div></div>)}</div>
+    </details>
+  );
+
+  // Con decisiones pendientes el resumen es una columna angosta al costado;
+  // sin decisiones, es la card principal y lleva adentro las jornadas y la
+  // trazabilidad (la misma historia: qué entró, cuándo y quién lo tocó).
+  const resumen = (principal: boolean) => (
+    <section className="flex flex-col rounded-2xl border border-border bg-card p-4 sm:rounded-3xl sm:p-5">
+      <h2 className="text-sm font-extrabold">{importada ? "Lo que se incorporó" : "Lo que se va a incorporar"}</h2>
+      <dl className="mt-3 flex flex-wrap gap-x-6 gap-y-3">
+        {[
+          [detalle.deportistas, detalle.deportistas === 1 ? "deportista" : "deportistas"],
+          [detalle.mediciones, detalle.mediciones === 1 ? "medición" : "mediciones"],
+          ...(principal && detalle.jornadas.length > 0 ? [[detalle.jornadas.length, detalle.jornadas.length === 1 ? "jornada" : "jornadas"]] : []),
+        ].map(([valor, etiqueta]) => (
+          <div key={String(etiqueta)} className="flex items-baseline gap-1.5">
+            <dt className="text-sm font-bold text-muted-foreground">{String(etiqueta)}</dt>
+            <dd className="order-first text-2xl font-extrabold tabular-nums tracking-tight">{Number(valor).toLocaleString("es-AR")}</dd>
+          </div>
+        ))}
+      </dl>
+      {calidad.length > 0 && (
+        <p className="mt-3 flex items-start gap-2 rounded-xl bg-muted/50 p-2.5 text-xs text-muted-foreground">
+          <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
+          <span>{`${calidad.join(" · ")}.`}</span>
+        </p>
+      )}
+      {principal && detalle.jornadas.length > 0 && (
+        <div className="mt-4 border-t border-border pt-3">
+          <h3 className="text-xs font-extrabold uppercase tracking-wide text-muted-foreground">{detalle.jornadas.length === 1 ? "Jornada producida" : "Jornadas producidas"}</h3>
+          <ul className="mt-1 divide-y divide-border">{jornadasVisibles.map(filaJornada)}</ul>
+          {jornadasOcultas.length > 0 && (
+            <details className="group">
+              <summary className="flex min-h-11 cursor-pointer list-none items-center text-xs font-extrabold text-primary group-open:hidden sm:min-h-8">{`Ver las ${detalle.jornadas.length} jornadas`}</summary>
+              <ul className="divide-y divide-border border-t border-border">{jornadasOcultas.map(filaJornada)}</ul>
+            </details>
+          )}
+        </div>
+      )}
+      {principal && trazabilidad && <div className="mt-auto border-t border-border pt-3">{trazabilidad}</div>}
+    </section>
+  );
+
+  const queSeMidio = (dosColumnas: boolean) => (
     <section className="rounded-2xl border border-border bg-card p-4 sm:rounded-3xl sm:p-5">
-      <h2 className="text-sm font-extrabold">{`${detalle.jornadas.length} ${detalle.jornadas.length === 1 ? "jornada producida" : "jornadas producidas"}`}</h2>
-      <ul className="mt-2 divide-y divide-border">{detalle.jornadas.map((jornada) => <li key={jornada.id} className="flex items-center justify-between gap-3 py-3"><div className="min-w-0"><p className="text-sm font-bold">{fecha(jornada.fecha)} · {jornada.grupo}</p><p className="text-xs text-muted-foreground">Evaluó {jornada.evaluadoPor}</p></div><span className="shrink-0 text-xs font-extrabold tabular-nums text-primary">{jornada.mediciones} mediciones</span></li>)}</ul>
+      <h2 className="text-sm font-extrabold">Qué se midió</h2>
+      <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Cada protocolo se conserva por separado. El número es la cantidad de registros válidos de cada métrica.</p>
+      <div className="mt-3 flex flex-wrap gap-1.5">{detalle.protocolos.length ? detalle.protocolos.map((protocolo) => <span key={protocolo} className="rounded-full bg-primary px-2.5 py-1 text-[11px] font-extrabold text-primary-foreground">{protocolo}</span>) : <span className="text-xs text-muted-foreground">Sin protocolo confirmado</span>}</div>
+      <ul className={`mt-3 grid gap-px overflow-hidden rounded-xl border border-border bg-border ${dosColumnas ? "sm:grid-cols-2" : ""}`}>
+        {detalle.metricas.map((metrica) => <li key={metrica.codigo} className="flex items-center justify-between gap-2 bg-card px-3 py-2 text-xs"><span className="min-w-0"><span className="font-bold first-letter:uppercase">{metrica.nombre}</span> <span className="text-muted-foreground">{metrica.unidad || "sin unidad"}</span></span>{metrica.cantidad !== null && <strong className="shrink-0 tabular-nums text-primary">{metrica.cantidad}</strong>}</li>)}
+        {dosColumnas && detalle.metricas.length % 2 === 1 && <li aria-hidden className="hidden bg-card sm:block" />}
+      </ul>
     </section>
   );
 
@@ -109,48 +170,27 @@ export default function DetallePlanillaSecretaria() {
 
         {confirmada && <p role="status" className="rounded-xl bg-secondary px-4 py-3 text-sm font-bold text-primary">Planilla confirmada e importada correctamente.</p>}
 
-        {/* Escritorio: lo que hay que hacer a la izquierda y el resumen fijo a
-            la derecha. Mobile: una columna, las decisiones primero. */}
-        <div className="grid gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
-          <div className="flex min-w-0 flex-col gap-4 sm:gap-5">
-            {enRevision && <RevisionPlanilla id={id} contextoInicial={detalle.contexto} onConfirmada={() => { setConfirmada(true); recargarDetalle(); }} />}
-            {jornadasProducidas}
+        {enRevision ? (
+          // Con decisiones: lo que hay que hacer a la izquierda y el resumen
+          // fijo a la derecha. Mobile: una columna, las decisiones primero.
+          <div className="grid gap-4 sm:gap-5 xl:grid-cols-[minmax(0,1fr)_320px] xl:items-start">
+            <div className="min-w-0">
+              <RevisionPlanilla id={id} contextoInicial={detalle.contexto} onConfirmada={() => { setConfirmada(true); recargarDetalle(); }} />
+            </div>
+            <aside className="flex flex-col gap-4 sm:gap-5 xl:sticky xl:top-6">
+              {resumen(false)}
+              {queSeMidio(false)}
+              {trazabilidad && <div className="rounded-2xl border border-border bg-card p-4 sm:rounded-3xl sm:p-5">{trazabilidad}</div>}
+            </aside>
           </div>
-
-          <aside className="flex flex-col gap-4 sm:gap-5 xl:sticky xl:top-6">
-            <section className="rounded-2xl border border-border bg-card p-4 sm:rounded-3xl sm:p-5">
-              <h2 className="text-sm font-extrabold">{importada ? "Lo que se incorporó" : "Lo que se va a incorporar"}</h2>
-              <dl className="mt-3 grid grid-cols-2 gap-3">
-                {[
-                  [detalle.deportistas, detalle.deportistas === 1 ? "deportista" : "deportistas"],
-                  [detalle.mediciones, detalle.mediciones === 1 ? "medición" : "mediciones"],
-                ].map(([valor, etiqueta]) => (
-                  <div key={String(etiqueta)} className="flex items-baseline gap-1.5">
-                    <dt className="text-sm font-bold text-muted-foreground">{String(etiqueta)}</dt>
-                    <dd className="order-first text-2xl font-extrabold tabular-nums tracking-tight">{Number(valor).toLocaleString("es-AR")}</dd>
-                  </div>
-                ))}
-              </dl>
-              {calidad.length > 0 && (
-                <p className="mt-3 flex items-start gap-2 rounded-xl bg-muted/50 p-2.5 text-xs text-muted-foreground">
-                  <Info className="mt-0.5 size-3.5 shrink-0" aria-hidden />
-                  <span>{`${calidad.join(" · ")}.`}</span>
-                </p>
-              )}
-            </section>
-
-            <section className="rounded-2xl border border-border bg-card p-4 sm:rounded-3xl sm:p-5">
-              <h2 className="text-sm font-extrabold">Qué se midió</h2>
-              <p className="mt-1 text-xs leading-relaxed text-muted-foreground">Cada protocolo se conserva por separado. El número es la cantidad de registros válidos de cada métrica.</p>
-              <div className="mt-3 flex flex-wrap gap-1.5">{detalle.protocolos.length ? detalle.protocolos.map((protocolo) => <span key={protocolo} className="rounded-full bg-primary px-2.5 py-1 text-[11px] font-extrabold text-primary-foreground">{protocolo}</span>) : <span className="text-xs text-muted-foreground">Sin protocolo confirmado</span>}</div>
-              <ul className="mt-3 divide-y divide-border rounded-xl border border-border">
-                {detalle.metricas.map((metrica) => <li key={metrica.codigo} className="flex items-center justify-between gap-2 px-3 py-2 text-xs"><span className="min-w-0"><span className="font-bold first-letter:uppercase">{metrica.nombre}</span> <span className="text-muted-foreground">{metrica.unidad || "sin unidad"}</span></span>{metrica.cantidad !== null && <strong className="shrink-0 tabular-nums text-primary">{metrica.cantidad}</strong>}</li>)}
-              </ul>
-            </section>
-
-            {(detalle.hallazgos.length > 0 || detalle.correcciones.length > 0) && <details className="group rounded-2xl border border-border bg-card p-4 sm:rounded-3xl sm:p-5"><summary className="flex min-h-11 cursor-pointer list-none items-center gap-2 sm:min-h-8"><ShieldCheck className="size-4 text-primary" aria-hidden /><span className="flex-1 text-sm font-extrabold">Trazabilidad</span><span className="text-[11px] font-bold text-muted-foreground">{`${detalle.hallazgos.length + detalle.correcciones.length} registros`}<span className="group-open:hidden"> · ver</span></span></summary><div className="mt-3 space-y-3">{detalle.hallazgos.map((hallazgo) => <div key={hallazgo.id} className="rounded-2xl bg-muted/50 p-3"><p className="text-xs font-extrabold">{hallazgo.titulo ?? hallazgo.id}</p><p className="mt-1 text-xs text-muted-foreground">{hallazgo.detalle}</p></div>)}{detalle.correcciones.map((correccion, indice) => <div key={`${correccion.campo}-${indice}`} className="flex gap-3 rounded-2xl border border-border p-3"><CheckCircle2 className="mt-0.5 size-4 shrink-0 text-primary" aria-hidden /><div><p className="text-xs font-extrabold">{correccion.campo} corregido por {correccion.por}</p><p className="mt-1 text-xs text-muted-foreground">{correccion.motivo} · {fecha(correccion.cuando)}</p></div></div>)}</div></details>}
-          </aside>
-        </div>
+        ) : (
+          // Sin decisiones no hay columna "principal": dos cards parejas.
+          // Antes la izquierda quedaba con una jornada y un hueco al lado.
+          <div className="grid gap-4 sm:gap-5 lg:grid-cols-2 lg:items-stretch">
+            {resumen(true)}
+            {queSeMidio(true)}
+          </div>
+        )}
 
         <ResultadosPlanilla resultados={detalle.resultados ?? []} />
       </div>
