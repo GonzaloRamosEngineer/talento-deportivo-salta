@@ -2,14 +2,18 @@
 
 ## Estado de la implementación (2026-09-23)
 
-**Staging: implementado y verificado. Producción: sin tocar, pendiente de
-revisión manual.**
+**Staging y producción: aplicado.** En producción el 2026-09-23 con
+aprobación explícita, después del backup
+`Backups Talento Deportivo/2026-09-23_1144/db_public.sql` (5,4 MB). El
+frontend (`fix/panel-secretaria-ui`, PR #1) tiene que desplegarse ya: con
+estas migraciones, el código viejo no guarda el original y sus lotes nuevos
+no se pueden confirmar (`ORIGINAL_PENDIENTE`).
 
 | Paso | Staging | Producción |
 | --- | --- | --- |
 | 0 · Sincronizar las 3 migraciones que faltaban | ✅ aplicado; `schema_migrations` igual a prod | — |
-| P0 · `20260923160000_conservar_original_lotes.sql` (puntos 1 y 2) | ✅ aplicado | ⏳ requiere revisión manual |
-| P1 · `20260923161000_filas_pendientes_y_bandeja.sql` (puntos 3, 4 y 5) | ✅ aplicado | ⏳ requiere revisión manual (frontend listo: `2253d31`) |
+| P0 · `20260923160000_conservar_original_lotes.sql` (puntos 1 y 2) | ✅ aplicado | ✅ aplicado y verificado (2026-09-23) |
+| P1 · `20260923161000_filas_pendientes_y_bandeja.sql` (puntos 3, 4 y 5) | ✅ aplicado | ✅ aplicado y verificado (2026-09-23); frontend en `2253d31` |
 
 Verificación: `npm run test:carga-planillas` (e2e de la sección 6, 44
 asserts, se limpia solo) y `npm run test:importadores` (9 planillas reales
