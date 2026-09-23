@@ -99,6 +99,9 @@
   --sidebar-accent-foreground: #14532d;
   --sidebar-border: #e2e7e0;
   --sidebar-ring: #15803d;
+  /* Curva de la respuesta al presionar: arranca rápido, así el toque se
+     siente registrado al instante (las curvas nativas de CSS son flojas). */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
 }
 
 .dark {
