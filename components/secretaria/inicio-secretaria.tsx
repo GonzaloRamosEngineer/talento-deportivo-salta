@@ -11,6 +11,7 @@ import {
   Gauge,
   Shapes,
   Users,
+  ArrowRight,
 } from "lucide-react";
 import { EstadoJornada } from "@/components/secretaria/estado-jornada";
 import { SelectorContextoSecretaria } from "@/components/secretaria/selector-contexto-secretaria";
@@ -63,18 +64,22 @@ export function InicioSecretaria() {
         <span className="hidden rounded-full border border-primary/20 bg-secondary px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-primary sm:inline-flex">Datos del espacio</span>
       </div>
 
-      <div className="grid grid-cols-4 divide-x divide-border overflow-hidden rounded-2xl border border-border bg-card">
-        {indicadores.map(({ valor, etiqueta, icon: Icon }) => (
-          <div key={etiqueta} className="min-w-0 px-2 py-3 text-center sm:p-4 sm:text-left">
+      <div className="grid grid-cols-2 divide-x divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card sm:grid-cols-4 sm:divide-y-0">
+        {indicadores.map(({ valor, etiqueta, icon: Icon }) => {
+          const destino = etiqueta === "planillas recibidas" ? "/secretaria/jornadas" : etiqueta === "disciplinas" ? "/secretaria/disciplinas" : etiqueta === "deportistas evaluados" ? "/secretaria/deportistas" : "/secretaria/reportes";
+          const detalle = etiqueta === "planillas recibidas" ? `${importados} incorporadas · ${resumen?.indicadores.lotesPendientes ?? 0} por revisar` : etiqueta === "disciplinas" ? "Explorar cobertura" : etiqueta === "deportistas evaluados" ? `${resumen?.indicadores.grupos ?? 0} planteles` : `${resumen?.indicadores.jornadas ?? 0} jornadas registradas`;
+          return <Link href={destino} key={etiqueta} className="group min-w-0 px-3 py-3 text-center transition-colors hover:bg-muted/35 sm:p-4 sm:text-left">
             <Icon className="mx-auto hidden size-4 text-primary sm:block sm:mx-0" aria-hidden />
             <p className="text-xl font-extrabold tabular-nums sm:mt-2 sm:text-2xl">{Number(valor).toLocaleString("es-AR")}</p>
             <p className="mt-0.5 truncate text-[9px] font-bold leading-tight text-muted-foreground sm:text-[11px]">
               {etiqueta === "planillas recibidas" ? "planillas" : etiqueta === "deportistas evaluados" ? "deportistas" : etiqueta}
             </p>
-          </div>
-        ))}
+            <p className="mt-1 hidden truncate text-[11px] text-muted-foreground lg:block">{detalle}</p>
+          </Link>;
+        })}
       </div>
 
+      <div className="grid gap-4 xl:grid-cols-[minmax(0,1.15fr)_minmax(340px,.85fr)] xl:items-start">
       <div>
         <h2 className="mb-2 text-xs font-extrabold uppercase tracking-wide text-muted-foreground">Acciones rápidas</h2>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
@@ -101,8 +106,6 @@ export function InicioSecretaria() {
           <span><span className="block text-sm font-extrabold">Deportistas</span><span className="mt-0.5 hidden text-xs text-muted-foreground sm:block">Ficha y evolución</span></span>
         </Link>
         </div>
-      </div>
-
       <section className={`rounded-3xl border bg-card p-5 ${loteConBloqueo ? "border-destructive/20" : "border-primary/20"}`}>
         <div className="flex items-start gap-3">
           <span className={`flex size-9 shrink-0 items-center justify-center rounded-xl ${loteConBloqueo ? "bg-destructive/10 text-destructive" : "bg-secondary text-primary"}`}>
@@ -124,7 +127,7 @@ export function InicioSecretaria() {
               <p className="text-xs text-muted-foreground">{loteConBloqueo.nombre_archivo}</p>
             </div>
             <EstadoJornada estado="revisar" />
-            <Link href="/evaluaciones/importar" className="text-xs font-extrabold text-primary">Revisar</Link>
+            <Link href={`/secretaria/jornadas/${loteConBloqueo.id}`} className="inline-flex items-center gap-1 text-xs font-extrabold text-primary">Revisar planilla<ArrowRight className="size-3.5" /></Link>
           </div>
         )}
       </section>
@@ -147,6 +150,19 @@ export function InicioSecretaria() {
           <span>{totalLotes} recibida{totalLotes === 1 ? "" : "s"}</span>
         </div>
       </section>
+      </div>
+
+      <section className="rounded-3xl border border-primary/15 bg-gradient-to-br from-secondary/75 via-card to-card p-5 xl:p-6">
+        <p className="text-[10px] font-extrabold uppercase tracking-[0.16em] text-primary">De los registros al seguimiento</p>
+        <h2 className="mt-1 text-lg font-extrabold tracking-tight">Una base común para entender la evolución</h2>
+        <p className="mt-1 max-w-2xl text-sm leading-relaxed text-muted-foreground">Cada planilla ordenada vincula deportistas, planteles, fechas, métricas y protocolos. Así, las mediciones dejan de quedar aisladas y pueden leerse con contexto.</p>
+        <div className="mt-5 grid gap-2 sm:grid-cols-3 xl:grid-cols-1">
+          <Link href="/secretaria/jornadas" className="group flex items-center gap-3 rounded-2xl border border-border/80 bg-card/80 p-3 transition-colors hover:border-primary/35 hover:bg-card"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-secondary text-primary"><FileStack className="size-4" /></span><span className="min-w-0 flex-1"><span className="block text-xs font-extrabold">Conservar el origen</span><span className="block text-[11px] text-muted-foreground">Revisar cada archivo antes de incorporarlo</span></span><ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" /></Link>
+          <Link href="/secretaria/disciplinas" className="group flex items-center gap-3 rounded-2xl border border-border/80 bg-card/80 p-3 transition-colors hover:border-primary/35 hover:bg-card"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-secondary text-primary"><Shapes className="size-4" /></span><span className="min-w-0 flex-1"><span className="block text-xs font-extrabold">Ver qué se está midiendo</span><span className="block text-[11px] text-muted-foreground">Explorar métricas, protocolos y cobertura</span></span><ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" /></Link>
+          <Link href="/secretaria/reportes" className="group flex items-center gap-3 rounded-2xl border border-border/80 bg-card/80 p-3 transition-colors hover:border-primary/35 hover:bg-card"><span className="grid size-9 shrink-0 place-items-center rounded-xl bg-secondary text-primary"><Gauge className="size-4" /></span><span className="min-w-0 flex-1"><span className="block text-xs font-extrabold">Preparar reportes comparables</span><span className="block text-[11px] text-muted-foreground">Se habilitan al validar jornadas y protocolos</span></span><ArrowRight className="size-4 text-muted-foreground transition-transform group-hover:translate-x-0.5" /></Link>
+        </div>
+      </section>
+      </div>
     </div>
   );
 }

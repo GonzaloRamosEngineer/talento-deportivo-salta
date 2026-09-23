@@ -14,6 +14,7 @@ import {
   Info,
   Loader2,
   LockKeyhole,
+  ClipboardCheck,
   ShieldCheck,
   Upload,
   Users,
@@ -25,6 +26,7 @@ import { useClub } from "@/lib/use-club";
 import { cn } from "@/lib/utils";
 import {
   DEMO_SUB13,
+  ErrorRespuestaEvaluacion,
   EXTENSIONES_EVALUACION,
   MAX_ARCHIVO_EVALUACION_BYTES,
   importarEvaluacion,
@@ -88,6 +90,8 @@ export default function PaginaImportarEvaluacion() {
   const [procesando, setProcesando] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [resultado, setResultado] = useState<ResultadoImportacion | null>(null);
+  const [formatoNoReconocido, setFormatoNoReconocido] = useState(false);
+  const [recepcionManual, setRecepcionManual] = useState<{ id?: string; numeroSeguimiento: string; estado: string; duplicada: boolean; mensaje: string } | null>(null);
 
   const pendientes = useMemo(
     () =>
@@ -129,9 +133,9 @@ export default function PaginaImportarEvaluacion() {
   function elegirArchivo(seleccionado: File | null) {
     if (!seleccionado) return;
     const nombre = seleccionado.name.toLowerCase();
-    const extensionValida = EXTENSIONES_EVALUACION.some((ext) => nombre.endsWith(ext));
+    const extensionValida = [...EXTENSIONES_EVALUACION, ".xls"].some((ext) => nombre.endsWith(ext));
     if (!extensionValida) {
-      setError("Usá una planilla Excel (.xlsx) o un archivo CSV.");
+      setError("Usá una planilla Excel (.xlsx o .xls) o un archivo CSV.");
       return;
     }
     if (seleccionado.size > MAX_ARCHIVO_EVALUACION_BYTES) {
@@ -143,6 +147,8 @@ export default function PaginaImportarEvaluacion() {
     setResultado(null);
     setResoluciones({});
     setError(null);
+    setFormatoNoReconocido(false);
+    setRecepcionManual(null);
     setPaso(2);
   }
 
@@ -166,11 +172,31 @@ export default function PaginaImportarEvaluacion() {
       setResoluciones({});
       setPaso(3);
     } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "No pudimos analizar la planilla. Probá nuevamente.",
-      );
+      const formatoNoSoportado = e instanceof ErrorRespuestaEvaluacion && e.codigo === "FORMATO_NO_RECONOCIDO";
+      setFormatoNoReconocido(formatoNoSoportado);
+      setError(e instanceof Error ? e.message : "No pudimos analizar la planilla. Probá nuevamente.");
+    } finally {
+      setProcesando(false);
+    }
+  }
+
+  async function enviarARevisionManual() {
+    if (!archivo || !contextoCompleto) return;
+    setProcesando(true);
+    setError(null);
+    try {
+      const formulario = new FormData();
+      formulario.append("archivo", archivo);
+      formulario.append("contexto", JSON.stringify(contexto));
+      formulario.append("motivo", "La estructura no pudo procesarse automáticamente; se solicita revisión manual.");
+      const respuesta = await fetch("/api/secretaria/recepcion", { method: "POST", body: formulario, credentials: "same-origin" });
+      const cuerpo = await respuesta.json() as { id?: string; estado?: string; numeroSeguimiento?: string; duplicada?: boolean; mensaje?: string; error?: string };
+      if (!respuesta.ok) throw new ErrorRespuestaEvaluacion(cuerpo.error ?? "No pudimos recibir el archivo.");
+      if (!cuerpo.numeroSeguimiento) throw new Error("La recepción no devolvió un número de seguimiento.");
+      setRecepcionManual({ id: cuerpo.id, numeroSeguimiento: cuerpo.numeroSeguimiento, estado: cuerpo.estado ?? "RECIBIDA_PARA_REVISION", duplicada: cuerpo.duplicada ?? false, mensaje: cuerpo.mensaje ?? "Recibimos la planilla para revisión. Todavía no se importó ningún dato." });
+      setFormatoNoReconocido(false);
+    } catch (causa) {
+      setError(causa instanceof Error ? causa.message : "No pudimos recibir el archivo.");
     } finally {
       setProcesando(false);
     }
@@ -189,6 +215,7 @@ export default function PaginaImportarEvaluacion() {
     setResoluciones({});
     setResultado(null);
     setError(null);
+    setFormatoNoReconocido(false);
     setPaso(3);
   }
 
@@ -211,6 +238,20 @@ export default function PaginaImportarEvaluacion() {
     } finally {
       setProcesando(false);
     }
+  }
+
+  if (recepcionManual) {
+    return (
+      <div className="mx-auto flex w-full max-w-2xl flex-col items-center rounded-3xl border border-primary/20 bg-card px-5 py-8 text-center sm:px-8">
+        <div className="flex size-14 items-center justify-center rounded-2xl bg-secondary text-primary"><ClipboardCheck className="size-7" aria-hidden /></div>
+        <p className="mt-4 text-xs font-extrabold uppercase tracking-widest text-primary">{recepcionManual.duplicada ? "Ya estaba recibida" : "Recepción confirmada"}</p>
+        <h1 className="mt-1 text-2xl font-extrabold tracking-tight">Planilla enviada para revisión</h1>
+        <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">{recepcionManual.mensaje}</p>
+        <div className="mt-5 w-full rounded-2xl bg-muted/50 p-4"><p className="text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground">Número de seguimiento</p><p className="mt-1 font-mono text-lg font-extrabold">{recepcionManual.numeroSeguimiento}</p><p className="mt-2 text-xs font-semibold text-primary">{recepcionManual.estado === "RECIBIDA_PARA_REVISION" ? "Revisión manual pendiente" : recepcionManual.estado}</p></div>
+        <p className="mt-4 text-xs text-muted-foreground">No cargamos deportistas, mediciones ni jornadas con este envío. Secretaría revisará el original antes de incorporar resultados.</p>
+        <div className="mt-6 flex w-full flex-col gap-2 sm:w-auto sm:flex-row">{recepcionManual.id && <Link href={`/secretaria/recepcion/${recepcionManual.id}`} className="flex h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-extrabold text-primary-foreground">Ver recepción</Link>}<Link href="/secretaria/jornadas" className="flex h-11 items-center justify-center rounded-xl border border-border px-5 text-sm font-bold">Ir a planillas</Link><button type="button" onClick={() => { setArchivo(null); setRecepcionManual(null); setContexto(CONTEXTO_INICIAL); setPaso(1); }} className="h-11 rounded-xl border border-border px-5 text-sm font-bold">Enviar otra</button></div>
+      </div>
+    );
   }
 
   if (resultado) {
@@ -300,12 +341,12 @@ export default function PaginaImportarEvaluacion() {
               <Upload className="size-5" aria-hidden />
             </span>
             <span className="mt-4 text-base font-extrabold">Elegí o arrastrá la planilla</span>
-            <span className="mt-1 text-xs text-muted-foreground">Excel o CSV · hasta 20 MB · el archivo no se carga hasta que confirmes</span>
+            <span className="mt-1 text-xs text-muted-foreground">.xlsx, .xls o CSV · hasta 20 MB · revisamos antes de importar</span>
           </button>
           <input
             ref={inputArchivo}
             type="file"
-            accept=".xlsx,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
+            accept=".xlsx,.xls,.csv,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv"
             className="sr-only"
             onChange={(evento) => elegirArchivo(evento.target.files?.[0] ?? null)}
           />
@@ -374,6 +415,7 @@ export default function PaginaImportarEvaluacion() {
           <button type="button" disabled={!contextoCompleto || procesando} onClick={revisarArchivo} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-extrabold text-primary-foreground disabled:opacity-50">
             {procesando ? <><Loader2 className="size-4 animate-spin" aria-hidden />Analizando planilla…</> : <>Revisar antes de cargar<ChevronRight className="size-4" aria-hidden /></>}
           </button>
+          {formatoNoReconocido && <div className="rounded-2xl border border-warning/30 bg-warning-soft/40 p-4"><div className="flex items-start gap-2"><AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning"/><div><p className="text-sm font-extrabold">No pudimos leer esta estructura con seguridad</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">No importamos nada. Podés enviar el original a Secretaría para que revise las hojas, identifique los datos y compruebe que todo cuadre antes de cargarlo.</p></div></div><button type="button" disabled={procesando} onClick={enviarARevisionManual} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-extrabold text-primary-foreground disabled:opacity-50 sm:w-auto">{procesando ? <><Loader2 className="size-4 animate-spin"/>Enviando archivo…</> : <><ClipboardCheck className="size-4"/>Enviar para revisión manual</>}</button></div>}
         </section>
       )}
 
@@ -454,7 +496,7 @@ export default function PaginaImportarEvaluacion() {
         </div>
       )}
 
-      {error && (
+      {error && !formatoNoReconocido && (
         <div role="alert" className="flex items-start gap-2.5 rounded-2xl border border-destructive/20 bg-destructive/5 p-4 text-sm text-destructive">
           <AlertTriangle className="mt-0.5 size-4 shrink-0" aria-hidden /><p>{error}</p>
         </div>

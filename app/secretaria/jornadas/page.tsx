@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CalendarCheck2, ChevronRight, FileSpreadsheet, Search } from "lucide-react";
 import { GuardiaSecretaria } from "@/components/secretaria/guardia-secretaria";
@@ -14,6 +14,29 @@ export default function JornadasSecretaria() {
   const [busqueda, setBusqueda] = useState("");
   const [filtro, setFiltro] = useState<"todas" | "revisar" | "lista">("todas");
   const { resumen, cargando, error, real } = useSecretaria();
+  const [recepciones, setRecepciones] = useState<Array<{
+    id: string; numeroSeguimiento: string; archivo: string; etiquetaEstado: string;
+    contexto: { institucionOrigen?: string; disciplina?: string; grupo?: string };
+    recibidaEn: string;
+  }>>([]);
+  const [errorRecepciones, setErrorRecepciones] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!real) return;
+    const controlador = new AbortController();
+    fetch("/api/secretaria/recepcion", { signal: controlador.signal, cache: "no-store" })
+      .then(async (respuesta) => {
+        const cuerpo = await respuesta.json() as { recepciones?: typeof recepciones; error?: string };
+        if (!respuesta.ok) throw new Error(cuerpo.error ?? "No pudimos cargar las recepciones manuales.");
+        return cuerpo.recepciones ?? [];
+      })
+      .then(setRecepciones)
+      .catch((causa: unknown) => {
+        if (causa instanceof DOMException && causa.name === "AbortError") return;
+        setErrorRecepciones(causa instanceof Error ? causa.message : "No pudimos cargar las recepciones manuales.");
+      });
+    return () => controlador.abort();
+  }, [real]);
   if (cargando) return <CargandoPelota texto="Cargando jornadas…" />;
   if (error) return <AvisoAcceso titulo="No pudimos cargar las jornadas" detalle={error} accionHref="/secretaria/jornadas" accionLabel="Reintentar" />;
   const jornadas = real && resumen
@@ -59,15 +82,22 @@ export default function JornadasSecretaria() {
 
         <div className="grid grid-cols-3 divide-x divide-border overflow-hidden rounded-2xl border border-border bg-card text-center">
           <div className="px-2 py-3"><p className="text-xl font-extrabold">{jornadas.length}</p><p className="text-[10px] font-semibold text-muted-foreground">recibidas</p></div>
-          <div className="px-2 py-3"><p className="text-xl font-extrabold text-destructive">{porDecidir}</p><p className="text-[10px] font-semibold text-muted-foreground">por revisar</p></div>
+          <div className="px-2 py-3"><p className="text-xl font-extrabold text-destructive">{porDecidir}</p><p className="text-[10px] font-semibold text-muted-foreground">por resolver</p></div>
           <div className="px-2 py-3"><p className="text-xl font-extrabold text-primary">{jornadas.filter((item) => item.estado === "lista").length}</p><p className="text-[10px] font-semibold text-muted-foreground">importadas</p></div>
         </div>
 
         <div className="flex gap-2 overflow-x-auto pb-1">
-          {([['todas', `Todas · ${jornadas.length}`], ['revisar', `Revisar · ${porDecidir}`], ['lista', `Importadas · ${jornadas.filter((item) => item.estado === 'lista').length}`]] as const).map(([valor, etiqueta]) => <button key={valor} onClick={() => setFiltro(valor)} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-extrabold ${filtro === valor ? "bg-primary text-primary-foreground" : "border border-border bg-card"}`}>{etiqueta}</button>)}
+          {([['todas', `Todas · ${jornadas.length}`], ['revisar', `Resolver · ${porDecidir}`], ['lista', `Importadas · ${jornadas.filter((item) => item.estado === 'lista').length}`]] as const).map(([valor, etiqueta]) => <button key={valor} onClick={() => setFiltro(valor)} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-extrabold ${filtro === valor ? "bg-primary text-primary-foreground" : "border border-border bg-card"}`}>{etiqueta}</button>)}
         </div>
 
-        <section className="overflow-hidden rounded-3xl border border-border bg-card">
+        <div className="grid gap-5 xl:grid-cols-[minmax(0,1fr)_340px] xl:items-start">
+        {real && (recepciones.length > 0 || errorRecepciones) && <section className="overflow-hidden rounded-3xl border border-border bg-card xl:sticky xl:top-6 xl:col-start-2 xl:row-start-1">
+          <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border px-5 py-4"><div className="flex items-center gap-2"><FileSpreadsheet className="size-4 text-warning" aria-hidden /><h2 className="text-sm font-extrabold">Recibidas para revisión manual</h2></div><span className="rounded-full bg-warning-soft px-2.5 py-1 text-[10px] font-extrabold text-warning">{recepciones.length}</span></div>
+          <p className="border-b border-border bg-warning-soft/35 px-5 py-3 text-xs leading-relaxed text-muted-foreground">Estos archivos quedaron resguardados. El equipo los revisará y organizará antes de incorporarlos a las mediciones.</p>
+          {errorRecepciones ? <p role="alert" className="px-5 py-4 text-xs text-destructive">{errorRecepciones}</p> : <div className="divide-y divide-border">{recepciones.map((recepcion) => <Link key={recepcion.id} href={`/secretaria/recepcion/${recepcion.id}`} className="flex min-w-0 items-center gap-3 px-4 py-3 transition-colors hover:bg-muted/35"><span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-warning-soft text-warning"><FileSpreadsheet className="size-4"/></span><div className="min-w-0 flex-1"><p className="truncate text-sm font-extrabold">{recepcion.contexto.institucionOrigen} · {recepcion.contexto.grupo}</p><p className="truncate text-[11px] text-muted-foreground">{recepcion.archivo} · {recepcion.numeroSeguimiento}</p></div><span className="hidden rounded-full bg-warning-soft px-2.5 py-1 text-[10px] font-extrabold text-warning sm:inline-flex">{recepcion.etiquetaEstado}</span><ChevronRight className="size-4 shrink-0 text-primary"/></Link>)}</div>}
+        </section>}
+
+        <section className="overflow-hidden rounded-3xl border border-border bg-card xl:col-start-1 xl:row-start-1">
           <div className="flex items-center gap-2 border-b border-border px-5 py-4">
             <CalendarCheck2 className="size-4 text-primary" aria-hidden />
             <h2 className="text-sm font-extrabold">Planillas recibidas</h2>
@@ -89,6 +119,7 @@ export default function JornadasSecretaria() {
             )}
           </div>
         </section>
+        </div>
       </div>
     </GuardiaSecretaria>
   );

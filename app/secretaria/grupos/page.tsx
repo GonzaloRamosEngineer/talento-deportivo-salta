@@ -8,6 +8,7 @@ import { AvisoAcceso } from "@/components/aviso-acceso";
 import { ConfiguradorSecretaria, type ConfiguracionSecretaria } from "@/components/secretaria/configurador-secretaria";
 
 export default function GruposSecretaria() {
+  const [vista, setVista] = useState<"instituciones" | "grupos" | "disciplinas" | "deportistas">("instituciones");
   const [configuracion, setConfiguracion] = useState<ConfiguracionSecretaria | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -52,14 +53,14 @@ export default function GruposSecretaria() {
 
   return (
     <GuardiaSecretaria>
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4 sm:gap-5">
         <div>
           <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Organización operativa</p>
           <h1 className="mt-1 text-2xl font-extrabold tracking-tight">Instituciones y planteles</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Prepará dónde, qué disciplina y a quiénes van a medir. Todo lo que agregues queda disponible en la nueva jornada.</p>
+          <p className="mt-1 text-sm text-muted-foreground">Organizá dónde y a quiénes medir.</p>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 sm:gap-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
           {[
             [Building2, configuracion.arbol.length, "instituciones"],
             [Users, totales.grupos, "grupos"],
@@ -67,12 +68,12 @@ export default function GruposSecretaria() {
             [Users, totales.deportistas, "deportistas"],
           ].map(([Icono, valor, etiqueta]) => {
             const Icon = Icono as typeof Users;
-            return <div key={String(etiqueta)} className="rounded-2xl border border-border bg-card p-3 sm:p-4"><Icon className="size-4 text-primary" /><p className="mt-2 text-xl font-extrabold sm:text-2xl">{String(valor)}</p><p className="truncate text-[10px] text-muted-foreground sm:text-xs">{String(etiqueta)}</p></div>;
+            return <button type="button" aria-pressed={vista === etiqueta} onClick={() => setVista(etiqueta as typeof vista)} key={String(etiqueta)} className={`flex min-w-0 items-center gap-2 rounded-xl border px-3 py-2.5 text-left transition-colors sm:rounded-2xl sm:p-4 ${vista === etiqueta ? "border-primary bg-secondary" : "border-border bg-card"}`}><Icon className="size-4 shrink-0 text-primary" /><p className="shrink-0 text-base font-extrabold sm:text-2xl">{String(valor)}</p><p className="min-w-0 truncate text-xs text-muted-foreground sm:text-sm">{String(etiqueta)}</p></button>;
           })}
         </div>
 
         {error && <p className="rounded-xl bg-destructive/10 p-3 text-sm font-semibold text-destructive">{error}</p>}
-        <ConfiguradorSecretaria inicial={configuracion} recargar={cargar} />
+        <ConfiguradorSecretaria inicial={configuracion} recargar={cargar} vista={vista} />
       </div>
     </GuardiaSecretaria>
   );

@@ -8,6 +8,7 @@ import { GuardiaSecretaria } from "@/components/secretaria/guardia-secretaria";
 import { CargandoPelota } from "@/components/cargando-pelota";
 import { AvisoAcceso } from "@/components/aviso-acceso";
 import { ResultadosPlanilla, type ResultadoPlanilla } from "@/components/secretaria/resultados-planilla";
+import { RevisionPlanilla } from "@/components/secretaria/revision-planilla";
 
 interface DetalleLote {
   loteId: string;
@@ -38,6 +39,18 @@ export default function DetallePlanillaSecretaria() {
   const { id } = useParams<{ id: string }>();
   const [detalle, setDetalle] = useState<DetalleLote | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [confirmada, setConfirmada] = useState(false);
+
+  const recargarDetalle = () => {
+    fetch(`/api/secretaria/planillas/${id}`, { cache: "no-store" })
+      .then(async (respuesta) => {
+        const cuerpo = await respuesta.json();
+        if (!respuesta.ok) throw new Error(cuerpo.error ?? "No pudimos actualizar la planilla.");
+        return cuerpo as DetalleLote;
+      })
+      .then(setDetalle)
+      .catch((causa: unknown) => setError(causa instanceof Error ? causa.message : "No pudimos actualizar la planilla."));
+  };
 
   useEffect(() => {
     const controlador = new AbortController();
@@ -67,6 +80,10 @@ export default function DetallePlanillaSecretaria() {
           <h1 className="mt-1 break-words text-2xl font-extrabold tracking-tight">{detalle.archivo}</h1>
           <p className="mt-1 text-sm text-muted-foreground">{detalle.contexto.institucionOrigen} · {detalle.contexto.grupo}</p>
         </div>
+
+        {confirmada && <p role="status" className="rounded-xl bg-secondary px-4 py-3 text-sm font-bold text-primary">Planilla confirmada e importada correctamente.</p>}
+
+        {detalle.estado === "previsualizado" && <RevisionPlanilla id={id} contextoInicial={detalle.contexto} onConfirmada={() => { setConfirmada(true); recargarDetalle(); }} />}
 
         <div className="grid grid-cols-4 divide-x divide-border overflow-hidden rounded-2xl border border-border bg-card">
           {[

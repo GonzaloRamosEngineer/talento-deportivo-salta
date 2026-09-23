@@ -404,6 +404,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     ? nav.filter((item) => ["/secretaria/deportistas", "/secretaria/disciplinas", "/secretaria/equipo", "/secretaria/reportes"].includes(item.href))
     : [];
   const masActivo = navMobileMas.some((item) => esActiva(pathname, item.href));
+  const contenidoAmplio = perfil === "secretaria" && (pathname === "/panel" || pathname.startsWith("/secretaria/"));
 
   // La landing pública (/), el login y la página de privacidad viven
   // fuera del shell de la app.
@@ -502,7 +503,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
         </header>
 
-        <main className="mx-auto w-full max-w-3xl flex-1 px-4 pb-28 pt-5 md:px-8 md:pb-12 md:pt-8">
+        <main className={cn("mx-auto w-full flex-1 px-4 pb-28 pt-5 md:px-8 md:pb-12 md:pt-8", contenidoAmplio ? "max-w-6xl" : "max-w-3xl")}>
           {sinMembresia ? <CuentaSinClub /> : children}
         </main>
       </div>

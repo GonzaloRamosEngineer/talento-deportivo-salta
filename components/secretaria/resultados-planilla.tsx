@@ -132,7 +132,7 @@ export function ResultadosPlanilla({ resultados }: { resultados: ResultadoPlanil
         <table className="min-w-full border-separate border-spacing-0 text-left text-xs">
           <thead className="sticky top-0 z-20 bg-muted/95 backdrop-blur">
             <tr>
-              <th className="sticky left-0 z-30 min-w-36 max-w-36 border-b border-r border-border bg-muted px-3 py-3 font-extrabold sm:min-w-52 sm:max-w-52 sm:px-4">Deportista</th>
+              <th className="sticky left-0 z-30 min-w-44 max-w-44 border-b border-r border-border bg-muted px-3 py-3 font-extrabold sm:min-w-52 sm:max-w-52 sm:px-4">Deportista</th>
               {columnas.map((columna) => (
                 <th key={columna.clave} className="min-w-28 border-b border-border px-2.5 py-3 align-bottom sm:min-w-36 sm:px-3">
                   <span className="block text-[10px] font-extrabold uppercase tracking-wide text-primary">{columna.protocolo}</span>
@@ -145,12 +145,12 @@ export function ResultadosPlanilla({ resultados }: { resultados: ResultadoPlanil
           <tbody>
             {filas.map((fila) => (
               <tr key={fila.clave} className="group hover:bg-muted/30">
-                <td className="sticky left-0 z-10 max-w-36 border-b border-r border-border bg-card px-3 py-3 group-hover:bg-muted sm:max-w-52 sm:px-4">
+                <td className="sticky left-0 z-10 min-w-44 max-w-44 border-b border-r border-border bg-card px-3 py-3 group-hover:bg-muted sm:min-w-52 sm:max-w-52 sm:px-4">
                   {fila.deportistaId ? (
-                    <Link href={`/secretaria/deportistas/${fila.deportistaId}`} className="inline-flex items-center gap-1.5 font-extrabold text-primary hover:underline">
-                      {fila.nombre}<ArrowUpRight className="size-3.5 shrink-0" />
+                    <Link href={`/secretaria/deportistas/${fila.deportistaId}`} className="grid w-full grid-cols-[minmax(0,1fr)_14px] items-center gap-1.5 font-extrabold text-primary hover:underline" title={fila.nombre}>
+                      <span className="truncate whitespace-nowrap">{fila.nombre}</span><ArrowUpRight className="size-3.5" />
                     </Link>
-                  ) : <span className="font-extrabold">{fila.nombre}</span>}
+                  ) : <span className="block truncate whitespace-nowrap font-extrabold" title={fila.nombre}>{fila.nombre}</span>}
                 </td>
                 {columnas.map((columna) => {
                   const valores = fila.valores.get(columna.clave) ?? [];

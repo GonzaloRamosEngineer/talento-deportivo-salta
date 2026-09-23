@@ -17,7 +17,7 @@ export function EstadoJornada({ estado, compacto = false }: { estado: EstadoJorn
         estado === "lista" && "bg-secondary text-primary",
       )}
     >
-      {compacto ? (estado === "revisar" ? "Revisar" : estado === "recibida" ? "Pendiente" : "Lista") : TEXTO[estado]}
+      {compacto ? (estado === "revisar" ? "Resolver" : estado === "recibida" ? "Pendiente" : "Lista") : TEXTO[estado]}
     </span>
   );
 }
