@@ -34,6 +34,8 @@ export interface ResumenSecretaria {
     mediciones: number;
     lotesImportados: number;
     lotesPendientes: number;
+    /** recepciones manuales abiertas + planillas con filas para carga manual */
+    pendientesCarga?: number;
   };
   lotes: LoteSecretaria[];
   jornadas: Array<{ id: string; fecha: string; estado: string; evaluadoPor: string; institucion: string; disciplina: string; grupo: string; mediciones: number }>;

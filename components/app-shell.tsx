@@ -546,7 +546,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               <Link
                 key={href}
                 href={href}
-                className="flex min-w-0 flex-col items-center gap-0.5 px-1 pb-1.5 pt-2.5 text-[10px] font-bold text-muted-foreground transition-colors hover:text-foreground"
+                className="flex min-w-0 flex-col items-center gap-0.5 px-1 pb-1.5 pt-4 text-[10px] font-bold text-muted-foreground transition-colors hover:text-foreground"
               >
                 <Icon className="size-5" aria-hidden />
                 {label}
@@ -554,7 +554,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             );
           })}
           {navMobileMas.length > 0 && (
-            <button onClick={() => setMasAbierto((actual) => !actual)} className={cn("flex min-w-0 flex-col items-center gap-0.5 px-1 pb-1.5 text-[10px] font-bold", masActivo || masAbierto ? "text-primary" : "text-muted-foreground", masActivo ? "pt-2" : "pt-2.5")}>
+            <button onClick={() => setMasAbierto((actual) => !actual)} className={cn("flex min-w-0 flex-col items-center gap-0.5 px-1 pb-1.5 text-[10px] font-bold", masActivo || masAbierto ? "text-primary" : "text-muted-foreground", masActivo ? "pt-2" : "pt-4")}>
               {masActivo ? <span className="-mt-5 flex size-12 items-center justify-center rounded-full border-4 border-background bg-primary text-primary-foreground shadow-md"><MoreHorizontal className="size-5" /></span> : <MoreHorizontal className="size-5" />}
               Más
             </button>

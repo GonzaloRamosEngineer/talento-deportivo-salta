@@ -43,7 +43,7 @@ export function SelectorContextoSecretaria({
           onClick={() => cambiar("observatorio")}
           disabled={sesionReal && !contextosDisponibles.observatorio}
           className={cn(
-            "flex min-h-9 items-center justify-center gap-1.5 rounded-lg px-2 text-[11px] font-extrabold transition-colors",
+            "flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-extrabold transition-colors sm:min-h-9 sm:text-[11px]",
             activo === "observatorio"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "text-muted-foreground hover:bg-muted",
@@ -57,7 +57,7 @@ export function SelectorContextoSecretaria({
           onClick={() => cambiar("evaluaciones")}
           disabled={sesionReal && !contextosDisponibles.secretaria}
           className={cn(
-            "flex min-h-9 items-center justify-center gap-1.5 rounded-lg px-2 text-[11px] font-extrabold transition-colors",
+            "flex min-h-11 items-center justify-center gap-1.5 rounded-lg px-2 text-xs font-extrabold transition-colors sm:min-h-9 sm:text-[11px]",
             activo === "evaluaciones"
               ? "bg-primary text-primary-foreground shadow-sm"
               : "text-muted-foreground hover:bg-muted",

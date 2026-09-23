@@ -12,7 +12,7 @@ export async function GET() {
   try {
     const { supabase, membresia } = await sesionSecretaria();
     const clubId = membresia.club_id;
-    const [lotes, jornadas, grupos, equipo, catalogoDisciplinas] = await Promise.all([
+    const [lotes, jornadas, grupos, equipo, catalogoDisciplinas, pendientes] = await Promise.all([
       supabase
         .from("lote_importacion")
         .select("id, nombre_archivo, estado, contexto, filas_ignoradas, duplicados_archivo, bloqueos_pendientes, creado_en, confirmado_en")
@@ -40,6 +40,7 @@ export async function GET() {
         .select("id, nombre")
         .eq("activo", true)
         .order("nombre"),
+      supabase.rpc("pendientes_de_carga"),
     ]);
     const error = lotes.error ?? jornadas.error ?? grupos.error ?? equipo.error ?? catalogoDisciplinas.error;
     if (error) throw error;
@@ -94,6 +95,9 @@ export async function GET() {
         mediciones,
         lotesImportados: (lotes.data ?? []).filter((lote) => lote.estado === "importado").length,
         lotesPendientes: (lotes.data ?? []).filter((lote) => lote.estado === "previsualizado").length,
+        // Recepciones manuales abiertas + lotes con filas para carga manual.
+        // null si la bandeja no está disponible: el panel no se cae por eso.
+        pendientesCarga: pendientes.error ? null : ((pendientes.data as unknown[] | null) ?? []).length,
       },
       lotes: lotes.data ?? [],
       jornadas: jornadasLimpias,

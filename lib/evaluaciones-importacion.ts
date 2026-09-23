@@ -29,6 +29,7 @@ export interface HallazgoImportacion {
     | "metrica_desconocida"
     | "deportista_sin_identificador"
     | "valor_invalido"
+    | "fila_pendiente"
     | "otro";
   severidad: SeveridadHallazgo;
   titulo: string;

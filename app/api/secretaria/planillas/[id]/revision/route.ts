@@ -8,7 +8,10 @@ function traducir(mensaje: string): never {
     SIN_ALCANCE: ["Esta planilla no pertenece a tu espacio.", 403],
     ROL_INSUFICIENTE: ["Tu rol no puede revisar planillas.", 403],
     LOTE_NO_EDITABLE: ["La planilla ya fue importada: no admite correcciones por esta vía.", 409],
-    PREVIEW_EXPIRADO: ["La previsualización venció. Volvé a subir el archivo.", 410],
+    PREVIEW_EXPIRADO: ["La revisión venció. Reprocesá la planilla para reabrirla: si el original está guardado, no hace falta volver a subirlo.", 410],
+    ORIGINAL_PENDIENTE: ["El archivo original de esta planilla no se llegó a guardar. Volvé a subirla.", 409],
+    REQUIERE_REVISION: ["Esta decisión se toma desde la revisión de la planilla, con motivo.", 422],
+    FECHA_NO_ADMITE_CARGA_MANUAL: ["La fecha no puede quedar para carga manual: sin fecha no hay jornada. Ingresala o enviá la planilla a revisión manual.", 400],
     MOTIVO_REQUERIDO: ["Escribí el motivo de la corrección.", 400],
     HALLAZGO_DESCONOCIDO: ["Esa resolución no corresponde a ningún bloqueo de la planilla.", 400],
     FECHA_INVALIDA: ["La fecha ingresada no es válida.", 400],
@@ -20,7 +23,7 @@ function traducir(mensaje: string): never {
     MAPA_INCOMPLETO: ["Falta decidir qué hacer con algunos valores sin protocolo. Ninguno se excluye solo.", 422],
     MAPA_CON_CLAVES_EXTRA: ["El mapa incluye valores que no están en la planilla.", 400],
     PROTOCOLO_NO_DISPONIBLE: ["Ese protocolo no está habilitado para la disciplina de la planilla.", 400],
-    RESOLUCION_INVALIDA: ["La resolución debe ser 'excluir_todo', o un protocolo o 'excluir' por cada valor.", 400],
+    RESOLUCION_INVALIDA: ["La resolución no es válida: para protocolos, 'excluir_todo', 'carga_manual', o un protocolo, 'excluir' o 'carga_manual' por cada valor; para filas pendientes, 'carga_manual' o 'excluir'.", 400],
   };
   const [texto, status] = mapa[codigo ?? ""] ?? ["No pudimos completar la operación.", 500];
   // Los códigos de mapa traen los valores concretos después del segundo ":".

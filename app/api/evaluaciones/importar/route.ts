@@ -17,7 +17,9 @@ export async function POST(request: Request) {
       resoluciones?: { hallazgos?: Record<string, string> };
     };
     if (!cuerpo.previewToken) throw new ErrorImportacion("Falta la previsualización.", 400, "TOKEN_INVALIDO");
-    const payload = verificarPreview(cuerpo.previewToken, user.id);
+    // El token prueba quién subió qué lote; si el lote sigue abierto lo
+    // decide `confirmar_lote_evaluacion` con `vence_en` (PREVIEW_EXPIRADO).
+    const payload = verificarPreview(cuerpo.previewToken, user.id, { vencimiento: "lo-decide-el-lote" });
     if (payload.organizacionId !== membresia.club_id) {
       throw new ErrorImportacion("La previsualización pertenece a otro espacio.", 403, "SIN_ALCANCE");
     }
@@ -27,7 +29,11 @@ export async function POST(request: Request) {
     });
     if (error) {
       const codigo = error.message.match(/TDS:([A-Z_]+)/u)?.[1];
-      if (codigo === "PREVIEW_EXPIRADO") throw new ErrorImportacion("La previsualización venció. Volvé a analizar el archivo.", 410, codigo);
+      if (codigo === "PREVIEW_EXPIRADO") throw new ErrorImportacion("La revisión de esta planilla venció. Abrila desde Planillas y reprocesala: no hace falta volver a subir el archivo.", 410, codigo);
+      if (codigo === "ORIGINAL_PENDIENTE") throw new ErrorImportacion("El archivo original de esta planilla no se llegó a guardar. Volvé a subirla.", 409, codigo);
+      // Excluir o dejar filas para carga manual es una decisión con motivo:
+      // va por la revisión de la planilla, no por esta confirmación rápida.
+      if (codigo === "REQUIERE_REVISION") throw new ErrorImportacion("Esta planilla tiene filas que necesitan una decisión con motivo. Abrila desde Planillas para resolverla y confirmarla ahí.", 422, codigo);
       if (codigo === "BLOQUEOS_PENDIENTES") throw new ErrorImportacion("Todavía hay decisiones obligatorias sin resolver.", 422, codigo);
       if (codigo === "IMPORTACION_DUPLICADA") throw new ErrorImportacion("Este lote ya fue importado.", 409, codigo);
       if (codigo === "CONFLICTO_MEDICION") throw new ErrorImportacion("Ya existe una medición para la misma jornada, métrica, protocolo e intento. No se sobrescribió ningún dato.", 409, codigo);

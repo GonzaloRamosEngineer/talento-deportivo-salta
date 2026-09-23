@@ -17,7 +17,7 @@ export function Ayuda({
       <summary className="flex cursor-pointer list-none items-center gap-2 px-3.5 py-2.5 text-xs font-semibold text-muted-foreground transition-colors hover:text-foreground [&::-webkit-details-marker]:hidden">
         <CircleHelp className="size-4 shrink-0" aria-hidden />
         {titulo}
-        <span className="ml-auto text-[10px] font-bold uppercase tracking-wide text-muted-foreground/70 group-open:hidden">
+        <span className="ml-auto text-[11px] font-bold uppercase tracking-wide text-muted-foreground/70 group-open:hidden">
           Ver
         </span>
       </summary>
