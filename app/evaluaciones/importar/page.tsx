@@ -24,6 +24,7 @@ import { CargandoPelota } from "@/components/cargando-pelota";
 import { usePerfil } from "@/components/perfil-context";
 import { useClub } from "@/lib/use-club";
 import { cn } from "@/lib/utils";
+import { Ayuda } from "@/components/ayuda";
 import {
   DEMO_SUB13,
   ErrorRespuestaEvaluacion,
@@ -47,7 +48,7 @@ const DISCIPLINAS = [
   "Otra",
 ];
 
-const PASOS = ["Archivo", "Contexto", "Revisión", "Carga"];
+const PASOS = ["Archivo", "Contexto", "Revisión", "Confirmación"];
 
 const CONTEXTO_INICIAL: ContextoEvaluacion = {
   institucionOrigen: "",
@@ -193,7 +194,17 @@ export default function PaginaImportarEvaluacion() {
       const cuerpo = await respuesta.json() as { id?: string; estado?: string; numeroSeguimiento?: string; duplicada?: boolean; mensaje?: string; error?: string };
       if (!respuesta.ok) throw new ErrorRespuestaEvaluacion(cuerpo.error ?? "No pudimos recibir el archivo.");
       if (!cuerpo.numeroSeguimiento) throw new Error("La recepción no devolvió un número de seguimiento.");
-      setRecepcionManual({ id: cuerpo.id, numeroSeguimiento: cuerpo.numeroSeguimiento, estado: cuerpo.estado ?? "RECIBIDA_PARA_REVISION", duplicada: cuerpo.duplicada ?? false, mensaje: cuerpo.mensaje ?? "Recibimos la planilla para revisión. Todavía no se importó ningún dato." });
+      // El contrato inicial no devuelve id. Recuperamos el enlace por número de
+      // seguimiento para que también funcionen duplicados y reintentos.
+      let recepcionId = cuerpo.id;
+      if (!recepcionId) {
+        const respuestaLista = await fetch("/api/secretaria/recepcion", { credentials: "same-origin", cache: "no-store" });
+        if (respuestaLista.ok) {
+          const lista = await respuestaLista.json() as { recepciones?: Array<{ id: string; numeroSeguimiento: string }> };
+          recepcionId = lista.recepciones?.find((item) => item.numeroSeguimiento === cuerpo.numeroSeguimiento)?.id;
+        }
+      }
+      setRecepcionManual({ id: recepcionId, numeroSeguimiento: cuerpo.numeroSeguimiento, estado: cuerpo.estado ?? "RECIBIDA_PARA_REVISION", duplicada: cuerpo.duplicada ?? false, mensaje: cuerpo.mensaje ?? "Recibimos la planilla para revisión. Todavía no se importó ningún dato." });
       setFormatoNoReconocido(false);
     } catch (causa) {
       setError(causa instanceof Error ? causa.message : "No pudimos recibir el archivo.");
@@ -245,10 +256,10 @@ export default function PaginaImportarEvaluacion() {
       <div className="mx-auto flex w-full max-w-2xl flex-col items-center rounded-3xl border border-primary/20 bg-card px-5 py-8 text-center sm:px-8">
         <div className="flex size-14 items-center justify-center rounded-2xl bg-secondary text-primary"><ClipboardCheck className="size-7" aria-hidden /></div>
         <p className="mt-4 text-xs font-extrabold uppercase tracking-widest text-primary">{recepcionManual.duplicada ? "Ya estaba recibida" : "Recepción confirmada"}</p>
-        <h1 className="mt-1 text-2xl font-extrabold tracking-tight">Planilla enviada para revisión</h1>
+        <h1 className="mt-1 text-2xl font-extrabold tracking-tight">Planilla enviada a Secretaría</h1>
         <p className="mt-3 max-w-xl text-sm leading-relaxed text-muted-foreground">{recepcionManual.mensaje}</p>
         <div className="mt-5 w-full rounded-2xl bg-muted/50 p-4"><p className="text-[10px] font-extrabold uppercase tracking-wide text-muted-foreground">Número de seguimiento</p><p className="mt-1 font-mono text-lg font-extrabold">{recepcionManual.numeroSeguimiento}</p><p className="mt-2 text-xs font-semibold text-primary">{recepcionManual.estado === "RECIBIDA_PARA_REVISION" ? "Revisión manual pendiente" : recepcionManual.estado}</p></div>
-        <p className="mt-4 text-xs text-muted-foreground">No cargamos deportistas, mediciones ni jornadas con este envío. Secretaría revisará el original antes de incorporar resultados.</p>
+        <p className="mt-4 text-xs text-muted-foreground">El archivo quedó resguardado. Secretaría revisará los datos y se ocupará de cargarlos; todavía no se incorporó nada.</p>
         <div className="mt-6 flex w-full flex-col gap-2 sm:w-auto sm:flex-row">{recepcionManual.id && <Link href={`/secretaria/recepcion/${recepcionManual.id}`} className="flex h-11 items-center justify-center rounded-xl bg-primary px-5 text-sm font-extrabold text-primary-foreground">Ver recepción</Link>}<Link href="/secretaria/jornadas" className="flex h-11 items-center justify-center rounded-xl border border-border px-5 text-sm font-bold">Ir a planillas</Link><button type="button" onClick={() => { setArchivo(null); setRecepcionManual(null); setContexto(CONTEXTO_INICIAL); setPaso(1); }} className="h-11 rounded-xl border border-border px-5 text-sm font-bold">Enviar otra</button></div>
       </div>
     );
@@ -300,14 +311,20 @@ export default function PaginaImportarEvaluacion() {
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Evaluaciones</p>
-            <h1 className="mt-1 text-2xl font-extrabold tracking-tight">Importar una jornada</h1>
-            <p className="mt-1 text-sm text-muted-foreground">Convertí una planilla en seguimiento, sin perder el origen ni el protocolo.</p>
+            <h1 className="mt-1 text-2xl font-extrabold tracking-tight">Cargar planilla</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Revisamos los datos antes de incorporarlos al seguimiento.</p>
           </div>
           <div className="hidden size-12 shrink-0 items-center justify-center rounded-2xl bg-secondary sm:flex">
             <FileSpreadsheet className="size-6 text-primary" aria-hidden />
           </div>
         </div>
       </div>
+
+      <Ayuda titulo="¿Cómo se carga una planilla?" bullets={[
+        "Subí un Excel o CSV con evaluaciones. El sistema reconoce algunas estructuras conocidas; no interpreta cualquier archivo automáticamente.",
+        "Si puede leerla, vas a revisar el contexto y los datos antes de confirmar. Nada se incorpora antes de esa confirmación.",
+        "Si hay varias hojas o bloques mezclados y no logramos validar qué corresponde cargar, podés enviar el original a Secretaría para revisión y carga manual.",
+      ]} />
 
       <div className="grid grid-cols-4 gap-1 rounded-2xl border border-border bg-card p-2">
         {PASOS.map((nombre, indice) => {
@@ -340,8 +357,8 @@ export default function PaginaImportarEvaluacion() {
             <span className="flex size-12 items-center justify-center rounded-2xl bg-primary text-primary-foreground shadow-sm">
               <Upload className="size-5" aria-hidden />
             </span>
-            <span className="mt-4 text-base font-extrabold">Elegí o arrastrá la planilla</span>
-            <span className="mt-1 text-xs text-muted-foreground">.xlsx, .xls o CSV · hasta 20 MB · revisamos antes de importar</span>
+            <span className="mt-4 text-base font-extrabold">Elegí o arrastrá el archivo</span>
+            <span className="mt-1 text-xs text-muted-foreground">Excel o CSV · hasta 20 MB · vas a revisar los datos antes de cargarlos</span>
           </button>
           <input
             ref={inputArchivo}
@@ -415,7 +432,7 @@ export default function PaginaImportarEvaluacion() {
           <button type="button" disabled={!contextoCompleto || procesando} onClick={revisarArchivo} className="flex h-11 items-center justify-center gap-2 rounded-xl bg-primary px-5 text-sm font-extrabold text-primary-foreground disabled:opacity-50">
             {procesando ? <><Loader2 className="size-4 animate-spin" aria-hidden />Analizando planilla…</> : <>Revisar antes de cargar<ChevronRight className="size-4" aria-hidden /></>}
           </button>
-          {formatoNoReconocido && <div className="rounded-2xl border border-warning/30 bg-warning-soft/40 p-4"><div className="flex items-start gap-2"><AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning"/><div><p className="text-sm font-extrabold">No pudimos leer esta estructura con seguridad</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">No importamos nada. Podés enviar el original a Secretaría para que revise las hojas, identifique los datos y compruebe que todo cuadre antes de cargarlo.</p></div></div><button type="button" disabled={procesando} onClick={enviarARevisionManual} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-extrabold text-primary-foreground disabled:opacity-50 sm:w-auto">{procesando ? <><Loader2 className="size-4 animate-spin"/>Enviando archivo…</> : <><ClipboardCheck className="size-4"/>Enviar para revisión manual</>}</button></div>}
+          {formatoNoReconocido && <div className="rounded-2xl border border-warning/30 bg-warning-soft/40 p-4"><div className="flex items-start gap-2"><AlertTriangle className="mt-0.5 size-4 shrink-0 text-warning"/><div><p className="text-sm font-extrabold">No pudimos identificar los datos con seguridad</p><p className="mt-1 text-xs leading-relaxed text-muted-foreground">No se cargó nada. Podés enviar el archivo a Secretaría para que revise sus hojas y datos, y se ocupe de cargarlo cuando todo esté claro.</p></div></div><button type="button" disabled={procesando} onClick={enviarARevisionManual} className="mt-3 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary px-4 text-sm font-extrabold text-primary-foreground disabled:opacity-50 sm:w-auto">{procesando ? <><Loader2 className="size-4 animate-spin"/>Enviando archivo…</> : <><ClipboardCheck className="size-4"/>Enviar a Secretaría para revisión y carga</>}</button></div>}
         </section>
       )}
 

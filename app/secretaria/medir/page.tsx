@@ -10,6 +10,7 @@ import { hoyLocalISO } from "@/lib/use-datos";
 import { cn } from "@/lib/utils";
 import { usePerfil } from "@/components/perfil-context";
 import { AltaRapidaMedicion, type ModoAltaRapida } from "@/components/secretaria/alta-rapida-medicion";
+import { Ayuda } from "@/components/ayuda";
 
 interface GrupoCatalogo {
   id: string;
@@ -163,6 +164,12 @@ export default function MedirSecretaria() {
     <GuardiaSecretaria>
       <div className="flex flex-col gap-4 sm:gap-5">
         <div><p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Nueva jornada</p><h1 className="mt-1 text-2xl font-extrabold tracking-tight">Medir</h1><p className="mt-1 text-sm text-muted-foreground">Elegí dónde van a medir, la disciplina y el plantel. Después cargá la evaluación de corrido.</p></div>
+
+        <Ayuda titulo="¿Cómo cargo una medición?" bullets={[
+          "Elegí institución, disciplina y plantel para que los resultados queden asociados al grupo correcto.",
+          "Seleccioná el protocolo y la métrica: una misma métrica puede medirse con protocolos distintos.",
+          "Ingresá fecha, evaluador y valores. La jornada se guarda cuando confirmás la carga.",
+        ]} />
 
         {grupo ? (
           <section className="flex items-center gap-3 rounded-2xl border border-primary/30 bg-secondary p-3">

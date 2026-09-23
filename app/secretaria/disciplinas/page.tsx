@@ -7,6 +7,7 @@ import { DISCIPLINAS_SECRETARIA } from "@/lib/secretaria-demo";
 import { useSecretaria } from "@/lib/use-secretaria";
 import { CargandoPelota } from "@/components/cargando-pelota";
 import { AvisoAcceso } from "@/components/aviso-acceso";
+import { Ayuda } from "@/components/ayuda";
 
 interface DisciplinaReal {
   disciplinaId: string;
@@ -66,6 +67,12 @@ export default function DisciplinasSecretaria() {
           <h1 className="mt-1 text-2xl font-extrabold tracking-tight">Disciplinas</h1>
           <p className="mt-1 text-sm text-muted-foreground">La Secretaría habilita baterías validadas; las métricas no se inventan desde una planilla.</p>
         </div>
+
+        <Ayuda titulo="¿Qué muestra esta sección?" bullets={[
+          "La cobertura indica qué instituciones, grupos y jornadas tienen datos para cada disciplina.",
+          "Los protocolos describen cómo se hizo una prueba; las métricas son los resultados que se registran.",
+          "Las baterías habilitadas mantienen criterios comparables. Una planilla no crea métricas nuevas automáticamente.",
+        ]} />
 
         <details className="group rounded-2xl border border-primary/20 bg-secondary/45">
           <summary className="flex cursor-pointer list-none items-center gap-2.5 p-3"><FlaskConical className="size-4 shrink-0 text-primary" aria-hidden /><span className="min-w-0 flex-1 text-xs"><strong className="font-extrabold">Métrica y protocolo son distintos.</strong> Altura de salto puede medirse con CMJ, SJ o Abalakov.</span><ChevronDown className="size-4 shrink-0 transition-transform group-open:rotate-180" /></summary>

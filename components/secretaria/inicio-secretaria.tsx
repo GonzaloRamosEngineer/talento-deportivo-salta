@@ -19,6 +19,7 @@ import { AvisoAcceso } from "@/components/aviso-acceso";
 import { CargandoPelota } from "@/components/cargando-pelota";
 import { useSecretaria } from "@/lib/use-secretaria";
 import { usePerfil } from "@/components/perfil-context";
+import { Ayuda } from "@/components/ayuda";
 
 export function InicioSecretaria() {
   const { sesionReal, cargandoSesion } = usePerfil();
@@ -64,6 +65,12 @@ export function InicioSecretaria() {
         <span className="hidden rounded-full border border-primary/20 bg-secondary px-3 py-1.5 text-[10px] font-extrabold uppercase tracking-wide text-primary sm:inline-flex">Datos del espacio</span>
       </div>
 
+      <Ayuda titulo="¿Cómo usar el panel?" bullets={[
+        "El panel resume las planillas, disciplinas, deportistas y mediciones registradas por Secretaría.",
+        "Empezá por resolver los avisos pendientes; después podés explorar grupos, cobertura y reportes.",
+        "Los datos confirmados forman una base común para seguir la evolución y orientar decisiones deportivas.",
+      ]} />
+
       <div className="grid grid-cols-2 divide-x divide-y divide-border overflow-hidden rounded-2xl border border-border bg-card sm:grid-cols-4 sm:divide-y-0">
         {indicadores.map(({ valor, etiqueta, icon: Icon }) => {
           const destino = etiqueta === "planillas recibidas" ? "/secretaria/jornadas" : etiqueta === "disciplinas" ? "/secretaria/disciplinas" : etiqueta === "deportistas evaluados" ? "/secretaria/deportistas" : "/secretaria/reportes";
@@ -92,7 +99,7 @@ export function InicioSecretaria() {
           className="group flex min-h-24 flex-col justify-between rounded-2xl bg-primary p-4 text-primary-foreground shadow-sm transition-transform active:scale-[0.99]"
         >
           <span className="flex items-start justify-between"><span className="flex size-9 items-center justify-center rounded-xl bg-white/15"><FileSpreadsheet className="size-4" aria-hidden /></span><ArrowUpRight className="size-3.5" /></span>
-          <span><span className="block text-sm font-extrabold">Importar planilla</span><span className="mt-0.5 hidden text-xs text-primary-foreground/75 sm:block">Excel o CSV con revisión</span></span>
+          <span><span className="block text-sm font-extrabold">Cargar planilla</span><span className="mt-0.5 hidden text-xs text-primary-foreground/75 sm:block">Vista previa o revisión por Secretaría</span></span>
         </Link>
         <Link
           href="/secretaria/grupos"

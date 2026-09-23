@@ -9,6 +9,7 @@ import { GRUPOS_SECRETARIA } from "@/lib/secretaria-demo";
 import { useSecretaria } from "@/lib/use-secretaria";
 import { CargandoPelota } from "@/components/cargando-pelota";
 import { AvisoAcceso } from "@/components/aviso-acceso";
+import { Ayuda } from "@/components/ayuda";
 
 export default function JornadasSecretaria() {
   const [busqueda, setBusqueda] = useState("");
@@ -71,9 +72,15 @@ export default function JornadasSecretaria() {
           </div>
           <Link href="/evaluaciones/importar" className="flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-xs font-extrabold text-primary-foreground">
             <FileSpreadsheet className="size-4" aria-hidden />
-            Importar
+            Cargar planilla
           </Link>
         </div>
+
+        <Ayuda titulo="¿Qué encontrás acá?" bullets={[
+          "Cada archivo puede quedar pendiente de revisión, en revisión o confirmado como una jornada.",
+          "Abrí una planilla pendiente para ver qué falta y resolverlo antes de incorporar los resultados.",
+          "Los archivos que no se pueden leer con seguridad quedan resguardados para que Secretaría los revise y cargue.",
+        ]} />
 
         <div className="flex h-11 items-center gap-2 rounded-xl border border-input bg-card px-3 text-muted-foreground">
           <Search className="size-4" aria-hidden />

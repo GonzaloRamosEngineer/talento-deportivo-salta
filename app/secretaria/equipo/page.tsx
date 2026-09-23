@@ -8,6 +8,7 @@ import { CargandoPelota } from "@/components/cargando-pelota";
 import { AvisoAcceso } from "@/components/aviso-acceso";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
 import { ROL_LABEL, type RolMembresia } from "@/lib/tipos-db";
+import { Ayuda } from "@/components/ayuda";
 
 export default function EquipoSecretaria() {
   const { resumen, cargando, error, real } = useSecretaria();
@@ -20,6 +21,12 @@ export default function EquipoSecretaria() {
           <div><p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Acceso por alcance</p><h1 className="mt-1 text-2xl font-extrabold tracking-tight">Equipo</h1><p className="mt-1 text-sm text-muted-foreground">Administrativos, coordinadores, evaluadores y analistas.</p></div>
           <button type="button" disabled className="flex h-10 items-center gap-2 rounded-xl bg-primary px-4 text-xs font-extrabold text-primary-foreground opacity-50"><UserPlus className="size-4" aria-hidden />Invitar</button>
         </div>
+
+        <Ayuda titulo="¿Para qué sirve el equipo?" bullets={[
+          "Acá consultás quiénes tienen acceso al espacio de Secretaría y el rol asignado a cada persona.",
+          "Los roles determinan qué acciones puede realizar cada integrante, como cargar o revisar planillas.",
+          "La invitación de nuevos integrantes todavía no está habilitada desde esta pantalla.",
+        ]} />
 
         {!real && <div className="flex items-start gap-3 rounded-2xl border border-warning/25 bg-warning-soft/45 p-4">
           <LockKeyhole className="mt-0.5 size-5 shrink-0 text-warning" aria-hidden />

@@ -7,6 +7,7 @@ import { GuardiaSecretaria } from "@/components/secretaria/guardia-secretaria";
 import { CargandoPelota } from "@/components/cargando-pelota";
 import { AvisoAcceso } from "@/components/aviso-acceso";
 import { AvatarIniciales } from "@/components/avatar-iniciales";
+import { Ayuda } from "@/components/ayuda";
 
 interface DeportistaSecretaria {
   id: string;
@@ -80,6 +81,12 @@ export default function DeportistasSecretaria() {
     <GuardiaSecretaria>
       <div className="flex flex-col gap-4 sm:gap-5">
         <div className="flex items-center justify-between gap-3"><div><p className="text-xs font-extrabold uppercase tracking-[0.16em] text-primary">Seguimiento individual</p><h1 className="mt-1 text-2xl font-extrabold tracking-tight">Deportistas</h1><p className="mt-1 text-sm text-muted-foreground">Buscá una ficha o filtrá por plantel.</p></div><Link href="/secretaria/medir" className="inline-flex h-10 shrink-0 items-center gap-2 rounded-xl bg-primary px-3 text-xs font-extrabold text-primary-foreground"><ClipboardPlus className="size-4" /><span className="hidden min-[380px]:inline">Medir</span></Link></div>
+
+        <Ayuda titulo="¿Qué puedo consultar?" bullets={[
+          "Buscá por nombre o apellido, o combiná los filtros de institución, disciplina y plantel.",
+          "Abrí una ficha para revisar las mediciones disponibles y la evolución individual.",
+          "La cantidad de registros no reemplaza la comparación: revisá también fecha, métrica y protocolo.",
+        ]} />
 
         <div className="grid grid-cols-2 gap-2 sm:gap-3"><div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 sm:rounded-2xl sm:p-4"><Users className="size-4 shrink-0 text-primary" /><p className="text-lg font-extrabold sm:text-2xl">{deportistas.length}</p><p className="text-[11px] leading-tight text-muted-foreground sm:text-xs">deportistas</p></div><div className="flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2.5 sm:rounded-2xl sm:p-4"><p className="text-lg font-extrabold sm:text-2xl">{deportistas.reduce((total, item) => total + item.mediciones, 0)}</p><p className="text-[11px] leading-tight text-muted-foreground sm:text-xs">mediciones</p></div></div>
 

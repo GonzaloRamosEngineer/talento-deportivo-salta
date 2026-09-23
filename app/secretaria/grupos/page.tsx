@@ -6,6 +6,7 @@ import { GuardiaSecretaria } from "@/components/secretaria/guardia-secretaria";
 import { CargandoPelota } from "@/components/cargando-pelota";
 import { AvisoAcceso } from "@/components/aviso-acceso";
 import { ConfiguradorSecretaria, type ConfiguracionSecretaria } from "@/components/secretaria/configurador-secretaria";
+import { Ayuda } from "@/components/ayuda";
 
 export default function GruposSecretaria() {
   const [vista, setVista] = useState<"instituciones" | "grupos" | "disciplinas" | "deportistas">("instituciones");
@@ -59,6 +60,12 @@ export default function GruposSecretaria() {
           <h1 className="mt-1 text-2xl font-extrabold tracking-tight">Instituciones y planteles</h1>
           <p className="mt-1 text-sm text-muted-foreground">Organizá dónde y a quiénes medir.</p>
         </div>
+
+        <Ayuda titulo="¿Cómo se organiza?" bullets={[
+          "Cada institución reúne disciplinas; cada disciplina contiene sus grupos o planteles.",
+          "Elegí los indicadores para ver solo instituciones, grupos, disciplinas o deportistas.",
+          "Desde acá podés agregar y organizar los planteles que después vas a seleccionar al medir.",
+        ]} />
 
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-4 sm:gap-3">
           {[
