@@ -19,11 +19,8 @@ import { useSecretaria } from "@/lib/use-secretaria";
 import { usePerfil } from "@/components/perfil-context";
 import { Ayuda } from "@/components/ayuda";
 import { EscaleraDatos } from "@/components/secretaria/escalera-datos";
+import { PRESIONABLE } from "@/components/secretaria/presionable";
 
-// Respuesta al presionar: en la cancha, con el dedo, es la única señal de
-// que el toque se registró. Con reduced-motion queda solo el color.
-const PRESIONABLE =
-  "transition-[transform,background-color,border-color] duration-150 ease-(--ease-out) active:scale-[0.97] motion-reduce:active:scale-100";
 
 export function InicioSecretaria() {
   const { sesionReal, cargandoSesion } = usePerfil();
